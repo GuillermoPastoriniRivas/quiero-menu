@@ -31,7 +31,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signup({ name, email, password, restaurantName, restaurantSlug });
-      router.push('/dashboard');
+      router.push('/onboarding');
     } catch (err: any) {
       setError(err.message || 'Error al registrarte');
     } finally {

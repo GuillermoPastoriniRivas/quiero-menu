@@ -20,4 +20,7 @@ export default () => ({
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
   },
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3001',
+  openai: {
+    apiKey: requireEnv('OPENAI_API_KEY'),
+  },
 });

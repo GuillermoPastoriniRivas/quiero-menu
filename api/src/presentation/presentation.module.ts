@@ -15,6 +15,7 @@ import { MenuController } from './controllers/menu.controller.js';
 import { OrderController } from './controllers/order.controller.js';
 import { DeliveryZoneController } from './controllers/delivery-zone.controller.js';
 import { KitchenController } from './controllers/kitchen.controller.js';
+import { OnboardingController } from './controllers/onboarding.controller.js';
 
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
@@ -63,6 +64,10 @@ import { CreateKitchenTokenUseCase } from '../application/use-cases/kitchen/crea
 import { ValidateKitchenTokenUseCase } from '../application/use-cases/kitchen/validate-kitchen-token.use-case.js';
 import { ListKitchenTokensUseCase } from '../application/use-cases/kitchen/list-kitchen-tokens.use-case.js';
 import { RevokeKitchenTokenUseCase } from '../application/use-cases/kitchen/revoke-kitchen-token.use-case.js';
+
+// Use Cases — Onboarding
+import { AnalyzeMenuUseCase } from '../application/use-cases/onboarding/analyze-menu.use-case.js';
+import { BulkImportMenuUseCase } from '../application/use-cases/onboarding/bulk-import-menu.use-case.js';
 
 const useCaseProviders = [
   // Auth
@@ -249,6 +254,20 @@ const useCaseProviders = [
     inject: ['DeliveryZoneRepository'],
   },
 
+  // Onboarding
+  {
+    provide: 'AnalyzeMenuUseCase',
+    useFactory: (vision: any, restRepo: any) =>
+      new AnalyzeMenuUseCase(vision, restRepo),
+    inject: ['MenuVisionPort', 'RestaurantRepository'],
+  },
+  {
+    provide: 'BulkImportMenuUseCase',
+    useFactory: (restRepo: any, hoursRepo: any, catRepo: any, itemRepo: any, varRepo: any, optRepo: any) =>
+      new BulkImportMenuUseCase(restRepo, hoursRepo, catRepo, itemRepo, varRepo, optRepo),
+    inject: ['RestaurantRepository', 'OperatingHoursRepository', 'MenuCategoryRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository'],
+  },
+
   // Kitchen
   {
     provide: 'CreateKitchenTokenUseCase',
@@ -282,6 +301,7 @@ const useCaseProviders = [
     OrderController,
     DeliveryZoneController,
     KitchenController,
+    OnboardingController,
   ],
   providers: [
     ...useCaseProviders,

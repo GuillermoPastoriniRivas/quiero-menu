@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, ChevronDown, ChevronRight, Package, Layers, Settings2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight, Package, Layers, Settings2, Loader2, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { formatCurrency } from '@/lib/format';
 import type { MenuCategory, MenuItem, MenuItemVariant, MenuItemOption, StorefrontData } from '@/types';
 import { toast } from 'sonner';
@@ -243,7 +244,16 @@ export default function MenuPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Menu</h1>
-        <Badge variant="secondary">{richCategories.length} categorias</Badge>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/onboarding?from=menu"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Sparkles className="h-4 w-4" />
+            Importar con IA
+          </Link>
+          <Badge variant="secondary">{richCategories.length} categorias</Badge>
+        </div>
       </div>
 
       {/* ---- add category ---- */}

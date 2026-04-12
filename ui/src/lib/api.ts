@@ -119,6 +119,37 @@ class ApiClient {
   delete<T>(path: string) {
     return this.request<T>('DELETE', path);
   }
+
+  async postFormData<T>(path: string, formData: FormData): Promise<T> {
+    const url = `${API_URL}${path}`;
+    const headers: Record<string, string> = {};
+    if (this.accessToken) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
+
+    let res = await fetch(url, { method: 'POST', headers, body: formData });
+
+    if (res.status === 401 && this.refreshToken) {
+      const refreshed = await this.tryRefresh();
+      if (refreshed) {
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
+        res = await fetch(url, { method: 'POST', headers, body: formData });
+      }
+    }
+
+    if (res.status === 401) {
+      this.clearTokens();
+      this.onUnauthorized?.();
+      throw new ApiError(401, 'Unauthorized');
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ message: res.statusText }));
+      throw new ApiError(res.status, data.message || res.statusText);
+    }
+
+    return res.json();
+  }
 }
 
 export const api = new ApiClient();
