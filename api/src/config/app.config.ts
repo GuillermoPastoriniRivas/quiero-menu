@@ -1,0 +1,23 @@
+function requireEnv(key: string, fallbackForDev?: string): string {
+  const value = process.env[key];
+  if (value) return value;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  if (fallbackForDev !== undefined) return fallbackForDev;
+  throw new Error(`Missing required environment variable: ${key}`);
+}
+
+export default () => ({
+  port: parseInt(process.env.PORT ?? '3000', 10),
+  mongodb: {
+    uri: requireEnv('MONGODB_URI', 'mongodb://localhost:27017/quiero-menu'),
+  },
+  jwt: {
+    secret: requireEnv('JWT_SECRET', 'dev-secret-do-not-use-in-prod'),
+    expiresIn: process.env.JWT_EXPIRES_IN ?? '3d',
+    refreshSecret: requireEnv('JWT_REFRESH_SECRET', 'dev-refresh-secret-do-not-use-in-prod'),
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+  },
+  frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3001',
+});
