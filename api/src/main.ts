@@ -5,7 +5,7 @@ import { AppModule } from './app.module.js';
 import { GlobalExceptionFilter } from './presentation/filters/global-exception.filter.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new GlobalExceptionFilter());

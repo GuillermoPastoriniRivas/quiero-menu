@@ -3,6 +3,7 @@ import { UserRepository } from '../../../domain/repositories/user.repository.js'
 import { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
 import { UserRestaurantRepository } from '../../../domain/repositories/user-restaurant.repository.js';
 import { RefreshTokenRepository } from '../../../domain/repositories/refresh-token.repository.js';
+import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
 import { PasswordHasherPort } from '../../ports/password-hasher.port.js';
 import { TokenProviderPort } from '../../ports/token-provider.port.js';
 import { SignupInput } from '../../dtos/auth/signup-input.dto.js';
@@ -11,6 +12,9 @@ import { Result, ok, err } from '../../common/result.js';
 import { EmailAlreadyExistsError, SlugAlreadyExistsError } from '../../../domain/errors/domain-errors.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
 import { UserRole } from '../../../domain/enums/user-role.enum.js';
+import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
+import { SubscriptionStatus } from '../../../domain/enums/subscription-status.enum.js';
+import { PaymentProvider } from '../../../domain/enums/payment-provider.enum.js';
 
 export class SignupUseCase {
   constructor(
@@ -20,6 +24,7 @@ export class SignupUseCase {
     private readonly refreshTokenRepo: RefreshTokenRepository,
     private readonly passwordHasher: PasswordHasherPort,
     private readonly tokenProvider: TokenProviderPort,
+    private readonly subscriptionRepo: SubscriptionRepository,
   ) {}
 
   async execute(input: SignupInput): Promise<Result<LoginOutput, EmailAlreadyExistsError | SlugAlreadyExistsError>> {
@@ -58,6 +63,18 @@ export class SignupUseCase {
       userId: user.id,
       restaurantId: restaurant.id,
       role: UserRole.OWNER,
+    });
+
+    await this.subscriptionRepo.create({
+      restaurantId: restaurant.id,
+      plan: PlanTier.FREE,
+      status: SubscriptionStatus.ACTIVE,
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: null,
+      canceledAt: null,
+      paymentProvider: PaymentProvider.NONE,
+      externalCustomerId: null,
+      externalSubscriptionId: null,
     });
 
     const payload = { sub: user.id, restaurantId: restaurant.id, role: UserRole.OWNER };

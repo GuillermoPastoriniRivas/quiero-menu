@@ -16,6 +16,8 @@ import { OrderController } from './controllers/order.controller.js';
 import { DeliveryZoneController } from './controllers/delivery-zone.controller.js';
 import { KitchenController } from './controllers/kitchen.controller.js';
 import { OnboardingController } from './controllers/onboarding.controller.js';
+import { BillingController } from './controllers/billing.controller.js';
+import { PaymentWebhookController } from './controllers/payment-webhook.controller.js';
 
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
@@ -69,6 +71,13 @@ import { RevokeKitchenTokenUseCase } from '../application/use-cases/kitchen/revo
 import { AnalyzeMenuUseCase } from '../application/use-cases/onboarding/analyze-menu.use-case.js';
 import { BulkImportMenuUseCase } from '../application/use-cases/onboarding/bulk-import-menu.use-case.js';
 
+// Use Cases — Billing
+import { GetSubscriptionUseCase } from '../application/use-cases/billing/get-subscription.use-case.js';
+import { CreateCheckoutUseCase } from '../application/use-cases/billing/create-checkout.use-case.js';
+import { HandlePaymentWebhookUseCase } from '../application/use-cases/billing/handle-payment-webhook.use-case.js';
+import { CancelSubscriptionUseCase } from '../application/use-cases/billing/cancel-subscription.use-case.js';
+import { GetBillingHistoryUseCase } from '../application/use-cases/billing/get-billing-history.use-case.js';
+
 const useCaseProviders = [
   // Auth
   {
@@ -79,9 +88,9 @@ const useCaseProviders = [
   },
   {
     provide: 'SignupUseCase',
-    useFactory: (userRepo: any, restRepo: any, urRepo: any, rtRepo: any, hasher: any, tokenProvider: any) =>
-      new SignupUseCase(userRepo, restRepo, urRepo, rtRepo, hasher, tokenProvider),
-    inject: ['UserRepository', 'RestaurantRepository', 'UserRestaurantRepository', 'RefreshTokenRepository', 'PasswordHasherPort', 'TokenProviderPort'],
+    useFactory: (userRepo: any, restRepo: any, urRepo: any, rtRepo: any, hasher: any, tokenProvider: any, subRepo: any) =>
+      new SignupUseCase(userRepo, restRepo, urRepo, rtRepo, hasher, tokenProvider, subRepo),
+    inject: ['UserRepository', 'RestaurantRepository', 'UserRestaurantRepository', 'RefreshTokenRepository', 'PasswordHasherPort', 'TokenProviderPort', 'SubscriptionRepository'],
   },
   {
     provide: 'RefreshTokenUseCase',
@@ -104,9 +113,9 @@ const useCaseProviders = [
   },
   {
     provide: 'GetRestaurantBySlugUseCase',
-    useFactory: (restRepo: any, catRepo: any, itemRepo: any, varRepo: any, optRepo: any, hoursRepo: any, zoneRepo: any) =>
-      new GetRestaurantBySlugUseCase(restRepo, catRepo, itemRepo, varRepo, optRepo, hoursRepo, zoneRepo),
-    inject: ['RestaurantRepository', 'MenuCategoryRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository', 'OperatingHoursRepository', 'DeliveryZoneRepository'],
+    useFactory: (restRepo: any, catRepo: any, itemRepo: any, varRepo: any, optRepo: any, hoursRepo: any, zoneRepo: any, subRepo: any) =>
+      new GetRestaurantBySlugUseCase(restRepo, catRepo, itemRepo, varRepo, optRepo, hoursRepo, zoneRepo, subRepo),
+    inject: ['RestaurantRepository', 'MenuCategoryRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository', 'OperatingHoursRepository', 'DeliveryZoneRepository', 'SubscriptionRepository'],
   },
   {
     provide: 'UpdateRestaurantUseCase',
@@ -218,13 +227,13 @@ const useCaseProviders = [
   },
   {
     provide: 'ListOrdersUseCase',
-    useFactory: (orderRepo: any) => new ListOrdersUseCase(orderRepo),
-    inject: ['OrderRepository'],
+    useFactory: (orderRepo: any, subRepo: any) => new ListOrdersUseCase(orderRepo, subRepo),
+    inject: ['OrderRepository', 'SubscriptionRepository'],
   },
   {
     provide: 'GetOrderUseCase',
-    useFactory: (orderRepo: any, orderItemRepo: any) => new GetOrderUseCase(orderRepo, orderItemRepo),
-    inject: ['OrderRepository', 'OrderItemRepository'],
+    useFactory: (orderRepo: any, orderItemRepo: any, subRepo: any) => new GetOrderUseCase(orderRepo, orderItemRepo, subRepo),
+    inject: ['OrderRepository', 'OrderItemRepository', 'SubscriptionRepository'],
   },
   {
     provide: 'UpdateOrderStatusUseCase',
@@ -268,6 +277,38 @@ const useCaseProviders = [
     inject: ['RestaurantRepository', 'OperatingHoursRepository', 'MenuCategoryRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository'],
   },
 
+  // Billing
+  {
+    provide: 'GetSubscriptionUseCase',
+    useFactory: (subRepo: any, orderRepo: any) =>
+      new GetSubscriptionUseCase(subRepo, orderRepo),
+    inject: ['SubscriptionRepository', 'OrderRepository'],
+  },
+  {
+    provide: 'CreateCheckoutUseCase',
+    useFactory: (subRepo: any, userRepo: any, paymentProvider: any) =>
+      new CreateCheckoutUseCase(subRepo, userRepo, paymentProvider),
+    inject: ['SubscriptionRepository', 'UserRepository', 'PaymentProviderPort'],
+  },
+  {
+    provide: 'HandlePaymentWebhookUseCase',
+    useFactory: (subRepo: any, billingRepo: any, restRepo: any) =>
+      new HandlePaymentWebhookUseCase(subRepo, billingRepo, restRepo),
+    inject: ['SubscriptionRepository', 'BillingRecordRepository', 'RestaurantRepository'],
+  },
+  {
+    provide: 'CancelSubscriptionUseCase',
+    useFactory: (subRepo: any, billingRepo: any, restRepo: any, paymentProvider: any) =>
+      new CancelSubscriptionUseCase(subRepo, billingRepo, restRepo, paymentProvider),
+    inject: ['SubscriptionRepository', 'BillingRecordRepository', 'RestaurantRepository', 'PaymentProviderPort'],
+  },
+  {
+    provide: 'GetBillingHistoryUseCase',
+    useFactory: (billingRepo: any) =>
+      new GetBillingHistoryUseCase(billingRepo),
+    inject: ['BillingRecordRepository'],
+  },
+
   // Kitchen
   {
     provide: 'CreateKitchenTokenUseCase',
@@ -302,6 +343,8 @@ const useCaseProviders = [
     DeliveryZoneController,
     KitchenController,
     OnboardingController,
+    BillingController,
+    PaymentWebhookController,
   ],
   providers: [
     ...useCaseProviders,

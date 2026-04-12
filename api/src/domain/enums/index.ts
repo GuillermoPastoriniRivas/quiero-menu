@@ -4,3 +4,7 @@ export { OrderStatus } from './order-status.enum.js';
 export { OrderSource } from './order-source.enum.js';
 export { DeliveryType } from './delivery-type.enum.js';
 export { UserRole } from './user-role.enum.js';
+export { PlanTier } from './plan-tier.enum.js';
+export { SubscriptionStatus } from './subscription-status.enum.js';
+export { PaymentProvider } from './payment-provider.enum.js';
+export { BillingEventType } from './billing-event-type.enum.js';

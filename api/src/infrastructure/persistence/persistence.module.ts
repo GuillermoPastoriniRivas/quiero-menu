@@ -14,6 +14,8 @@ import { UserModel, UserSchema } from './mongoose/schemas/user.schema.js';
 import { UserRestaurantModel, UserRestaurantSchema } from './mongoose/schemas/user-restaurant.schema.js';
 import { RefreshTokenModel, RefreshTokenSchema } from './mongoose/schemas/refresh-token.schema.js';
 import { KitchenAccessTokenModel, KitchenAccessTokenSchema } from './mongoose/schemas/kitchen-access-token.schema.js';
+import { SubscriptionModel, SubscriptionSchema } from './mongoose/schemas/subscription.schema.js';
+import { BillingRecordModel, BillingRecordSchema } from './mongoose/schemas/billing-record.schema.js';
 
 import { MongoRestaurantRepository } from './mongoose/repositories/mongo-restaurant.repository.js';
 import { MongoOperatingHoursRepository } from './mongoose/repositories/mongo-operating-hours.repository.js';
@@ -28,6 +30,8 @@ import { MongoUserRepository } from './mongoose/repositories/mongo-user.reposito
 import { MongoUserRestaurantRepository } from './mongoose/repositories/mongo-user-restaurant.repository.js';
 import { MongoRefreshTokenRepository } from './mongoose/repositories/mongo-refresh-token.repository.js';
 import { MongoKitchenAccessTokenRepository } from './mongoose/repositories/mongo-kitchen-access-token.repository.js';
+import { MongoSubscriptionRepository } from './mongoose/repositories/mongo-subscription.repository.js';
+import { MongoBillingRecordRepository } from './mongoose/repositories/mongo-billing-record.repository.js';
 
 const schemas = MongooseModule.forFeature([
   { name: RestaurantModel.name, schema: RestaurantSchema },
@@ -44,6 +48,8 @@ const schemas = MongooseModule.forFeature([
   { name: UserRestaurantModel.name, schema: UserRestaurantSchema },
   { name: RefreshTokenModel.name, schema: RefreshTokenSchema },
   { name: KitchenAccessTokenModel.name, schema: KitchenAccessTokenSchema },
+  { name: SubscriptionModel.name, schema: SubscriptionSchema },
+  { name: BillingRecordModel.name, schema: BillingRecordSchema },
 ]);
 
 const repositories = [
@@ -60,6 +66,8 @@ const repositories = [
   { provide: 'UserRestaurantRepository', useClass: MongoUserRestaurantRepository },
   { provide: 'RefreshTokenRepository', useClass: MongoRefreshTokenRepository },
   { provide: 'KitchenAccessTokenRepository', useClass: MongoKitchenAccessTokenRepository },
+  { provide: 'SubscriptionRepository', useClass: MongoSubscriptionRepository },
+  { provide: 'BillingRecordRepository', useClass: MongoBillingRecordRepository },
 ];
 
 @Module({

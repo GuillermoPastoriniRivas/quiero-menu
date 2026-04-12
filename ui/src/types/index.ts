@@ -199,6 +199,68 @@ export interface BulkImportResult {
   options: number;
 }
 
+// Billing
+export enum PlanTier {
+  FREE = 'free',
+  PRO = 'pro',
+}
+
+export interface Subscription {
+  id: string;
+  restaurantId: string;
+  plan: PlanTier;
+  status: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string | null;
+  canceledAt: string | null;
+  paymentProvider: string;
+  externalCustomerId: string | null;
+  externalSubscriptionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanLimits {
+  maxOrdersPerMonth: number;
+  showPoweredByFooter: boolean;
+  customDomain: boolean;
+  priceMonthly: number;
+}
+
+export interface SubscriptionInfo {
+  subscription: Subscription | null;
+  plan: PlanTier;
+  limits: PlanLimits;
+  usage: { ordersThisMonth: number };
+}
+
+export interface BillingRecord {
+  id: string;
+  restaurantId: string;
+  eventType: string;
+  plan: string;
+  amountCents: number;
+  description: string;
+  createdAt: string;
+}
+
+export interface PlanInfo {
+  plan: PlanTier;
+  ordersUsed: number;
+  ordersLimit: number;
+  redactedCount: number;
+}
+
+export interface OrderWithRedaction extends Order {
+  redacted: boolean;
+}
+
+export interface OrderListResponse {
+  data: OrderWithRedaction[];
+  meta: { total: number; page: number; pages: number };
+  planInfo: PlanInfo;
+}
+
 // API responses
 export interface LoginResponse {
   accessToken: string;
@@ -228,6 +290,7 @@ export interface StorefrontData {
   })[];
   operatingHours: OperatingHours[];
   deliveryZones: DeliveryZone[];
+  showPoweredByFooter: boolean;
 }
 
 export interface StorefrontOrderResponse {

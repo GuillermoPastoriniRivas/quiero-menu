@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRestaurantStore } from '@/stores/restaurant.store';
+import { useBillingStore } from '@/stores/billing.store';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import type { OperatingHours, DeliveryZone, KitchenAccessToken } from '@/types';
+import { PlanTier } from '@/types';
 import { toast } from 'sonner';
-import { Copy, Trash2, Plus } from 'lucide-react';
+import { Copy, Trash2, Plus, Zap, Check, X } from 'lucide-react';
+import { formatDate } from '@/lib/format';
 
 export default function SettingsPage() {
   const { restaurant, fetch: fetchRestaurant, update } = useRestaurantStore();
@@ -45,10 +49,17 @@ export default function SettingsPage() {
   const [savingHours, setSavingHours] = useState(false);
   const { updateHours } = useRestaurantStore();
 
+  // Billing
+  const billing = useBillingStore();
+  const [upgrading, setUpgrading] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+
   useEffect(() => {
     fetchRestaurant();
     loadZones();
     loadTokens();
+    billing.fetch();
+    billing.fetchHistory();
   }, []);
 
   useEffect(() => {
@@ -126,6 +137,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="general">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="billing">Plan</TabsTrigger>
           <TabsTrigger value="delivery">Zonas de delivery</TabsTrigger>
           <TabsTrigger value="kitchen">Cocina</TabsTrigger>
           <TabsTrigger value="hours">Horarios</TabsTrigger>
@@ -160,6 +172,149 @@ export default function SettingsPage() {
                   <Button variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/${restaurant.slug}`); toast.success('Link copiado'); }}>
                     <Copy className="h-4 w-4" />
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="billing" className="space-y-4 mt-4">
+          {/* Current plan */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Free plan card */}
+            <Card className={billing.info?.plan === PlanTier.FREE ? 'border-primary' : ''}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Gratis</CardTitle>
+                  {billing.info?.plan === PlanTier.FREE && <Badge>Plan actual</Badge>}
+                </div>
+                <CardDescription>Para empezar</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-3xl font-bold">$0<span className="text-sm font-normal text-muted-foreground">/mes</span></p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Hasta 50 pedidos/mes</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Menú digital completo</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Pedidos por WhatsApp</li>
+                  <li className="flex items-center gap-2 text-muted-foreground"><X className="h-4 w-4" />Footer "Powered by quiero.menu"</li>
+                  <li className="flex items-center gap-2 text-muted-foreground"><X className="h-4 w-4" />Sin dominio personalizado</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Pro plan card */}
+            <Card className={billing.info?.plan === PlanTier.PRO ? 'border-primary' : ''}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-yellow-500" />Pro</CardTitle>
+                  {billing.info?.plan === PlanTier.PRO && <Badge>Plan actual</Badge>}
+                </div>
+                <CardDescription>Para restaurantes en crecimiento</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-3xl font-bold">$19<span className="text-sm font-normal text-muted-foreground"> USD/mes</span></p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Pedidos ilimitados</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Menú digital completo</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Pedidos por WhatsApp</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Sin footer de quiero.menu</li>
+                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Dominio personalizado</li>
+                </ul>
+                {billing.info?.plan === PlanTier.FREE && (
+                  <Button className="w-full" disabled={upgrading} onClick={async () => {
+                    setUpgrading(true);
+                    try {
+                      const url = await billing.checkout();
+                      window.location.href = url;
+                    } catch (err: any) {
+                      toast.error(err.message || 'Error al crear checkout');
+                    } finally {
+                      setUpgrading(false);
+                    }
+                  }}>
+                    <Zap className="mr-2 h-4 w-4" />{upgrading ? 'Redirigiendo...' : 'Subir a Pro'}
+                  </Button>
+                )}
+                {billing.info?.plan === PlanTier.PRO && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={async () => {
+                      try {
+                        const url = await billing.getPortalUrl();
+                        window.open(url, '_blank');
+                      } catch {
+                        toast.error('No se pudo obtener el portal de pagos');
+                      }
+                    }}>Administrar pago</Button>
+                    <Button variant="ghost" className="text-destructive" disabled={canceling} onClick={async () => {
+                      if (!confirm('¿Seguro que querés cancelar? Perderás acceso a las funciones Pro.')) return;
+                      setCanceling(true);
+                      try {
+                        await billing.cancel();
+                        await billing.fetch();
+                        toast.success('Suscripción cancelada');
+                      } catch (err: any) {
+                        toast.error(err.message || 'Error al cancelar');
+                      } finally {
+                        setCanceling(false);
+                      }
+                    }}>{canceling ? 'Cancelando...' : 'Cancelar plan'}</Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Usage */}
+          {billing.info && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Uso este mes</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Pedidos</span>
+                  <span className="text-sm font-medium">
+                    {billing.info.usage.ordersThisMonth}
+                    {billing.info.limits.maxOrdersPerMonth !== -1 && ` / ${billing.info.limits.maxOrdersPerMonth}`}
+                    {billing.info.limits.maxOrdersPerMonth === -1 && ' (ilimitado)'}
+                  </span>
+                </div>
+                {billing.info.limits.maxOrdersPerMonth !== -1 && (
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${billing.info.usage.ordersThisMonth > billing.info.limits.maxOrdersPerMonth ? 'bg-destructive' : 'bg-primary'}`}
+                      style={{ width: `${Math.min(100, (billing.info.usage.ordersThisMonth / billing.info.limits.maxOrdersPerMonth) * 100)}%` }}
+                    />
+                  </div>
+                )}
+                {billing.info.usage.ordersThisMonth > billing.info.limits.maxOrdersPerMonth && billing.info.limits.maxOrdersPerMonth !== -1 && (
+                  <p className="text-sm text-destructive">
+                    Tenés {billing.info.usage.ordersThisMonth - billing.info.limits.maxOrdersPerMonth} pedidos ocultos. Subí a Pro para verlos.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Billing history */}
+          {billing.history.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Historial de facturación</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {billing.history.map((record) => (
+                    <div key={record.id} className="flex items-center justify-between rounded-md border p-3 text-sm">
+                      <div>
+                        <p className="font-medium">{record.description}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(record.createdAt)}</p>
+                      </div>
+                      {record.amountCents > 0 && (
+                        <span className="font-medium">${(record.amountCents / 100).toFixed(2)}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

@@ -17,7 +17,7 @@ import type { StorefrontOrderResponse } from '@/types';
 type FullMenuItem = MenuItem & { variants: MenuItemVariant[]; options: MenuItemOption[] };
 
 export function StorefrontView({ data, slug }: { data: StorefrontData; slug: string }) {
-  const { restaurant, categories, operatingHours, deliveryZones } = data;
+  const { restaurant, categories, operatingHours, deliveryZones, showPoweredByFooter } = data;
   const cart = useCartStore();
 
   // Main UI state
@@ -234,6 +234,22 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
           </div>
         ))}
       </div>
+
+      {/* ── Powered by footer ── */}
+      {showPoweredByFooter && (
+        <div className="mx-auto max-w-2xl px-4 pb-20">
+          <div className="border-t pt-6 pb-4 text-center">
+            <a
+              href="https://quiero.menu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Powered by <span className="font-semibold">quiero.menu</span>
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* ── Item detail sheet ── */}
       <Sheet open={!!selectedItem} onOpenChange={(open) => { if (!open) closeItemDetail(); }}>

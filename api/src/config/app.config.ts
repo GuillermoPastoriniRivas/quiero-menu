@@ -23,4 +23,12 @@ export default () => ({
   openai: {
     apiKey: requireEnv('OPENAI_API_KEY'),
   },
+  lemonSqueezy: {
+    apiKey: process.env.LEMON_SQUEEZY_API_KEY ?? '',
+    storeId: process.env.LEMON_SQUEEZY_STORE_ID ?? '',
+    webhookSecret: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET ?? '',
+    variants: {
+      pro: process.env.LEMON_SQUEEZY_VARIANT_PRO ?? '',
+    },
+  },
 });

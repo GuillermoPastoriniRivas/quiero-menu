@@ -60,6 +60,24 @@ export class MongoOrderRepository implements OrderRepository {
     return doc ? OrderMapper.toDomain(doc) : null;
   }
 
+  async countByRestaurantIdSince(restaurantId: string, since: Date): Promise<number> {
+    return this.model.countDocuments({
+      restaurantId: new Types.ObjectId(restaurantId),
+      createdAt: { $gte: since },
+    });
+  }
+
+  async findNthOrderCreatedAt(restaurantId: string, since: Date, n: number): Promise<Date | null> {
+    const result = await this.model
+      .find({ restaurantId: new Types.ObjectId(restaurantId), createdAt: { $gte: since } })
+      .sort({ createdAt: 1 })
+      .skip(n - 1)
+      .limit(1)
+      .select('createdAt')
+      .lean();
+    return result[0]?.createdAt ?? null;
+  }
+
   async generateNextCode(restaurantId: string): Promise<string> {
     const counter = await this.counterModel.findOneAndUpdate(
       { restaurantId: new Types.ObjectId(restaurantId) },

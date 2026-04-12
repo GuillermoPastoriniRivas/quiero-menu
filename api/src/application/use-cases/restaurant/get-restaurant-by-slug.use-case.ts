@@ -5,6 +5,7 @@ import { MenuItemVariantRepository } from '../../../domain/repositories/menu-ite
 import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item-option.repository.js';
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
 import { DeliveryZoneRepository } from '../../../domain/repositories/delivery-zone.repository.js';
+import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
 import { Restaurant } from '../../../domain/entities/restaurant.entity.js';
 import { MenuCategory } from '../../../domain/entities/menu-category.entity.js';
 import { MenuItem } from '../../../domain/entities/menu-item.entity.js';
@@ -14,12 +15,16 @@ import { OperatingHours } from '../../../domain/entities/operating-hours.entity.
 import { DeliveryZone } from '../../../domain/entities/delivery-zone.entity.js';
 import { Result, ok, err } from '../../common/result.js';
 import { RestaurantNotFoundError } from '../../../domain/errors/domain-errors.js';
+import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
+import { SubscriptionStatus } from '../../../domain/enums/subscription-status.enum.js';
+import { PLAN_LIMITS } from '../../../domain/constants/plan-limits.js';
 
 export interface StorefrontData {
   restaurant: Restaurant;
   categories: (MenuCategory & { items: (MenuItem & { variants: MenuItemVariant[]; options: MenuItemOption[] })[] })[];
   operatingHours: OperatingHours[];
   deliveryZones: DeliveryZone[];
+  showPoweredByFooter: boolean;
 }
 
 export class GetRestaurantBySlugUseCase {
@@ -31,6 +36,7 @@ export class GetRestaurantBySlugUseCase {
     private readonly optionRepo: MenuItemOptionRepository,
     private readonly hoursRepo: OperatingHoursRepository,
     private readonly zoneRepo: DeliveryZoneRepository,
+    private readonly subscriptionRepo: SubscriptionRepository,
   ) {}
 
   async execute(slug: string): Promise<Result<StorefrontData, RestaurantNotFoundError>> {
@@ -91,6 +97,12 @@ export class GetRestaurantBySlugUseCase {
       return { ...cat, items };
     });
 
-    return ok({ restaurant, categories, operatingHours, deliveryZones });
+    const subscription = await this.subscriptionRepo.findByRestaurantId(restaurant.id);
+    const plan = subscription?.status === SubscriptionStatus.ACTIVE
+      ? subscription.plan
+      : PlanTier.FREE;
+    const showPoweredByFooter = PLAN_LIMITS[plan].showPoweredByFooter;
+
+    return ok({ restaurant, categories, operatingHours, deliveryZones, showPoweredByFooter });
   }
 }

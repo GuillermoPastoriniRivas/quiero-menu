@@ -36,7 +36,7 @@ const JSON_SCHEMA = {
   strict: true,
   schema: {
     type: 'object',
-    required: ['restaurant', 'categories'],
+    required: ['restaurant', 'operatingHours', 'categories'],
     additionalProperties: false,
     properties: {
       restaurant: {
@@ -78,7 +78,7 @@ const JSON_SCHEMA = {
               type: 'array',
               items: {
                 type: 'object',
-                required: ['name', 'description', 'basePrice', 'itemType'],
+                required: ['name', 'description', 'basePrice', 'itemType', 'variants', 'options'],
                 additionalProperties: false,
                 properties: {
                   name: { type: 'string' },
