@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, ChevronDown, ChevronRight, Package, Layers, Settings2, Loader2, Sparkles } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/material-icon';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/format';
 import type { MenuCategory, MenuItem, MenuItemVariant, MenuItemOption, StorefrontData } from '@/types';
@@ -235,7 +235,7 @@ export default function MenuPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <MaterialIcon name="progress_activity" size="lg" className="animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -249,7 +249,7 @@ export default function MenuPage() {
             href="/onboarding?from=menu"
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
           >
-            <Sparkles className="h-4 w-4" />
+            <MaterialIcon name="auto_awesome" size="sm" />
             Importar con IA
           </Link>
           <Badge variant="secondary">{richCategories.length} categorias</Badge>
@@ -265,7 +265,7 @@ export default function MenuPage() {
           onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
         />
         <Button onClick={handleCreateCategory}>
-          <Plus className="mr-2 h-4 w-4" />
+          <MaterialIcon name="add" size="sm" className="mr-2" />
           Agregar
         </Button>
       </div>
@@ -280,7 +280,7 @@ export default function MenuPage() {
               onClick={() => toggleCat(cat.id)}
             >
               <div className="flex items-center gap-2">
-                {catOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {catOpen ? <MaterialIcon name="expand_more" size="sm" /> : <MaterialIcon name="chevron_right" size="sm" />}
                 <CardTitle className="text-lg">{cat.name}</CardTitle>
                 <Badge variant="outline" className="ml-2">{cat.items.length} productos</Badge>
               </div>
@@ -295,11 +295,11 @@ export default function MenuPage() {
                     setNewItemDesc('');
                   }}
                 >
-                  <Plus className="mr-1 h-3 w-3" />
+                  <MaterialIcon name="add" size="xs" className="mr-1" />
                   Producto
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(cat.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
+                  <MaterialIcon name="delete" size="sm" className="text-destructive" />
                 </Button>
               </div>
             </CardHeader>
@@ -323,9 +323,9 @@ export default function MenuPage() {
                       >
                         <div className="flex items-center gap-3">
                           {hasExtras ? (
-                            itemOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            itemOpen ? <MaterialIcon name="expand_more" size="sm" className="text-muted-foreground" /> : <MaterialIcon name="chevron_right" size="sm" className="text-muted-foreground" />
                           ) : (
-                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <MaterialIcon name="inventory_2" size="sm" className="text-muted-foreground" />
                           )}
                           <div>
                             <span className="font-medium">{item.name}</span>
@@ -343,7 +343,7 @@ export default function MenuPage() {
                             onCheckedChange={() => handleToggleAvailability(item.id)}
                           />
                           <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item.id)}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            <MaterialIcon name="delete" size="xs" className="text-destructive" />
                           </Button>
                         </div>
                       </div>
@@ -357,7 +357,7 @@ export default function MenuPage() {
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <Layers className="h-4 w-4 text-muted-foreground" />
+                                <MaterialIcon name="layers" size="sm" className="text-muted-foreground" />
                                 <span className="text-sm font-medium">Variantes</span>
                                 <Badge variant="outline" className="text-xs">{item.variants.length}</Badge>
                               </div>
@@ -370,7 +370,7 @@ export default function MenuPage() {
                                   setNewVariantPrice('');
                                 }}
                               >
-                                <Plus className="mr-1 h-3 w-3" />
+                                <MaterialIcon name="add" size="xs" className="mr-1" />
                                 Variante
                               </Button>
                             </div>
@@ -390,7 +390,7 @@ export default function MenuPage() {
                                   )}
                                 </div>
                                 <Button size="sm" variant="ghost" onClick={() => handleDeleteVariant(v.id)}>
-                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                  <MaterialIcon name="delete" size="xs" className="text-destructive" />
                                 </Button>
                               </div>
                             ))}
@@ -402,7 +402,7 @@ export default function MenuPage() {
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <Settings2 className="h-4 w-4 text-muted-foreground" />
+                                <MaterialIcon name="tune" size="sm" className="text-muted-foreground" />
                                 <span className="text-sm font-medium">Opciones</span>
                                 <Badge variant="outline" className="text-xs">{item.options.length}</Badge>
                               </div>
@@ -416,7 +416,7 @@ export default function MenuPage() {
                                   setNewOptionDelta('');
                                 }}
                               >
-                                <Plus className="mr-1 h-3 w-3" />
+                                <MaterialIcon name="add" size="xs" className="mr-1" />
                                 Opcion
                               </Button>
                             </div>
@@ -445,7 +445,7 @@ export default function MenuPage() {
                                       )}
                                     </div>
                                     <Button size="sm" variant="ghost" onClick={() => handleDeleteOption(opt.id)}>
-                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                      <MaterialIcon name="delete" size="xs" className="text-destructive" />
                                     </Button>
                                   </div>
                                 ))}

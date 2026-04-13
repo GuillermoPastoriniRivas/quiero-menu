@@ -10,20 +10,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ShoppingBag, Plus, Minus, MapPin, Send, X, Check } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/material-icon';
 import { DeliveryType } from '@/types';
 import type { StorefrontOrderResponse } from '@/types';
 
 type FullMenuItem = MenuItem & { variants: MenuItemVariant[]; options: MenuItemOption[] };
 
 export function StorefrontView({ data, slug }: { data: StorefrontData; slug: string }) {
-  const { restaurant, categories, operatingHours, deliveryZones, showPoweredByFooter } = data;
+  const { restaurant, categories, deliveryZones, showPoweredByFooter } = data;
   const cart = useCartStore();
 
-  // Main UI state
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [orderResult, setOrderResult] = useState<StorefrontOrderResponse | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(categories[0]?.id ?? null);
 
   // Item detail dialog state
   const [selectedItem, setSelectedItem] = useState<FullMenuItem | null>(null);
@@ -35,7 +35,6 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
   const openItemDetail = (item: FullMenuItem) => {
     if (!item.isAvailable) return;
     setSelectedItem(item);
-    // Auto-select first variant if available
     const firstVariant = item.variants.length > 0
       ? [...item.variants].sort((a, b) => a.displayOrder - b.displayOrder)[0]
       : null;
@@ -53,13 +52,11 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
     setItemNotes('');
   };
 
-  // Derived: selected variant object
   const selectedVariant = useMemo(() => {
     if (!selectedItem || !selectedVariantId) return null;
     return selectedItem.variants.find((v) => v.id === selectedVariantId) ?? null;
   }, [selectedItem, selectedVariantId]);
 
-  // Derived: available options for the selected variant
   const availableOptions = useMemo(() => {
     if (!selectedItem) return [];
     return selectedItem.options.filter(
@@ -67,7 +64,6 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
     );
   }, [selectedItem, selectedVariantId]);
 
-  // Derived: options grouped by optionGroup
   const optionGroups = useMemo(() => {
     const groups: Record<string, MenuItemOption[]> = {};
     for (const opt of availableOptions) {
@@ -78,23 +74,16 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
     return groups;
   }, [availableOptions]);
 
-  // Derived: max selections for current variant (0 = unlimited)
   const maxSelections = selectedVariant?.maxSelections ?? 0;
 
   const toggleOption = (optionId: string) => {
     setSelectedOptionIds((prev) => {
-      if (prev.includes(optionId)) {
-        return prev.filter((id) => id !== optionId);
-      }
-      // Enforce maxSelections
-      if (maxSelections > 0 && prev.length >= maxSelections) {
-        return prev;
-      }
+      if (prev.includes(optionId)) return prev.filter((id) => id !== optionId);
+      if (maxSelections > 0 && prev.length >= maxSelections) return prev;
       return [...prev, optionId];
     });
   };
 
-  // Derived: unit price calculation
   const itemUnitPrice = useMemo(() => {
     if (!selectedItem) return 0;
     const base = selectedVariant?.priceOverride ?? selectedItem.basePrice;
@@ -158,8 +147,8 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
       const result: StorefrontOrderResponse = await res.json();
       setOrderResult(result);
       cart.clear();
-    } catch (err) {
-      alert('Error al crear el pedido. Intentá de nuevo.');
+    } catch {
+      alert('Error al crear el pedido. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
     }
@@ -168,18 +157,18 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
   // ── Order confirmation screen ──
   if (orderResult) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-surface">
         <div className="max-w-md space-y-4">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <Send className="h-8 w-8 text-green-600" />
+            <MaterialIcon name="send" size="xl" className="text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold">Pedido creado</h1>
-          <p className="text-muted-foreground">Tu pedido <strong>{orderResult.order.code}</strong> fue creado. Envialo por WhatsApp para confirmarlo.</p>
+          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Pedido creado</h1>
+          <p className="text-on-surface-variant">Tu pedido <strong>{orderResult.order.code}</strong> fue creado. Envialo por WhatsApp para confirmarlo.</p>
           <a
             href={orderResult.whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-green-600 px-4 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-green-600 px-4 text-sm font-bold text-white hover:bg-green-700 transition-colors"
           >
             Enviar por WhatsApp
           </a>
@@ -189,62 +178,113 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* ── Header ── */}
-      {restaurant.bannerUrl && (
-        <div className="h-48 w-full bg-cover bg-center" style={{ backgroundImage: `url(${restaurant.bannerUrl})` }} />
-      )}
-      <div className="mx-auto max-w-2xl px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{restaurant.name}</h1>
-          {restaurant.description && <p className="mt-1 text-muted-foreground">{restaurant.description}</p>}
-          <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
-            {restaurant.address && (
-              <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{restaurant.address}</span>
-            )}
-          </div>
+    <div className="min-h-screen bg-surface antialiased">
+      {/* ── Top App Bar ── */}
+      <header className="bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 border-b border-outline-variant/10">
+        <div className="flex items-center gap-2">
+          <MaterialIcon name="receipt_long" size="md" className="text-primary" />
+          <span className="font-bold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Quiero Menu</span>
         </div>
+        <button className="p-2 rounded-full hover:bg-surface-container-low transition-colors">
+          <MaterialIcon name="search" size="md" className="text-on-surface" />
+        </button>
+      </header>
 
-        {/* ── Categories & Items ── */}
+      <main className="pb-40">
+        {/* ── Hero Section ── */}
+        {restaurant.bannerUrl ? (
+          <section className="relative h-64 w-full overflow-hidden">
+            <img className="w-full h-full object-cover" src={restaurant.bannerUrl} alt={restaurant.name} />
+            <div className="absolute inset-0 bg-gradient-to-t from-on-surface/80 via-on-surface/20 to-transparent" />
+            <div className="absolute bottom-4 left-6 right-6">
+              <h1 className="text-white text-2xl font-extrabold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>{restaurant.name}</h1>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1 bg-green-500/90 text-white px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+                  <MaterialIcon name="fiber_manual_record" size="xs" fill />
+                  Abierto
+                </span>
+                {restaurant.address && (
+                  <span className="text-white/90 text-sm font-medium flex items-center gap-1">
+                    <MaterialIcon name="location_on" size="xs" />
+                    {restaurant.address}
+                  </span>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : (
+          <div className="px-6 py-8">
+            <h1 className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}>{restaurant.name}</h1>
+            {restaurant.description && <p className="mt-1 text-on-surface-variant">{restaurant.description}</p>}
+          </div>
+        )}
+
+        {/* ── Categories Slider ── */}
+        {categories.length > 1 && (
+          <div className="mt-6 px-6">
+            <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`font-bold px-6 py-2 rounded-xl text-sm whitespace-nowrap active:scale-95 duration-200 transition-all ${
+                    activeCategory === cat.id
+                      ? 'bg-primary-fixed text-primary'
+                      : 'text-on-surface-variant hover:bg-surface-container-low'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Menu Sections ── */}
         {categories.map((cat) => (
-          <div key={cat.id} className="mb-8">
-            <h2 className="mb-3 text-lg font-semibold">{cat.name}</h2>
-            {cat.description && <p className="mb-3 text-sm text-muted-foreground">{cat.description}</p>}
-            <div className="space-y-2">
+          <section key={cat.id} className="mt-8 px-6">
+            <h2 className="text-xl font-bold text-on-surface mb-4" style={{ fontFamily: 'var(--font-heading)' }}>{cat.name}</h2>
+            {cat.description && <p className="mb-3 text-sm text-on-surface-variant">{cat.description}</p>}
+            <div className="space-y-4">
               {cat.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent"
+                  className="flex gap-4 bg-white p-4 rounded-2xl shadow-[0px_4px_12px_rgba(38,24,21,0.02)] border border-outline-variant/10 cursor-pointer transition-all hover:shadow-ambient active:scale-[0.99]"
                   onClick={() => openItemDetail(item)}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{item.name}</span>
-                      {!item.isAvailable && <Badge variant="secondary">Agotado</Badge>}
+                  <div className="flex-1 flex flex-col">
+                    <h3 className="font-bold text-on-surface mb-1" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
+                    {item.description && <p className="text-on-surface-variant text-sm line-clamp-2 mb-3">{item.description}</p>}
+                    <div className="flex items-center justify-between mt-auto">
+                      <span className="font-extrabold text-lg text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
+                        {formatCurrency(item.basePrice, restaurant.currency)}
+                      </span>
+                      {!item.isAvailable ? (
+                        <Badge variant="secondary">Agotado</Badge>
+                      ) : (
+                        <button className="bg-primary text-white p-2 rounded-xl flex items-center justify-center active:scale-95 duration-150">
+                          <MaterialIcon name="add" size="md" />
+                        </button>
+                      )}
                     </div>
-                    {item.description && <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>}
-                    <p className="mt-1 text-sm font-semibold">{formatCurrency(item.basePrice, restaurant.currency)}</p>
                   </div>
                   {item.imageUrl && (
-                    <img src={item.imageUrl} alt={item.name} className="ml-3 h-16 w-16 rounded-md object-cover" />
+                    <div className="w-28 h-28 shrink-0">
+                      <img className="w-full h-full object-cover rounded-xl" src={item.imageUrl} alt={item.name} />
+                    </div>
                   )}
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         ))}
-      </div>
+      </main>
 
       {/* ── Powered by footer ── */}
       {showPoweredByFooter && (
         <div className="mx-auto max-w-2xl px-4 pb-20">
-          <div className="border-t pt-6 pb-4 text-center">
-            <a
-              href="https://quiero.menu"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
+          <div className="pt-6 pb-4 text-center">
+            <a href="https://quiero.menu" target="_blank" rel="noopener noreferrer" className="text-xs text-on-surface-variant hover:text-foreground transition-colors">
               Powered by <span className="font-semibold">quiero.menu</span>
             </a>
           </div>
@@ -253,82 +293,67 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
 
       {/* ── Item detail sheet ── */}
       <Sheet open={!!selectedItem} onOpenChange={(open) => { if (!open) closeItemDetail(); }}>
-        <SheetContent side="bottom" className="h-[85vh] overflow-auto">
+        <SheetContent side="bottom" className="h-[85vh] overflow-auto rounded-t-3xl">
           {selectedItem && (
-            <div className="space-y-5">
-              {/* Close button */}
+            <div className="space-y-5 p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold">{selectedItem.name}</h2>
-                  {selectedItem.description && (
-                    <p className="mt-1 text-sm text-muted-foreground">{selectedItem.description}</p>
-                  )}
+                  <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>{selectedItem.name}</h2>
+                  {selectedItem.description && <p className="mt-1 text-sm text-on-surface-variant">{selectedItem.description}</p>}
                 </div>
-                <button onClick={closeItemDetail} className="ml-3 rounded-full p-1 hover:bg-accent">
-                  <X className="h-5 w-5" />
+                <button onClick={closeItemDetail} className="ml-3 rounded-full p-2 hover:bg-surface-container-low transition-colors">
+                  <MaterialIcon name="close" size="md" />
                 </button>
               </div>
 
-              {/* Item image */}
               {selectedItem.imageUrl && (
-                <img
-                  src={selectedItem.imageUrl}
-                  alt={selectedItem.name}
-                  className="h-48 w-full rounded-lg object-cover"
-                />
+                <img src={selectedItem.imageUrl} alt={selectedItem.name} className="h-48 w-full rounded-2xl object-cover" />
               )}
 
-              {/* ── Variants ── */}
+              {/* Variants */}
               {selectedItem.variants.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold">Elegí una opción</Label>
+                  <Label className="text-sm font-semibold">Elegi una opcion</Label>
                   <div className="flex flex-wrap gap-2">
-                    {[...selectedItem.variants]
-                      .sort((a, b) => a.displayOrder - b.displayOrder)
-                      .map((variant) => {
-                        const isSelected = selectedVariantId === variant.id;
-                        const price = variant.priceOverride ?? selectedItem.basePrice;
-                        return (
-                          <button
-                            key={variant.id}
-                            onClick={() => {
-                              setSelectedVariantId(variant.id);
-                              // Clear options that aren't valid for this variant
-                              setSelectedOptionIds((prev) =>
-                                prev.filter((id) => {
-                                  const opt = selectedItem.options.find((o) => o.id === id);
-                                  return opt && (opt.variantId === null || opt.variantId === variant.id);
-                                }),
-                              );
-                            }}
-                            className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                              isSelected
-                                ? 'border-primary bg-primary text-primary-foreground'
-                                : 'border-border hover:bg-accent'
-                            }`}
-                          >
-                            {variant.name} {formatCurrency(price, restaurant.currency)}
-                          </button>
-                        );
-                      })}
+                    {[...selectedItem.variants].sort((a, b) => a.displayOrder - b.displayOrder).map((variant) => {
+                      const isSelected = selectedVariantId === variant.id;
+                      const price = variant.priceOverride ?? selectedItem.basePrice;
+                      return (
+                        <button
+                          key={variant.id}
+                          onClick={() => {
+                            setSelectedVariantId(variant.id);
+                            setSelectedOptionIds((prev) =>
+                              prev.filter((id) => {
+                                const opt = selectedItem.options.find((o) => o.id === id);
+                                return opt && (opt.variantId === null || opt.variantId === variant.id);
+                              }),
+                            );
+                          }}
+                          className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                            isSelected
+                              ? 'gradient-cta text-white shadow-md shadow-primary/20'
+                              : 'bg-surface-container-low text-on-surface hover:bg-surface-container'
+                          }`}
+                        >
+                          {variant.name} {formatCurrency(price, restaurant.currency)}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* ── Options grouped by optionGroup ── */}
+              {/* Options */}
               {Object.keys(optionGroups).length > 0 && (
                 <div className="space-y-4">
                   {Object.entries(optionGroups).map(([group, options]) => (
                     <div key={group} className="space-y-2">
                       <Label className="text-sm font-semibold">
                         {group}
-                        {maxSelections > 0 && (
-                          <span className="ml-1 font-normal text-muted-foreground">
-                            (máx. {maxSelections})
-                          </span>
-                        )}
+                        {maxSelections > 0 && <span className="ml-1 font-normal text-on-surface-variant">(max. {maxSelections})</span>}
                       </Label>
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         {options.map((opt) => {
                           const isChecked = selectedOptionIds.includes(opt.id);
                           const isDisabled = !isChecked && maxSelections > 0 && selectedOptionIds.length >= maxSelections;
@@ -337,29 +362,23 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
                               key={opt.id}
                               onClick={() => toggleOption(opt.id)}
                               disabled={isDisabled}
-                              className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
+                              className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-all ${
                                 isChecked
-                                  ? 'border-primary bg-primary/10'
+                                  ? 'bg-primary/10 ghost-border'
                                   : isDisabled
-                                    ? 'cursor-not-allowed border-border opacity-50'
-                                    : 'border-border hover:bg-accent'
+                                    ? 'cursor-not-allowed bg-surface-container-low opacity-50'
+                                    : 'bg-surface-container-low hover:bg-surface-container'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className={`flex h-5 w-5 items-center justify-center rounded border ${
-                                    isChecked ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'
-                                  }`}
-                                >
-                                  {isChecked && <Check className="h-3 w-3" />}
+                              <div className="flex items-center gap-3">
+                                <div className={`flex h-5 w-5 items-center justify-center rounded ${
+                                  isChecked ? 'gradient-cta text-white' : 'border border-outline-variant'
+                                }`}>
+                                  {isChecked && <MaterialIcon name="check" size="xs" />}
                                 </div>
                                 <span>{opt.name}</span>
                               </div>
-                              {opt.priceDelta > 0 && (
-                                <span className="text-muted-foreground">
-                                  +{formatCurrency(opt.priceDelta, restaurant.currency)}
-                                </span>
-                              )}
+                              {opt.priceDelta > 0 && <span className="text-on-surface-variant">+{formatCurrency(opt.priceDelta, restaurant.currency)}</span>}
                             </button>
                           );
                         })}
@@ -369,39 +388,30 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
                 </div>
               )}
 
-              {/* ── Notes ── */}
+              {/* Notes */}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Notas</Label>
-                <Input
-                  value={itemNotes}
-                  onChange={(e) => setItemNotes(e.target.value)}
-                  placeholder="Sin cebolla, bien cocido, etc."
-                />
+                <Input value={itemNotes} onChange={(e) => setItemNotes(e.target.value)} placeholder="Sin cebolla, bien cocido, etc." />
               </div>
 
-              {/* ── Quantity selector + Add button ── */}
-              <div className="sticky bottom-0 bg-background pt-3 pb-2 border-t space-y-3">
+              {/* Quantity + Add */}
+              <div className="sticky bottom-0 bg-white pt-4 pb-2 space-y-3">
                 <div className="flex items-center justify-center gap-4">
                   <button
                     onClick={() => setItemQuantity((q) => Math.max(1, q - 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border hover:bg-accent"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-low hover:bg-surface-container transition-colors"
                   >
-                    <Minus className="h-4 w-4" />
+                    <MaterialIcon name="remove" size="md" />
                   </button>
-                  <span className="min-w-[2rem] text-center text-lg font-semibold">{itemQuantity}</span>
+                  <span className="min-w-[2rem] text-center text-lg font-bold">{itemQuantity}</span>
                   <button
                     onClick={() => setItemQuantity((q) => q + 1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border hover:bg-accent"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-low hover:bg-surface-container transition-colors"
                   >
-                    <Plus className="h-4 w-4" />
+                    <MaterialIcon name="add" size="md" />
                   </button>
                 </div>
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={addToCart}
-                  disabled={selectedItem.variants.length > 0 && !selectedVariantId}
-                >
+                <Button className="w-full" size="lg" onClick={addToCart} disabled={selectedItem.variants.length > 0 && !selectedVariantId}>
                   Agregar {formatCurrency(itemTotalPrice, restaurant.currency)}
                 </Button>
               </div>
@@ -412,57 +422,58 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
 
       {/* ── Floating cart bar ── */}
       {cart.items.length > 0 && !checkoutOpen && !selectedItem && (
-        <div className="fixed bottom-0 left-0 right-0 border-t bg-background p-4">
-          <div className="mx-auto flex max-w-2xl items-center justify-between">
-            <div>
-              <span className="font-semibold">{cart.items.length} items</span>
-              <span className="ml-2 text-muted-foreground">{formatCurrency(subtotal, restaurant.currency)}</span>
+        <div className="fixed bottom-0 left-0 w-full z-40 px-4 pb-4">
+          <button
+            onClick={() => setCheckoutOpen(true)}
+            className="w-full gradient-cta text-white py-4 px-6 rounded-2xl shadow-xl flex items-center justify-between font-bold active:scale-[0.98] transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <MaterialIcon name="shopping_cart" size="lg" />
+                <span className="absolute -top-1 -right-1 bg-white text-primary text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  {cart.items.length}
+                </span>
+              </div>
+              <span className="uppercase tracking-wider text-sm">Ver Carrito</span>
             </div>
-            <Button onClick={() => setCheckoutOpen(true)}>
-              <ShoppingBag className="mr-2 h-4 w-4" />
-              Ver pedido
-            </Button>
-          </div>
+            <span className="text-lg">{formatCurrency(subtotal, restaurant.currency)}</span>
+          </button>
         </div>
       )}
 
       {/* ── Checkout sheet ── */}
       <Sheet open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <SheetContent side="bottom" className="h-[90vh] overflow-auto">
-          <SheetHeader>
+        <SheetContent side="bottom" className="h-[90vh] overflow-auto rounded-t-3xl">
+          <SheetHeader className="p-6 pb-0">
             <SheetTitle>Tu pedido</SheetTitle>
           </SheetHeader>
-          <div className="mt-4 space-y-4">
+          <div className="p-6 space-y-4">
             {/* Cart items */}
             {cart.items.map((item, i) => (
-              <div key={i} className="flex items-center justify-between">
+              <div key={i} className="flex items-center justify-between bg-surface-container-low rounded-xl p-3">
                 <div>
                   <span className="font-medium">{item.quantity}x {item.menuItemName}</span>
-                  {item.variantName && <span className="text-sm text-muted-foreground"> ({item.variantName})</span>}
-                  {item.selectedOptionNames.length > 0 && (
-                    <p className="text-xs text-muted-foreground">{item.selectedOptionNames.join(', ')}</p>
-                  )}
-                  {item.notes && (
-                    <p className="text-xs italic text-muted-foreground">{item.notes}</p>
-                  )}
+                  {item.variantName && <span className="text-sm text-on-surface-variant"> ({item.variantName})</span>}
+                  {item.selectedOptionNames.length > 0 && <p className="text-xs text-on-surface-variant">{item.selectedOptionNames.join(', ')}</p>}
+                  {item.notes && <p className="text-xs italic text-on-surface-variant">{item.notes}</p>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">{formatCurrency(item.unitPrice * item.quantity, restaurant.currency)}</span>
+                  <span className="text-sm font-semibold">{formatCurrency(item.unitPrice * item.quantity, restaurant.currency)}</span>
                   <Button variant="ghost" size="sm" onClick={() => cart.removeItem(i)}>
-                    <Minus className="h-3 w-3" />
+                    <MaterialIcon name="remove" size="xs" />
                   </Button>
                 </div>
               </div>
             ))}
 
-            <div className="border-t pt-4 space-y-3">
+            <div className="space-y-3 pt-2">
               <div className="space-y-2">
                 <Label>Nombre</Label>
                 <Input value={cart.customerName} onChange={(e) => cart.setCustomer({ customerName: e.target.value })} placeholder="Tu nombre" />
               </div>
               <div className="space-y-2">
-                <Label>Teléfono</Label>
-                <Input value={cart.customerPhone} onChange={(e) => cart.setCustomer({ customerPhone: e.target.value })} placeholder="Tu teléfono" />
+                <Label>Telefono</Label>
+                <Input value={cart.customerPhone} onChange={(e) => cart.setCustomer({ customerPhone: e.target.value })} placeholder="Tu telefono" />
               </div>
               <div className="flex gap-2">
                 <Button
@@ -479,8 +490,8 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
               {cart.deliveryType === DeliveryType.DELIVERY && (
                 <>
                   <div className="space-y-2">
-                    <Label>Dirección</Label>
-                    <Input value={cart.customerAddress} onChange={(e) => cart.setCustomer({ customerAddress: e.target.value })} placeholder="Tu dirección" />
+                    <Label>Direccion</Label>
+                    <Input value={cart.customerAddress} onChange={(e) => cart.setCustomer({ customerAddress: e.target.value })} placeholder="Tu direccion" />
                   </div>
                   {deliveryZones.length > 0 && (
                     <div className="space-y-2">
@@ -502,9 +513,8 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
                 </>
               )}
 
-              {/* ── Payment method ── */}
               <div className="space-y-2">
-                <Label>Método de pago</Label>
+                <Label>Metodo de pago</Label>
                 <div className="flex gap-2">
                   {[
                     { value: 'efectivo', label: 'Efectivo' },
@@ -530,10 +540,10 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
               </div>
             </div>
 
-            <div className="border-t pt-4 space-y-2">
+            <div className="bg-surface-container-low rounded-xl p-4 space-y-2">
               <div className="flex justify-between text-sm"><span>Subtotal</span><span>{formatCurrency(subtotal, restaurant.currency)}</span></div>
-              {deliveryFee > 0 && <div className="flex justify-between text-sm"><span>Envío</span><span>{formatCurrency(deliveryFee, restaurant.currency)}</span></div>}
-              <div className="flex justify-between font-bold"><span>Total</span><span>{formatCurrency(total, restaurant.currency)}</span></div>
+              {deliveryFee > 0 && <div className="flex justify-between text-sm"><span>Envio</span><span>{formatCurrency(deliveryFee, restaurant.currency)}</span></div>}
+              <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{formatCurrency(total, restaurant.currency)}</span></div>
             </div>
 
             <Button

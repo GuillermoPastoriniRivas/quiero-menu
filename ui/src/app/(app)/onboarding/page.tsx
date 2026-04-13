@@ -7,6 +7,7 @@ import { MenuImageUpload } from '@/components/onboarding/menu-image-upload';
 import { AiMenuPreview } from '@/components/onboarding/ai-menu-preview';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { MaterialIcon } from '@/components/ui/material-icon';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -57,7 +58,7 @@ export default function OnboardingPage() {
   if (step === 'analyzing') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <MaterialIcon name="progress_activity" size="xl" className="animate-spin text-primary" />
         <p className="text-lg font-medium">Analizando tu menu...</p>
         <p className="text-sm text-muted-foreground">Esto puede tomar hasta 30 segundos</p>
       </div>
@@ -79,7 +80,7 @@ export default function OnboardingPage() {
   if (step === 'importing') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <MaterialIcon name="progress_activity" size="xl" className="animate-spin text-primary" />
         <p className="text-lg font-medium">Importando tu menu...</p>
       </div>
     );
@@ -91,9 +92,7 @@ export default function OnboardingPage() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <MaterialIcon name="check" size="xl" className="text-green-600" />
             </div>
             <h2 className="text-xl font-bold">Menu importado</h2>
             <div className="text-sm text-muted-foreground space-y-1">

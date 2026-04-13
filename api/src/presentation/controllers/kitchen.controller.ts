@@ -8,6 +8,7 @@ import type { ValidateKitchenTokenUseCase } from '../../application/use-cases/ki
 import type { ListKitchenTokensUseCase } from '../../application/use-cases/kitchen/list-kitchen-tokens.use-case.js';
 import type { RevokeKitchenTokenUseCase } from '../../application/use-cases/kitchen/revoke-kitchen-token.use-case.js';
 import type { ListOrdersUseCase } from '../../application/use-cases/order/list-orders.use-case.js';
+import type { GetOrderUseCase } from '../../application/use-cases/order/get-order.use-case.js';
 import type { UpdateOrderStatusUseCase } from '../../application/use-cases/order/update-order-status.use-case.js';
 import { OrderStatus } from '../../domain/enums/order-status.enum.js';
 
@@ -19,6 +20,7 @@ export class KitchenController {
     @Inject('ListKitchenTokensUseCase') private readonly listTokens: ListKitchenTokensUseCase,
     @Inject('RevokeKitchenTokenUseCase') private readonly revokeToken: RevokeKitchenTokenUseCase,
     @Inject('ListOrdersUseCase') private readonly listOrders: ListOrdersUseCase,
+    @Inject('GetOrderUseCase') private readonly getOrder: GetOrderUseCase,
     @Inject('UpdateOrderStatusUseCase') private readonly updateStatus: UpdateOrderStatusUseCase,
   ) {}
 
@@ -60,6 +62,20 @@ export class KitchenController {
     if (!result.ok) throw new UnauthorizedException(result.error.message);
 
     return this.listOrders.execute({ restaurantId: result.value.restaurantId });
+  }
+
+  @Public()
+  @Get('orders/:id')
+  async getOrderDetail(@Req() req: Request, @Param('id') id: string) {
+    const kitchenToken = req.headers['x-kitchen-token'] as string;
+    if (!kitchenToken) throw new UnauthorizedException('Missing kitchen token');
+
+    const result = await this.validateToken.execute(kitchenToken);
+    if (!result.ok) throw new UnauthorizedException(result.error.message);
+
+    const orderResult = await this.getOrder.execute(id, result.value.restaurantId);
+    if (!orderResult.ok) throw new NotFoundException(orderResult.error.message);
+    return { order: orderResult.value.order, items: orderResult.value.items };
   }
 
   @Public()

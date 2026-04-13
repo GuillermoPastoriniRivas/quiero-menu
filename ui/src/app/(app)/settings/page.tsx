@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import type { OperatingHours, DeliveryZone, KitchenAccessToken } from '@/types';
 import { PlanTier } from '@/types';
 import { toast } from 'sonner';
-import { Copy, Trash2, Plus, Zap, Check, X } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/material-icon';
 import { formatDate } from '@/lib/format';
 
 export default function SettingsPage() {
@@ -170,7 +170,7 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2">
                   <Input value={`${window.location.origin}/${restaurant.slug}`} readOnly />
                   <Button variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/${restaurant.slug}`); toast.success('Link copiado'); }}>
-                    <Copy className="h-4 w-4" />
+                    <MaterialIcon name="content_copy" size="sm" />
                   </Button>
                 </div>
               </CardContent>
@@ -193,11 +193,11 @@ export default function SettingsPage() {
               <CardContent className="space-y-3">
                 <p className="text-3xl font-bold">$0<span className="text-sm font-normal text-muted-foreground">/mes</span></p>
                 <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Hasta 50 pedidos/mes</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Menú digital completo</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Pedidos por WhatsApp</li>
-                  <li className="flex items-center gap-2 text-muted-foreground"><X className="h-4 w-4" />Footer "Powered by quiero.menu"</li>
-                  <li className="flex items-center gap-2 text-muted-foreground"><X className="h-4 w-4" />Sin dominio personalizado</li>
+                  <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Hasta 50 pedidos/mes</li>
+                  <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Menú digital completo</li>
+                  <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Pedidos por WhatsApp</li>
+                  <li className="flex items-center gap-2 text-muted-foreground"><MaterialIcon name="close" size="sm" />Footer "Powered by quiero.menu"</li>
+                  <li className="flex items-center gap-2 text-muted-foreground"><MaterialIcon name="close" size="sm" />Sin dominio personalizado</li>
                 </ul>
               </CardContent>
             </Card>
@@ -206,7 +206,7 @@ export default function SettingsPage() {
             <Card className={billing.info?.plan === PlanTier.PRO ? 'border-primary' : ''}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-yellow-500" />Pro</CardTitle>
+                  <CardTitle className="flex items-center gap-2"><MaterialIcon name="bolt" size="md" className="text-yellow-500" />Pro</CardTitle>
                   {billing.info?.plan === PlanTier.PRO && <Badge>Plan actual</Badge>}
                 </div>
                 <CardDescription>Para restaurantes en crecimiento</CardDescription>
@@ -214,11 +214,11 @@ export default function SettingsPage() {
               <CardContent className="space-y-3">
                 <p className="text-3xl font-bold">$19<span className="text-sm font-normal text-muted-foreground"> USD/mes</span></p>
                 <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Pedidos ilimitados</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Menú digital completo</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Pedidos por WhatsApp</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Sin footer de quiero.menu</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600" />Dominio personalizado</li>
+                  <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Pedidos ilimitados</li>
+                  <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Menú digital completo</li>
+                  <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Pedidos por WhatsApp</li>
+                  <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Sin footer de quiero.menu</li>
+                  <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Dominio personalizado</li>
                 </ul>
                 {billing.info?.plan === PlanTier.FREE && (
                   <Button className="w-full" disabled={upgrading} onClick={async () => {
@@ -232,7 +232,7 @@ export default function SettingsPage() {
                       setUpgrading(false);
                     }
                   }}>
-                    <Zap className="mr-2 h-4 w-4" />{upgrading ? 'Redirigiendo...' : 'Subir a Pro'}
+                    <MaterialIcon name="bolt" size="sm" className="mr-2" />{upgrading ? 'Redirigiendo...' : 'Subir a Pro'}
                   </Button>
                 )}
                 {billing.info?.plan === PlanTier.PRO && (
@@ -330,7 +330,7 @@ export default function SettingsPage() {
               <div className="flex gap-2">
                 <Input placeholder="Nombre de zona" value={newZoneName} onChange={(e) => setNewZoneName(e.target.value)} />
                 <Input type="number" placeholder="Precio" value={newZonePrice} onChange={(e) => setNewZonePrice(e.target.value)} className="w-32" />
-                <Button onClick={handleCreateZone}><Plus className="mr-1 h-4 w-4" />Agregar</Button>
+                <Button onClick={handleCreateZone}><MaterialIcon name="add" size="sm" className="mr-1" />Agregar</Button>
               </div>
               {zones.map((zone) => (
                 <div key={zone.id} className="flex items-center justify-between rounded-md border p-3">
@@ -339,7 +339,7 @@ export default function SettingsPage() {
                     <span className="ml-2 text-sm text-muted-foreground">${zone.price.toLocaleString()}</span>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => handleDeleteZone(zone.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <MaterialIcon name="delete" size="sm" className="text-destructive" />
                   </Button>
                 </div>
               ))}
@@ -356,7 +356,7 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="flex gap-2">
                 <Input placeholder="Nombre (ej: Cocina principal)" value={newTokenName} onChange={(e) => setNewTokenName(e.target.value)} />
-                <Button onClick={handleCreateToken}><Plus className="mr-1 h-4 w-4" />Generar</Button>
+                <Button onClick={handleCreateToken}><MaterialIcon name="add" size="sm" className="mr-1" />Generar</Button>
               </div>
               {tokens.map((t) => (
                 <div key={t.id} className="flex items-center justify-between rounded-md border p-3">
@@ -365,8 +365,8 @@ export default function SettingsPage() {
                     <p className="text-xs text-muted-foreground font-mono truncate">{getKitchenUrl(t.token)}</p>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => copyKitchenLink(t.token)}><Copy className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleRevokeToken(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => copyKitchenLink(t.token)}><MaterialIcon name="content_copy" size="sm" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleRevokeToken(t.id)}><MaterialIcon name="delete" size="sm" className="text-destructive" /></Button>
                   </div>
                 </div>
               ))}
