@@ -36,7 +36,6 @@ export default function SettingsPage() {
 
   // Kitchen tokens
   const [tokens, setTokens] = useState<KitchenAccessToken[]>([]);
-  const [newTokenName, setNewTokenName] = useState('');
 
   // Operating hours
   const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -116,23 +115,23 @@ export default function SettingsPage() {
   };
 
   const handleCreateToken = async () => {
-    await api.post('/kitchen/tokens', { name: newTokenName });
-    setNewTokenName('');
+    const name = `Vista ${tokens.length + 1}`;
+    await api.post('/kitchen/tokens', { name });
     loadTokens();
-    toast.success('Token creado');
+    toast.success('Acceso creado');
   };
 
   const handleRevokeToken = async (id: string) => {
     await api.delete(`/kitchen/tokens/${id}`);
     loadTokens();
-    toast.success('Token revocado');
+    toast.success('Acceso eliminado');
   };
 
-  const getKitchenUrl = (token: string) => `${window.location.origin}/kitchen?token=${token}`;
+  const getKitchenUrl = (token: string) => `${window.location.origin}/kitchen/${token}`;
 
   const copyKitchenLink = (token: string) => {
     navigator.clipboard.writeText(getKitchenUrl(token));
-    toast.success('Link de cocina copiado');
+    toast.success('Link copiado');
   };
 
   return (
@@ -361,18 +360,15 @@ export default function SettingsPage() {
         <TabsContent value="kitchen" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Tokens de cocina</CardTitle>
-              <CardDescription>Generá tokens para que cocina acceda sin login</CardDescription>
+              <CardTitle>Acceso Cocina</CardTitle>
+              <CardDescription>Creá links para que cocina vea los pedidos</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input placeholder="Nombre (ej: Cocina principal)" value={newTokenName} onChange={(e) => setNewTokenName(e.target.value)} />
-                <Button onClick={handleCreateToken}><MaterialIcon name="add" size="sm" className="mr-1" />Generar</Button>
-              </div>
+              <Button onClick={handleCreateToken}><MaterialIcon name="add" size="sm" className="mr-1" />Crear acceso</Button>
               {tokens.map((t) => (
                 <div key={t.id} className="flex items-center justify-between rounded-md border p-3">
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium">{t.name || 'Sin nombre'}</p>
+                    <p className="font-medium">{t.name || `Vista ${tokens.indexOf(t) + 1}`}</p>
                     <p className="text-xs text-muted-foreground font-mono truncate">{getKitchenUrl(t.token)}</p>
                   </div>
                   <div className="flex gap-1">

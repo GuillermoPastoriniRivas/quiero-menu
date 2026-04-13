@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import type { Order, OrderItem } from '@/types';
 import { OrderStatus } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -42,12 +42,11 @@ const NEXT_ICON: Record<string, string> = {
 };
 
 export default function KitchenBoardPage() {
+  const { code } = useParams<{ code: string }>();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [invalid, setInvalid] = useState(false);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
-  const router = useRouter();
-
-  const kitchenToken = typeof window !== 'undefined' ? sessionStorage.getItem('kitchenToken') : null;
 
   const fetchOrderItems = useCallback(async (orderIds: string[], token: string) => {
     const missing = orderIds.filter((id) => !(id in orderItems));
@@ -72,46 +71,47 @@ export default function KitchenBoardPage() {
   }, [orderItems]);
 
   const fetchOrders = useCallback(async () => {
-    if (!kitchenToken) return;
+    if (!code) return;
     try {
       const res = await fetch(`${API_URL}/kitchen/orders`, {
-        headers: { 'X-Kitchen-Token': kitchenToken },
+        headers: { 'X-Kitchen-Token': code },
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        setInvalid(true);
+        return;
+      }
       const data = await res.json();
       const active = data.data.filter((o: Order) => [OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY].includes(o.status));
       setOrders(active);
-      fetchOrderItems(active.map((o: Order) => o.id), kitchenToken);
+      fetchOrderItems(active.map((o: Order) => o.id), code);
     } catch {
-      sessionStorage.clear();
-      router.push('/kitchen');
+      setInvalid(true);
     } finally {
       setLoading(false);
     }
-  }, [kitchenToken, fetchOrderItems]);
+  }, [code, fetchOrderItems]);
 
   useEffect(() => {
-    if (!kitchenToken) { router.push('/kitchen'); return; }
+    if (!code) return;
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
-  }, [kitchenToken]);
-
-  const advanceStatus = async (orderId: string, currentStatus: string) => {
-    const next = NEXT_STATUS[currentStatus];
-    if (!next || !kitchenToken) return;
-    await fetch(`${API_URL}/kitchen/orders/${orderId}/status`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Kitchen-Token': kitchenToken },
-      body: JSON.stringify({ status: next }),
-    });
-    fetchOrders();
-  };
+  }, [code]);
 
   if (loading) {
     return (
       <div className="dark flex h-screen items-center justify-center bg-surface">
         <MaterialIcon name="progress_activity" size="xl" className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (invalid) {
+    return (
+      <div className="dark flex h-screen flex-col items-center justify-center gap-4 bg-surface text-on-surface">
+        <MaterialIcon name="error" size="xl" className="text-error" />
+        <p className="text-lg font-medium">Link de cocina invalido</p>
+        <p className="text-sm text-on-surface-variant">Este link no existe o fue eliminado.</p>
       </div>
     );
   }
@@ -171,9 +171,8 @@ export default function KitchenBoardPage() {
                         </div>
                       </div>
 
-                      {/* Order detail — always visible */}
+                      {/* Order detail */}
                       <div className="px-4 pb-4 space-y-3 border-t border-outline-variant/10">
-                        {/* Order items */}
                         {items && items.length > 0 ? (
                           <div className="space-y-2 pt-3">
                             {items.map((item) => (
@@ -239,7 +238,16 @@ export default function KitchenBoardPage() {
 
                         {/* Action button */}
                         {NEXT_STATUS[status] && (
-                          <Button className="w-full" onClick={() => advanceStatus(order.id, status)}>
+                          <Button className="w-full" onClick={async () => {
+                            const next = NEXT_STATUS[status];
+                            if (!next || !code) return;
+                            await fetch(`${API_URL}/kitchen/orders/${order.id}/status`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', 'X-Kitchen-Token': code },
+                              body: JSON.stringify({ status: next }),
+                            });
+                            fetchOrders();
+                          }}>
                             <MaterialIcon name={NEXT_ICON[status]} size="sm" className="mr-1" />
                             {NEXT_LABEL[status]}
                           </Button>

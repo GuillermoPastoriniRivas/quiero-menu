@@ -45,14 +45,6 @@ export class KitchenController {
   }
 
   @Public()
-  @Post('auth')
-  async authenticate(@Body() body: { token: string }) {
-    const result = await this.validateToken.execute(body.token);
-    if (!result.ok) throw new UnauthorizedException(result.error.message);
-    return result.value;
-  }
-
-  @Public()
   @Get('orders')
   async getOrders(@Req() req: Request) {
     const kitchenToken = req.headers['x-kitchen-token'] as string;

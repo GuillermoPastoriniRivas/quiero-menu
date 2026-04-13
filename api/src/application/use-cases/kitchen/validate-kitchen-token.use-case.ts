@@ -9,7 +9,7 @@ export class ValidateKitchenTokenUseCase {
     const stored = await this.tokenRepo.findByToken(token);
     if (!stored) return err(new KitchenTokenInvalidError());
     if (stored.revokedAt) return err(new KitchenTokenInvalidError());
-    if (stored.expiresAt && stored.expiresAt < new Date()) return err(new KitchenTokenInvalidError());
+    // No expiration check — kitchen codes are permanent until revoked
     return ok({ restaurantId: stored.restaurantId });
   }
 }
