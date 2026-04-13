@@ -49,6 +49,7 @@ export interface Restaurant {
   currency: string;
   status: RestaurantStatus;
   customDomain: string | null;
+  socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null;
   createdAt: string;
   updatedAt: string;
 }

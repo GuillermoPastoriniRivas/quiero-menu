@@ -48,6 +48,9 @@ export class RestaurantModel {
   @Prop({ type: String, default: null })
   customDomain: string | null;
 
+  @Prop({ type: Object, default: null })
+  socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null;
+
   createdAt: Date;
   updatedAt: Date;
 }

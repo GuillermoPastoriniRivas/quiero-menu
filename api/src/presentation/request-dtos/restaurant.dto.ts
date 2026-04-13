@@ -14,6 +14,11 @@ export const UpdateRestaurantRequestSchema = z.object({
   timezone: z.string().optional(),
   currency: z.string().optional(),
   status: z.nativeEnum(RestaurantStatus).optional(),
+  socialLinks: z.object({
+    instagram: z.string().optional(),
+    facebook: z.string().optional(),
+    tiktok: z.string().optional(),
+  }).nullable().optional(),
 });
 export type UpdateRestaurantRequestDto = z.infer<typeof UpdateRestaurantRequestSchema>;
 

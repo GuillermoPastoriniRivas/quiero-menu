@@ -57,6 +57,7 @@ export class SignupUseCase {
       currency: 'COP',
       status: RestaurantStatus.ACTIVE,
       customDomain: null,
+      socialLinks: null,
     });
 
     await this.userRestaurantRepo.create({

@@ -20,6 +20,7 @@ export class RestaurantMapper {
       doc.currency,
       doc.status as RestaurantStatus,
       doc.customDomain,
+      doc.socialLinks ?? null,
       doc.createdAt,
       doc.updatedAt,
     );

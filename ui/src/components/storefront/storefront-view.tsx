@@ -17,8 +17,28 @@ import type { StorefrontOrderResponse } from '@/types';
 type FullMenuItem = MenuItem & { variants: MenuItemVariant[]; options: MenuItemOption[] };
 
 export function StorefrontView({ data, slug }: { data: StorefrontData; slug: string }) {
-  const { restaurant, categories, deliveryZones, showPoweredByFooter } = data;
+  const { restaurant, categories, operatingHours, deliveryZones, showPoweredByFooter } = data;
   const cart = useCartStore();
+
+  // ── Helpers ──
+  const cleanPhone = restaurant.phone ? restaurant.phone.replace(/\D/g, '') : '';
+  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : '';
+  const googleMapsUrl = restaurant.coordinates
+    ? `https://www.google.com/maps?q=${restaurant.coordinates.lat},${restaurant.coordinates.lng}`
+    : restaurant.address
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.address + (restaurant.city ? `, ${restaurant.city}` : ''))}`
+      : '';
+  const instagramHandle = restaurant.socialLinks?.instagram?.replace(/^@/, '') || '';
+  const instagramUrl = instagramHandle
+    ? instagramHandle.startsWith('http') ? instagramHandle : `https://instagram.com/${instagramHandle}`
+    : '';
+
+  // Today's operating hours
+  const todayDayOfWeek = new Date().getDay(); // 0=Sun
+  const todayHours = operatingHours.find((h) => h.dayOfWeek === todayDayOfWeek);
+  const todayHoursLabel = todayHours
+    ? todayHours.isClosed ? 'Cerrado hoy' : `Hoy ${todayHours.opensAt} – ${todayHours.closesAt}`
+    : null;
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -203,10 +223,10 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
                   <MaterialIcon name="fiber_manual_record" size="xs" fill />
                   Abierto
                 </span>
-                {restaurant.address && (
+                {todayHoursLabel && (
                   <span className="text-white/90 text-sm font-medium flex items-center gap-1">
-                    <MaterialIcon name="location_on" size="xs" />
-                    {restaurant.address}
+                    <MaterialIcon name="schedule" size="xs" />
+                    {todayHoursLabel}
                   </span>
                 )}
               </div>
@@ -215,8 +235,64 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
         ) : (
           <div className="px-6 py-8">
             <h1 className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}>{restaurant.name}</h1>
-            {restaurant.description && <p className="mt-1 text-on-surface-variant">{restaurant.description}</p>}
+            {todayHoursLabel && (
+              <span className="text-sm text-on-surface-variant flex items-center gap-1 mt-1">
+                <MaterialIcon name="schedule" size="xs" />
+                {todayHoursLabel}
+              </span>
+            )}
           </div>
+        )}
+
+        {/* ── Business Info Strip ── */}
+        {(restaurant.address || restaurant.description || whatsappUrl || instagramUrl) && (
+          <section className="px-6 py-4 space-y-3">
+            {/* Address */}
+            {restaurant.address && (
+              <a
+                href={googleMapsUrl || undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
+              >
+                <MaterialIcon name="location_on" size="sm" className="text-primary shrink-0" />
+                <span>{restaurant.address}{restaurant.city ? `, ${restaurant.city}` : ''}</span>
+              </a>
+            )}
+
+            {/* Contact buttons */}
+            {(whatsappUrl || instagramUrl) && (
+              <div className="flex gap-2">
+                {whatsappUrl && (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors"
+                  >
+                    <MaterialIcon name="chat" size="sm" />
+                    WhatsApp
+                  </a>
+                )}
+                {instagramUrl && (
+                  <a
+                    href={instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors"
+                  >
+                    <MaterialIcon name="photo_camera" size="sm" />
+                    Instagram
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* About us */}
+            {restaurant.description && (
+              <p className="text-sm text-on-surface-variant whitespace-pre-line">{restaurant.description}</p>
+            )}
+          </section>
         )}
 
         {/* ── Categories Slider ── */}
@@ -268,11 +344,15 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
                       )}
                     </div>
                   </div>
-                  {item.imageUrl && (
-                    <div className="w-28 h-28 shrink-0">
+                  <div className="w-28 h-28 shrink-0">
+                    {item.imageUrl ? (
                       <img className="w-full h-full object-cover rounded-xl" src={item.imageUrl} alt={item.name} />
-                    </div>
-                  )}
+                    ) : (
+                      <div className="w-full h-full rounded-xl bg-surface-container flex items-center justify-center">
+                        <MaterialIcon name="restaurant" size="xl" className="text-on-surface-variant/30" />
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -306,8 +386,12 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
                 </button>
               </div>
 
-              {selectedItem.imageUrl && (
+              {selectedItem.imageUrl ? (
                 <img src={selectedItem.imageUrl} alt={selectedItem.name} className="h-48 w-full rounded-2xl object-cover" />
+              ) : (
+                <div className="h-48 w-full rounded-2xl bg-surface-container flex items-center justify-center">
+                  <MaterialIcon name="restaurant" size="xl" className="text-on-surface-variant/30" />
+                </div>
               )}
 
               {/* Variants */}

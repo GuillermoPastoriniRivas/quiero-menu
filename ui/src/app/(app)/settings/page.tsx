@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [currency, setCurrency] = useState('');
+  const [instagram, setInstagram] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Delivery zones
@@ -70,6 +71,7 @@ export default function SettingsPage() {
       setAddress(restaurant.address);
       setCity(restaurant.city);
       setCurrency(restaurant.currency);
+      setInstagram(restaurant.socialLinks?.instagram || '');
     }
   }, [restaurant]);
 
@@ -86,7 +88,10 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await update({ name, description, phone, address, city, currency });
+      await update({
+        name, description, phone, address, city, currency,
+        socialLinks: { instagram: instagram || undefined },
+      });
       toast.success('Configuración guardada');
     } catch (err: any) {
       toast.error(err.message);
@@ -156,7 +161,13 @@ export default function SettingsPage() {
                 <div className="space-y-2"><Label>Ciudad</Label><Input value={city} onChange={(e) => setCity(e.target.value)} /></div>
                 <div className="space-y-2"><Label>Moneda</Label><Input value={currency} onChange={(e) => setCurrency(e.target.value)} /></div>
               </div>
-              <div className="space-y-2"><Label>Descripción</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} /></div>
+              <div className="space-y-2"><Label>Sobre nosotros</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Contale a tus clientes sobre tu negocio" /></div>
+              <div className="space-y-2 pt-2">
+                <Label className="text-base font-semibold">Redes sociales</Label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2"><Label>Instagram</Label><Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@tucuenta" /></div>
+                </div>
+              </div>
               <Button onClick={handleSave} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
             </CardContent>
           </Card>

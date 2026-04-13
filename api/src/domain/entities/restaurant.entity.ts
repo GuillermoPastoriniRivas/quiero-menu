@@ -17,6 +17,7 @@ export class Restaurant {
     public readonly currency: string,
     public readonly status: RestaurantStatus,
     public readonly customDomain: string | null,
+    public readonly socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}
