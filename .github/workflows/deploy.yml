@@ -3,8 +3,6 @@ name: Build & Deploy to EC2
 on:
   push:
     branches: [main]
-    paths:
-      - 'quiero-menu/**'
   workflow_dispatch:
 
 env:
@@ -13,10 +11,6 @@ env:
   ECR_API: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/quiero-menu/api
   ECR_UI: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/quiero-menu/ui
   APP_DIR: /home/ubuntu/quiero-menu
-
-defaults:
-  run:
-    working-directory: quiero-menu
 
 jobs:
   deploy:
