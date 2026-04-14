@@ -44,6 +44,28 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
   const [submitting, setSubmitting] = useState(false);
   const [orderResult, setOrderResult] = useState<StorefrontOrderResponse | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(categories[0]?.id ?? null);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState('');
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      setGpsError('Tu navegador no soporta geolocalizacion');
+      return;
+    }
+    setGpsLoading(true);
+    setGpsError('');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        cart.setLocation(pos.coords.latitude, pos.coords.longitude);
+        setGpsLoading(false);
+      },
+      (err) => {
+        setGpsError(err.code === 1 ? 'Permiso de ubicacion denegado' : 'No se pudo obtener tu ubicacion');
+        setGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
 
   // Item detail dialog state
   const [selectedItem, setSelectedItem] = useState<FullMenuItem | null>(null);
@@ -153,6 +175,8 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
         customerName: cart.customerName,
         customerPhone: cart.customerPhone,
         customerAddress: cart.customerAddress || undefined,
+        customerLatitude: cart.customerLatitude ?? undefined,
+        customerLongitude: cart.customerLongitude ?? undefined,
         deliveryType: cart.deliveryType,
         deliveryZoneId: cart.deliveryZoneId || undefined,
         paymentMethod: cart.paymentMethod,
@@ -576,6 +600,33 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
                   <div className="space-y-2">
                     <Label>Direccion</Label>
                     <Input value={cart.customerAddress} onChange={(e) => cart.setCustomer({ customerAddress: e.target.value })} placeholder="Tu direccion" />
+                    <button
+                      type="button"
+                      onClick={requestLocation}
+                      disabled={gpsLoading}
+                      className="w-full flex items-center justify-center gap-2 bg-surface-container-low hover:bg-surface-container text-on-surface rounded-xl py-2.5 text-sm font-medium transition-colors active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {gpsLoading ? (
+                        <MaterialIcon name="progress_activity" size="sm" className="animate-spin" />
+                      ) : cart.customerLatitude ? (
+                        <MaterialIcon name="check_circle" size="sm" className="text-green-600" />
+                      ) : (
+                        <MaterialIcon name="my_location" size="sm" className="text-primary" />
+                      )}
+                      {gpsLoading ? 'Obteniendo ubicacion...' : cart.customerLatitude ? 'Ubicacion capturada' : 'Usar mi ubicacion'}
+                    </button>
+                    {cart.customerLatitude && cart.customerLongitude && (
+                      <a
+                        href={`https://www.google.com/maps?q=${cart.customerLatitude},${cart.customerLongitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <MaterialIcon name="map" size="xs" />
+                        Ver en Maps
+                      </a>
+                    )}
+                    {gpsError && <p className="text-xs text-destructive">{gpsError}</p>}
                   </div>
                   {deliveryZones.length > 0 && (
                     <div className="space-y-2">

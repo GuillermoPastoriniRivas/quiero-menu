@@ -32,6 +32,8 @@ function redactOrder(order: Order): OrderWithRedaction {
       '***',
       '***',
       '***',
+      null,
+      null,
       order.deliveryType,
       order.deliveryZoneId,
       0,

@@ -13,6 +13,8 @@ export const CreateStorefrontOrderRequestSchema = z.object({
   customerName: z.string().min(1),
   customerPhone: z.string().min(1),
   customerAddress: z.string().optional(),
+  customerLatitude: z.number().min(-90).max(90).optional(),
+  customerLongitude: z.number().min(-180).max(180).optional(),
   deliveryType: z.nativeEnum(DeliveryType),
   deliveryZoneId: z.string().optional(),
   paymentMethod: z.string().optional().default('efectivo'),

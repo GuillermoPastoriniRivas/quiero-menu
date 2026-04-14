@@ -122,6 +122,8 @@ export interface Order {
   customerName: string;
   customerPhone: string;
   customerAddress: string | null;
+  customerLatitude: number | null;
+  customerLongitude: number | null;
   deliveryType: DeliveryType;
   deliveryZoneId: string | null;
   deliveryFee: number;

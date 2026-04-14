@@ -27,6 +27,8 @@ export interface CreateStorefrontOrderInput {
   customerName: string;
   customerPhone: string;
   customerAddress?: string;
+  customerLatitude?: number;
+  customerLongitude?: number;
   deliveryType: DeliveryType;
   deliveryZoneId?: string;
   paymentMethod: string;
@@ -119,6 +121,8 @@ export class CreateStorefrontOrderUseCase {
       customerName: input.customerName,
       customerPhone: input.customerPhone,
       customerAddress: input.customerAddress ?? null,
+      customerLatitude: input.customerLatitude ?? null,
+      customerLongitude: input.customerLongitude ?? null,
       deliveryType: input.deliveryType,
       deliveryZoneId: input.deliveryZoneId ?? null,
       deliveryFee,
@@ -147,8 +151,8 @@ export class CreateStorefrontOrderUseCase {
     if (deliveryFee > 0) messageLines.push(`Envío: $${deliveryFee.toLocaleString()}`);
     messageLines.push(`Total: $${total.toLocaleString()}`);
 
-    if (input.deliveryType === DeliveryType.DELIVERY && input.customerAddress) {
-      messageLines.push(`Dirección: ${input.customerAddress}`);
+    if (input.deliveryType === DeliveryType.DELIVERY) {
+      if (input.customerAddress) messageLines.push(`Dirección: ${input.customerAddress}`);
     } else {
       messageLines.push('Retiro en tienda');
     }

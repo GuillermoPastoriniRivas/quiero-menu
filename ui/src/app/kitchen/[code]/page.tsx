@@ -220,10 +220,22 @@ export default function KitchenBoardPage() {
                               <span>{order.customerPhone}</span>
                             </div>
                           )}
-                          {order.deliveryType === 'delivery' && order.customerAddress && (
+                          {order.deliveryType === 'delivery' && (order.customerAddress || order.customerLatitude) && (
                             <div className="flex justify-between text-xs text-on-surface-variant">
                               <span>Direccion</span>
-                              <span className="text-right max-w-[60%]">{order.customerAddress}</span>
+                              <a
+                                href={
+                                  order.customerLatitude && order.customerLongitude
+                                    ? `https://www.google.com/maps?q=${order.customerLatitude},${order.customerLongitude}`
+                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customerAddress || '')}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-right max-w-[60%] text-primary hover:underline flex items-center gap-1"
+                              >
+                                {order.customerAddress || 'Ver ubicacion'}
+                                <MaterialIcon name="open_in_new" size="xs" />
+                              </a>
                             </div>
                           )}
                         </div>

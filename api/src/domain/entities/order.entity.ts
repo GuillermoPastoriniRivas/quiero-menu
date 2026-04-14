@@ -11,6 +11,8 @@ export class Order {
     public readonly customerName: string,
     public readonly customerPhone: string,
     public readonly customerAddress: string | null,
+    public readonly customerLatitude: number | null,
+    public readonly customerLongitude: number | null,
     public readonly deliveryType: DeliveryType,
     public readonly deliveryZoneId: string | null,
     public readonly deliveryFee: number,

@@ -69,6 +69,8 @@ export class GetOrderUseCase {
       '***',
       '***',
       '***',
+      null,
+      null,
       order.deliveryType,
       order.deliveryZoneId,
       0,

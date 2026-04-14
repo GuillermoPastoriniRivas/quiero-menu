@@ -26,6 +26,12 @@ export class OrderModel {
   @Prop({ type: String, default: null })
   customerAddress: string | null;
 
+  @Prop({ type: Number, default: null })
+  customerLatitude: number | null;
+
+  @Prop({ type: Number, default: null })
+  customerLongitude: number | null;
+
   @Prop({ required: true, enum: DeliveryType })
   deliveryType: string;
 

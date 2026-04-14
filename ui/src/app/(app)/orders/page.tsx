@@ -174,11 +174,22 @@ export default function OrdersPage() {
                     <Badge variant="secondary" className="text-[10px]">
                       {order.deliveryType === 'pickup' ? 'Retiro' : 'Delivery'}
                     </Badge>
-                    {order.deliveryType === 'delivery' && order.customerAddress && (
-                      <span className="flex items-center gap-1">
+                    {order.deliveryType === 'delivery' && (order.customerAddress || order.customerLatitude) && (
+                      <a
+                        href={
+                          order.customerLatitude && order.customerLongitude
+                            ? `https://www.google.com/maps?q=${order.customerLatitude},${order.customerLongitude}`
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customerAddress || '')}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <MaterialIcon name="location_on" size="xs" />
-                        {order.customerAddress}
-                      </span>
+                        {order.customerAddress || 'Ver ubicacion'}
+                        <MaterialIcon name="open_in_new" size="xs" />
+                      </a>
                     )}
                   </div>
                 )}

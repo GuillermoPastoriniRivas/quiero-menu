@@ -20,6 +20,8 @@ interface CartState {
   customerName: string;
   customerPhone: string;
   customerAddress: string;
+  customerLatitude: number | null;
+  customerLongitude: number | null;
   deliveryType: DeliveryType;
   deliveryZoneId: string;
   paymentMethod: string;
@@ -29,6 +31,7 @@ interface CartState {
   removeItem: (index: number) => void;
   updateQuantity: (index: number, quantity: number) => void;
   setCustomer: (data: Partial<Pick<CartState, 'customerName' | 'customerPhone' | 'customerAddress'>>) => void;
+  setLocation: (lat: number | null, lng: number | null) => void;
   setDelivery: (data: Partial<Pick<CartState, 'deliveryType' | 'deliveryZoneId'>>) => void;
   setPaymentMethod: (method: string) => void;
   setNotes: (notes: string) => void;
@@ -41,6 +44,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   customerName: '',
   customerPhone: '',
   customerAddress: '',
+  customerLatitude: null,
+  customerLongitude: null,
   deliveryType: 'pickup' as DeliveryType,
   deliveryZoneId: '',
   paymentMethod: 'efectivo',
@@ -53,6 +58,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       items: s.items.map((item, i) => (i === index ? { ...item, quantity, unitPrice: item.unitPrice } : item)),
     })),
   setCustomer: (data) => set(data),
+  setLocation: (lat, lng) => set({ customerLatitude: lat, customerLongitude: lng }),
   setDelivery: (data) => set(data),
   setPaymentMethod: (method) => set({ paymentMethod: method }),
   setNotes: (notes) => set({ notes }),
@@ -62,6 +68,8 @@ export const useCartStore = create<CartState>((set, get) => ({
       customerName: '',
       customerPhone: '',
       customerAddress: '',
+      customerLatitude: null,
+      customerLongitude: null,
       deliveryType: 'pickup' as DeliveryType,
       deliveryZoneId: '',
       paymentMethod: 'efectivo',

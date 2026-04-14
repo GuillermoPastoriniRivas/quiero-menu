@@ -14,6 +14,8 @@ export class OrderMapper {
       doc.customerName,
       doc.customerPhone,
       doc.customerAddress,
+      doc.customerLatitude ?? null,
+      doc.customerLongitude ?? null,
       doc.deliveryType as DeliveryType,
       doc.deliveryZoneId?.toHexString() ?? null,
       doc.deliveryFee,
