@@ -18,6 +18,7 @@ import { KitchenController } from './controllers/kitchen.controller.js';
 import { OnboardingController } from './controllers/onboarding.controller.js';
 import { BillingController } from './controllers/billing.controller.js';
 import { PaymentWebhookController } from './controllers/payment-webhook.controller.js';
+import { HealthController } from './controllers/health.controller.js';
 
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
@@ -335,6 +336,7 @@ const useCaseProviders = [
 @Module({
   imports: [InfrastructureModule],
   controllers: [
+    HealthController,
     AuthController,
     StorefrontController,
     RestaurantController,

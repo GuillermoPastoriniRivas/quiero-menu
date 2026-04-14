@@ -1,0 +1,67 @@
+services:
+  api:
+    image: quiero-menu-api:latest
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: quiero-menu-api
+    restart: unless-stopped
+    env_file: ./api/.env
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)throw 1})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - quiero-menu
+
+  ui:
+    image: quiero-menu-ui:latest
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://quiero.menu/api}
+    container_name: quiero-menu-ui
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001').then(r=>{if(!r.ok)throw 1})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - quiero-menu
+
+  nginx:
+    image: nginx:alpine
+    container_name: quiero-menu-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      ui:
+        condition: service_healthy
+    networks:
+      - quiero-menu
+
+volumes:
+  certbot-webroot:
+
+networks:
+  quiero-menu:
+    driver: bridge

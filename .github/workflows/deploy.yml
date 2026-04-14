@@ -1,0 +1,93 @@
+name: Build & Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'quiero-menu/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  ECR_API: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/quiero-menu/api
+  ECR_UI: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/quiero-menu/ui
+  APP_DIR: /home/ubuntu/quiero-menu
+
+defaults:
+  run:
+    working-directory: quiero-menu
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: tag
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # --- Build & push (only changed layers are uploaded) ---
+      - name: Build & push API
+        run: |
+          docker build -t ${{ env.ECR_API }}:${{ steps.tag.outputs.sha }} \
+                       -t ${{ env.ECR_API }}:latest \
+                       ./api
+          docker push ${{ env.ECR_API }} --all-tags
+
+      - name: Build & push UI
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            -t ${{ env.ECR_UI }}:${{ steps.tag.outputs.sha }} \
+            -t ${{ env.ECR_UI }}:latest \
+            ./ui
+          docker push ${{ env.ECR_UI }} --all-tags
+
+      # --- Deploy on EC2 with zero downtime ---
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.QM_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.QM_EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ env.APP_DIR }}
+
+            # Login to ECR from EC2 (uses IAM role)
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
+            # Pull new images (only downloads changed layers)
+            docker pull ${{ env.ECR_API }}:latest
+            docker pull ${{ env.ECR_UI }}:latest
+
+            # Tag images so docker-compose can find them by local name
+            docker tag ${{ env.ECR_API }}:latest quiero-menu-api:latest
+            docker tag ${{ env.ECR_UI }}:latest quiero-menu-ui:latest
+
+            # Zero-downtime restart: one service at a time
+            docker compose up -d --no-deps api
+            sleep 10
+            docker compose up -d --no-deps ui
+            sleep 10
+            docker compose up -d --no-deps nginx
+
+            # Verify
+            docker compose ps
+            echo "Deploy ${{ steps.tag.outputs.sha }} complete!"
+
+            # Cleanup dangling images
+            docker image prune -f
