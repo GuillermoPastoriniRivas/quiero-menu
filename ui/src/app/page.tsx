@@ -31,9 +31,9 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <main className="pt-24">
+      <main className="pt-16">
         {/* Hero Section */}
-        <section id="inicio" className="px-6 py-16 md:py-24 max-w-7xl mx-auto">
+        <section id="inicio" className="px-6 py-8 md:py-12 max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight text-on-surface">
@@ -61,37 +61,109 @@ export default function LandingPage() {
               <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-primary/5 rounded-full blur-3xl" />
               {/* Smartphone Mockup */}
               <div className="relative mx-auto w-[280px] md:w-[320px] aspect-[9/19.5] bg-black rounded-[3rem] border-[8px] border-stone-800 shadow-2xl overflow-hidden">
-                <div className="absolute top-0 w-full h-6 bg-black flex justify-center pt-1">
+                <div className="absolute top-0 w-full h-6 bg-black flex justify-center pt-1 z-20">
                   <div className="w-20 h-4 bg-stone-900 rounded-full" />
                 </div>
-                <div className="h-full w-full bg-white pt-8 px-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-bold text-lg text-on-surface">Pizzeria Napoli</h4>
-                    <MaterialIcon name="shopping_bag" className="text-primary" />
-                  </div>
-                  <img
-                    alt="Pizzeria"
-                    className="w-full h-32 object-cover rounded-xl mb-4"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLBC89WbgjxI3A9hWf296UcipvrpO80HZfyBLeINShHNQy_q56JDOIer_ZV6SxmBXbArmWLztNKBwTPo8iQUuB7ehNU_pIvNwQPyCJSpHABgIxJOAkvnSEij5wDexlNCgUwMSOrNUujnzmMj2GLRSU3Ye_YNDE_3aoZU1dOa4B5ph2Nmnxhty_MUvXP3NShU6fqhgOxgDy1VtsFHf_-MBas5hJI6OGgz3X91hc6eY1xRGiXqGllUkDaPjCtGSSrm6H1bgDErzIgzY"
-                  />
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-3 border-b border-gray-100">
-                      <div>
-                        <p className="font-bold text-sm text-on-surface">Pizza Margherita</p>
-                        <p className="text-xs text-on-surface-variant">Tomate, mozzarella y albahaca.</p>
-                      </div>
-                      <p className="font-bold text-primary text-sm">$48.000</p>
-                    </div>
-                    <div className="flex justify-between items-center p-3 border-b border-gray-100">
-                      <div>
-                        <p className="font-bold text-sm text-on-surface">Pizza Pepperoni</p>
-                        <p className="text-xs text-on-surface-variant">Mucho pepperoni y queso.</p>
-                      </div>
-                      <p className="font-bold text-primary text-sm">$55.000</p>
+                <div className="h-full w-full bg-surface overflow-y-auto hide-scrollbar">
+                  {/* Cover + Logo */}
+                  <div className="relative">
+                    <img
+                      alt="Pizzeria cover"
+                      className="w-full h-40 object-cover object-top"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLBC89WbgjxI3A9hWf296UcipvrpO80HZfyBLeINShHNQy_q56JDOIer_ZV6SxmBXbArmWLztNKBwTPo8iQUuB7ehNU_pIvNwQPyCJSpHABgIxJOAkvnSEij5wDexlNCgUwMSOrNUujnzmMj2GLRSU3Ye_YNDE_3aoZU1dOa4B5ph2Nmnxhty_MUvXP3NShU6fqhgOxgDy1VtsFHf_-MBas5hJI6OGgz3X91hc6eY1xRGiXqGllUkDaPjCtGSSrm6H1bgDErzIgzY"
+                    />
+                    <div className="absolute -bottom-5 left-3 w-11 h-11 bg-white rounded-xl shadow-md flex items-center justify-center border border-gray-100">
+                      <MaterialIcon name="local_pizza" className="text-primary" size="lg" />
                     </div>
                   </div>
-                  <div className="absolute bottom-6 left-4 right-4">
-                    <button className="w-full gradient-cta text-white py-3 rounded-full font-bold text-sm">Ver mi pedido</button>
+                  {/* Store info */}
+                  <div className="px-3 pt-7 pb-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-bold text-sm text-on-surface leading-tight">Pizzeria Napoli</h4>
+                        <p className="text-[10px] text-on-surface-variant flex items-center gap-0.5 mt-0.5">
+                          <MaterialIcon name="schedule" size="xs" className="text-on-surface-variant" />
+                          Abierto hasta 23:00
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded-full">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                        <span className="text-[9px] font-bold text-green-700">Abierto</span>
+                      </div>
+                    </div>
+                    {/* Delivery info bar */}
+                    <div className="flex gap-3 mt-2 text-[9px] text-on-surface-variant">
+                      <span className="flex items-center gap-0.5"><MaterialIcon name="delivery_dining" size="xs" />25-40 min</span>
+                      <span className="flex items-center gap-0.5"><MaterialIcon name="payments" size="xs" />Envio $2.500</span>
+                      <span className="flex items-center gap-0.5"><MaterialIcon name="star" size="xs" className="text-amber-500" />4.8</span>
+                    </div>
+                  </div>
+                  {/* Category tabs */}
+                  <div className="flex gap-1 px-3 py-1.5 overflow-x-auto hide-scrollbar">
+                    <span className="whitespace-nowrap px-2.5 py-1 gradient-cta text-white rounded-full text-[9px] font-bold">Pizzas</span>
+                    <span className="whitespace-nowrap px-2.5 py-1 bg-white text-on-surface-variant rounded-full text-[9px] font-medium border border-gray-200">Empanadas</span>
+                    <span className="whitespace-nowrap px-2.5 py-1 bg-white text-on-surface-variant rounded-full text-[9px] font-medium border border-gray-200">Bebidas</span>
+                    <span className="whitespace-nowrap px-2.5 py-1 bg-white text-on-surface-variant rounded-full text-[9px] font-medium border border-gray-200">Postres</span>
+                  </div>
+                  {/* Products */}
+                  <div className="px-3 pb-20 space-y-2 mt-1">
+                    <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100">
+                      <div className="w-16 h-16 bg-orange-50 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        <MaterialIcon name="local_pizza" size="xl" className="text-primary/40" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs text-on-surface">Pizza Margherita</p>
+                        <p className="text-[9px] text-on-surface-variant mt-0.5 line-clamp-2">Salsa de tomate, mozzarella fresca y albahaca.</p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <p className="font-bold text-primary text-xs">$48.000</p>
+                          <div className="w-6 h-6 gradient-cta rounded-full flex items-center justify-center">
+                            <MaterialIcon name="add" size="xs" className="text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100">
+                      <div className="w-16 h-16 bg-orange-50 rounded-lg flex-shrink-0 flex items-center justify-center">
+                        <MaterialIcon name="local_pizza" size="xl" className="text-primary/40" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs text-on-surface">Pizza Pepperoni</p>
+                        <p className="text-[9px] text-on-surface-variant mt-0.5 line-clamp-2">Mucho pepperoni con extra queso mozzarella.</p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <p className="font-bold text-primary text-xs">$55.000</p>
+                          <div className="w-6 h-6 bg-white border-2 border-primary rounded-full flex items-center justify-center">
+                            <MaterialIcon name="add" size="xs" className="text-primary" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100 relative">
+                      <div className="absolute top-1.5 right-1.5 bg-amber-100 text-amber-700 text-[7px] font-bold px-1.5 py-0.5 rounded-full">MAS PEDIDA</div>
+                      <div className="w-16 h-16 bg-orange-50 rounded-lg flex-shrink-0 flex items-center justify-center">
+                        <MaterialIcon name="local_pizza" size="xl" className="text-primary/40" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs text-on-surface">Pizza 4 Quesos</p>
+                        <p className="text-[9px] text-on-surface-variant mt-0.5 line-clamp-2">Mozzarella, provolone, roquefort y parmesano.</p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <p className="font-bold text-primary text-xs">$62.000</p>
+                          <div className="w-6 h-6 gradient-cta rounded-full flex items-center justify-center">
+                            <MaterialIcon name="add" size="xs" className="text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Floating cart */}
+                  <div className="absolute bottom-4 left-3 right-3 z-10">
+                    <button className="w-full gradient-cta text-white py-2.5 rounded-full font-bold text-xs flex items-center justify-between px-4 shadow-lg shadow-primary/30">
+                      <span className="flex items-center gap-1.5">
+                        <MaterialIcon name="shopping_bag" size="sm" className="text-white" />
+                        <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-[9px]">2 items</span>
+                      </span>
+                      <span>Ver pedido</span>
+                      <span className="font-extrabold">$103.000</span>
+                    </button>
                   </div>
                 </div>
               </div>
