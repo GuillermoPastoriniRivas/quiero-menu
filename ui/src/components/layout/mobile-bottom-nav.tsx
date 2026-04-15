@@ -6,9 +6,9 @@ import { MaterialIcon } from '@/components/ui/material-icon';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Tienda', icon: 'storefront' },
   { href: '/orders', label: 'Pedidos', icon: 'confirmation_number' },
   { href: '/menu', label: 'Menú', icon: 'restaurant_menu' },
+  { href: '/mi-menu', label: 'Publicar', icon: 'share' },
   { href: '/settings', label: 'Cuenta', icon: 'person' },
 ];
 

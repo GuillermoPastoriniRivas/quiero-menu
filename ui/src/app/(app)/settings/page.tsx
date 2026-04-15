@@ -205,13 +205,17 @@ export default function SettingsPage() {
                 <CardTitle>Link público</CardTitle>
                 <CardDescription>Compartí este link con tus clientes</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Input value={`${window.location.origin}/${restaurant.slug}`} readOnly />
                   <Button variant="outline" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/${restaurant.slug}`); toast.success('Link copiado'); }}>
                     <MaterialIcon name="content_copy" size="sm" />
                   </Button>
                 </div>
+                <a href="/mi-menu" className="inline-flex items-center gap-1 text-sm text-primary font-medium hover:underline">
+                  <MaterialIcon name="qr_code_2" size="sm" />
+                  QR, WhatsApp y mas opciones
+                </a>
               </CardContent>
             </Card>
           )}

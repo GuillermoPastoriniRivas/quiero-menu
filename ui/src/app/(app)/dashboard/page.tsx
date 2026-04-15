@@ -81,13 +81,13 @@ export default function DashboardPage() {
           <div className="mb-4 w-12 h-12 bg-surface-container-low rounded-xl flex items-center justify-center text-primary">
             <MaterialIcon name="share" size="lg" />
           </div>
-          <h3 className="font-bold text-lg mb-2 text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Compartir tu Link</h3>
-          <p className="text-sm text-on-surface-variant mb-6">Envia tu catalogo digital directamente a WhatsApp.</p>
+          <h3 className="font-bold text-lg mb-2 text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Compartir tu Menu</h3>
+          <p className="text-sm text-on-surface-variant mb-6">Comparti tu link con clientes por WhatsApp o con un QR en tu local.</p>
           <Link
-            href="/settings"
+            href="/mi-menu"
             className="block w-full bg-surface-container-low text-primary border border-outline-variant/20 py-2.5 rounded-xl font-bold text-sm text-center active:scale-95 duration-200 transition-transform"
           >
-            Obtener Link
+            Ver mi link
           </Link>
         </div>
       </section>
@@ -118,11 +118,11 @@ export default function DashboardPage() {
               <p className="text-on-surface-variant">Una vez que tus clientes empiecen a pedir, aqui veras el crecimiento de tu restaurante en tiempo real.</p>
             </div>
             <Link
-              href="/settings"
+              href="/mi-menu"
               className="inline-flex items-center gap-2 gradient-cta text-white px-6 py-3 rounded-xl font-bold transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95"
             >
               <MaterialIcon name="rocket_launch" size="md" />
-              Activar mi Tienda
+              Compartir mi Menu
             </Link>
           </div>
         ) : (
