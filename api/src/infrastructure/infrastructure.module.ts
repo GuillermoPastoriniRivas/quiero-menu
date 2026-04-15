@@ -4,9 +4,10 @@ import { AuthInfraModule } from './auth/auth-infra.module.js';
 import { WebSocketInfraModule } from './websocket/websocket.module.js';
 import { AiModule } from './ai/ai.module.js';
 import { PaymentModule } from './payment/payment.module.js';
+import { StorageModule } from './storage/storage.module.js';
 
 @Module({
-  imports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule],
-  exports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule],
+  imports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule, StorageModule],
+  exports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule, StorageModule],
 })
 export class InfrastructureModule {}

@@ -19,6 +19,7 @@ import { OnboardingController } from './controllers/onboarding.controller.js';
 import { BillingController } from './controllers/billing.controller.js';
 import { PaymentWebhookController } from './controllers/payment-webhook.controller.js';
 import { HealthController } from './controllers/health.controller.js';
+import { UploadController } from './controllers/upload.controller.js';
 
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
@@ -78,6 +79,9 @@ import { CreateCheckoutUseCase } from '../application/use-cases/billing/create-c
 import { HandlePaymentWebhookUseCase } from '../application/use-cases/billing/handle-payment-webhook.use-case.js';
 import { CancelSubscriptionUseCase } from '../application/use-cases/billing/cancel-subscription.use-case.js';
 import { GetBillingHistoryUseCase } from '../application/use-cases/billing/get-billing-history.use-case.js';
+
+// Use Cases — Upload
+import { GenerateUploadUrlUseCase } from '../application/use-cases/upload/generate-upload-url.use-case.js';
 
 const useCaseProviders = [
   // Auth
@@ -310,6 +314,13 @@ const useCaseProviders = [
     inject: ['BillingRecordRepository'],
   },
 
+  // Upload
+  {
+    provide: 'GenerateUploadUrlUseCase',
+    useFactory: (storage: any) => new GenerateUploadUrlUseCase(storage),
+    inject: ['StoragePort'],
+  },
+
   // Kitchen
   {
     provide: 'CreateKitchenTokenUseCase',
@@ -347,6 +358,7 @@ const useCaseProviders = [
     OnboardingController,
     BillingController,
     PaymentWebhookController,
+    UploadController,
   ],
   providers: [
     ...useCaseProviders,

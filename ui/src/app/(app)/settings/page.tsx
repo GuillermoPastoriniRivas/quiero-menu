@@ -16,6 +16,7 @@ import type { OperatingHours, DeliveryZone, KitchenAccessToken } from '@/types';
 import { PlanTier } from '@/types';
 import { toast } from 'sonner';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { formatDate } from '@/lib/format';
 
 export default function SettingsPage() {
@@ -153,6 +154,22 @@ export default function SettingsPage() {
               <CardTitle>Datos del restaurante</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <ImageUpload
+                  value={restaurant?.logoUrl}
+                  onChange={async (url) => { await update({ logoUrl: url }); toast.success('Logo actualizado'); }}
+                  type="logo"
+                  label="Logo"
+                  aspectRatio="square"
+                />
+                <ImageUpload
+                  value={restaurant?.bannerUrl}
+                  onChange={async (url) => { await update({ bannerUrl: url }); toast.success('Banner actualizado'); }}
+                  type="banner"
+                  label="Banner"
+                  aspectRatio="banner"
+                />
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2"><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
                 <div className="space-y-2"><Label>Teléfono (WhatsApp)</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+57..." /></div>

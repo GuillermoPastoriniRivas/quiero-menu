@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { ImageUpload } from '@/components/ui/image-upload';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/format';
 import type { MenuCategory, MenuItem, MenuItemVariant, MenuItemOption, StorefrontData } from '@/types';
@@ -58,6 +59,7 @@ export default function MenuPage() {
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
+  const [newItemImageUrl, setNewItemImageUrl] = useState('');
 
   /* --- new variant dialog --- */
   const [newVariantItemId, setNewVariantItemId] = useState<string | null>(null);
@@ -139,10 +141,12 @@ export default function MenuPage() {
         name: newItemName.trim(),
         basePrice: Number(newItemPrice),
         description: newItemDesc.trim() || undefined,
+        imageUrl: newItemImageUrl || undefined,
       });
       setNewItemName('');
       setNewItemPrice('');
       setNewItemDesc('');
+      setNewItemImageUrl('');
       setNewItemCatId(null);
       toast.success('Producto creado');
       await loadMenu();
@@ -293,6 +297,7 @@ export default function MenuPage() {
                     setNewItemName('');
                     setNewItemPrice('');
                     setNewItemDesc('');
+                    setNewItemImageUrl('');
                   }}
                 >
                   <MaterialIcon name="add" size="xs" className="mr-1" />
@@ -326,6 +331,13 @@ export default function MenuPage() {
                             itemOpen ? <MaterialIcon name="expand_more" size="sm" className="text-muted-foreground" /> : <MaterialIcon name="chevron_right" size="sm" className="text-muted-foreground" />
                           ) : (
                             <MaterialIcon name="inventory_2" size="sm" className="text-muted-foreground" />
+                          )}
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                              <MaterialIcon name="restaurant" size="sm" className="text-muted-foreground" />
+                            </div>
                           )}
                           <div>
                             <span className="font-medium">{item.name}</span>
@@ -485,6 +497,13 @@ export default function MenuPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <ImageUpload
+              value={newItemImageUrl}
+              onChange={setNewItemImageUrl}
+              type="menu"
+              label="Foto del producto"
+              aspectRatio="square"
+            />
             <div className="space-y-1">
               <Label>Nombre</Label>
               <Input

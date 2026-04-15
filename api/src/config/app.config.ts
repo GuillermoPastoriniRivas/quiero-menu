@@ -23,6 +23,11 @@ export default () => ({
   openai: {
     apiKey: requireEnv('OPENAI_API_KEY'),
   },
+  s3: {
+    bucket: process.env.S3_BUCKET ?? 'quiero-menu-images',
+    region: process.env.S3_REGION ?? 'us-east-1',
+    cloudfrontDomain: process.env.CLOUDFRONT_DOMAIN ?? 'd2y3u1bswha7un.cloudfront.net',
+  },
   lemonSqueezy: {
     apiKey: process.env.LEMON_SQUEEZY_API_KEY ?? '',
     storeId: process.env.LEMON_SQUEEZY_STORE_ID ?? '',
