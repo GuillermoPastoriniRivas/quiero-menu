@@ -117,7 +117,7 @@ export class CreateStorefrontOrderUseCase {
     const order = await this.orderRepo.create({
       restaurantId: restaurant.id,
       code,
-      status: OrderStatus.DRAFT,
+      status: OrderStatus.NEW,
       customerName: input.customerName,
       customerPhone: input.customerPhone,
       customerAddress: input.customerAddress ?? null,

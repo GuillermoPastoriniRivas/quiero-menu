@@ -6,7 +6,6 @@ import { Result, ok, err } from '../../common/result.js';
 import { OrderNotFoundError, InvalidOrderTransitionError, CrossRestaurantAccessError } from '../../../domain/errors/domain-errors.js';
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  [OrderStatus.DRAFT]: [OrderStatus.NEW, OrderStatus.CANCELLED],
   [OrderStatus.NEW]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
   [OrderStatus.PREPARING]: [OrderStatus.READY, OrderStatus.CANCELLED],
   [OrderStatus.READY]: [OrderStatus.DELIVERING, OrderStatus.DELIVERED, OrderStatus.CANCELLED],

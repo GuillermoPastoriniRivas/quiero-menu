@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import type { Order, OrderItem } from '@/types';
 import { OrderStatus } from '@/types';
@@ -47,6 +47,9 @@ export default function KitchenBoardPage() {
   const [loading, setLoading] = useState(true);
   const [invalid, setInvalid] = useState(false);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const knownOrderIds = useRef<Set<string>>(new Set());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchOrderItems = useCallback(async (orderIds: string[], token: string) => {
     const missing = orderIds.filter((id) => !(id in orderItems));
@@ -82,6 +85,7 @@ export default function KitchenBoardPage() {
       }
       const data = await res.json();
       const active = data.data.filter((o: Order) => [OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY].includes(o.status));
+      alertNewOrders(active);
       setOrders(active);
       fetchOrderItems(active.map((o: Order) => o.id), code);
     } catch {
@@ -90,6 +94,56 @@ export default function KitchenBoardPage() {
       setLoading(false);
     }
   }, [code, fetchOrderItems]);
+
+  // Initialize audio and request notification permission
+  useEffect(() => {
+    audioRef.current = new Audio('/notification.wav');
+    audioRef.current.preload = 'auto';
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Enable sound on first user interaction (browser autoplay policy)
+  useEffect(() => {
+    const enable = () => {
+      setSoundEnabled(true);
+      window.removeEventListener('click', enable);
+      window.removeEventListener('touchstart', enable);
+    };
+    window.addEventListener('click', enable);
+    window.addEventListener('touchstart', enable);
+    return () => {
+      window.removeEventListener('click', enable);
+      window.removeEventListener('touchstart', enable);
+    };
+  }, []);
+
+  const alertNewOrders = useCallback((newOrders: Order[]) => {
+    const newNewOrders = newOrders.filter(
+      (o) => o.status === OrderStatus.NEW && !knownOrderIds.current.has(o.id),
+    );
+    // Update known IDs
+    knownOrderIds.current = new Set(newOrders.map((o) => o.id));
+
+    if (newNewOrders.length === 0) return;
+
+    // Play sound
+    if (soundEnabled && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    }
+
+    // Browser notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const count = newNewOrders.length;
+      new Notification(count === 1 ? 'Nuevo pedido!' : `${count} pedidos nuevos!`, {
+        body: newNewOrders.map((o) => `#${o.code} - ${o.customerName}`).join('\n'),
+        icon: '/icon-192x192.png',
+        tag: 'new-order',
+      });
+    }
+  }, [soundEnabled]);
 
   useEffect(() => {
     if (!code) return;

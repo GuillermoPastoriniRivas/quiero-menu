@@ -12,7 +12,6 @@ import { formatCurrency, formatDate, formatRelativeTime } from '@/lib/format';
 import { toast } from 'sonner';
 
 const STATUS_LABELS: Record<string, string> = {
-  [OrderStatus.DRAFT]: 'Borrador',
   [OrderStatus.NEW]: 'Nuevo',
   [OrderStatus.PREPARING]: 'Preparando',
   [OrderStatus.READY]: 'Listo',
@@ -22,7 +21,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_BADGE_VARIANT: Record<string, string> = {
-  [OrderStatus.DRAFT]: 'secondary',
   [OrderStatus.NEW]: 'nuevo',
   [OrderStatus.PREPARING]: 'preparando',
   [OrderStatus.READY]: 'listo',
@@ -32,7 +30,6 @@ const STATUS_BADGE_VARIANT: Record<string, string> = {
 };
 
 const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; label: string; icon: string }>> = {
-  [OrderStatus.DRAFT]: { status: OrderStatus.NEW, label: 'Confirmar', icon: 'check' },
   [OrderStatus.NEW]: { status: OrderStatus.PREPARING, label: 'Aceptar y Preparar', icon: 'restaurant' },
   [OrderStatus.PREPARING]: { status: OrderStatus.READY, label: 'Marcar como Listo', icon: 'check_circle' },
   [OrderStatus.READY]: { status: OrderStatus.DELIVERED, label: 'Marcar como Entregado', icon: 'handshake' },
@@ -83,7 +80,7 @@ export default function OrdersPage() {
   const filteredOrders = tab === 'all'
     ? orders
     : tab === 'active'
-    ? orders.filter((o) => [OrderStatus.DRAFT, OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY, OrderStatus.DELIVERING].includes(o.status))
+    ? orders.filter((o) => [OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY, OrderStatus.DELIVERING].includes(o.status))
     : orders.filter((o) => o.status === tab);
 
   const activeCount = orders.filter((o) => [OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY].includes(o.status)).length;
@@ -108,7 +105,6 @@ export default function OrdersPage() {
         <TabsList>
           <TabsTrigger value="all">Todos</TabsTrigger>
           <TabsTrigger value="active">Activos</TabsTrigger>
-          <TabsTrigger value={OrderStatus.DRAFT}>Borradores</TabsTrigger>
           <TabsTrigger value={OrderStatus.DELIVERED}>Entregados</TabsTrigger>
         </TabsList>
       </Tabs>

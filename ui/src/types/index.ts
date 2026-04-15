@@ -12,7 +12,6 @@ export enum MenuItemType {
 }
 
 export enum OrderStatus {
-  DRAFT = 'draft',
   NEW = 'new',
   PREPARING = 'preparing',
   READY = 'ready',

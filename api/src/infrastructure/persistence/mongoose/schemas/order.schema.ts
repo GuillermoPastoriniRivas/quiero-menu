@@ -14,7 +14,7 @@ export class OrderModel {
   @Prop({ required: true })
   code: string;
 
-  @Prop({ required: true, enum: OrderStatus, default: OrderStatus.DRAFT })
+  @Prop({ required: true, enum: OrderStatus, default: OrderStatus.NEW })
   status: string;
 
   @Prop({ required: true })
