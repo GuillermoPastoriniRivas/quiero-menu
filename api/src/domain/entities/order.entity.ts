@@ -19,6 +19,7 @@ export class Order {
     public readonly subtotal: number,
     public readonly total: number,
     public readonly paymentMethod: string,
+    public readonly receiptUrl: string | null,
     public readonly notes: string,
     public readonly source: OrderSource,
     public readonly createdAt: Date,

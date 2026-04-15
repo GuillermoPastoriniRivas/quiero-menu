@@ -19,6 +19,18 @@ export const UpdateRestaurantRequestSchema = z.object({
     facebook: z.string().optional(),
     tiktok: z.string().optional(),
   }).nullable().optional(),
+  paymentMethods: z.object({
+    cashEnabled: z.boolean().optional(),
+    cardEnabled: z.boolean().optional(),
+    transferEnabled: z.boolean().optional(),
+    transferBankName: z.string().optional(),
+    transferAccountType: z.string().optional(),
+    transferAccountNumber: z.string().optional(),
+    transferAccountHolder: z.string().optional(),
+    transferCbu: z.string().optional(),
+    transferAlias: z.string().optional(),
+    transferNotes: z.string().optional(),
+  }).optional(),
 });
 export type UpdateRestaurantRequestDto = z.infer<typeof UpdateRestaurantRequestSchema>;
 

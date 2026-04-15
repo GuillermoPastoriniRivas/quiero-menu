@@ -21,6 +21,7 @@ export class RestaurantMapper {
       doc.status as RestaurantStatus,
       doc.customDomain,
       doc.socialLinks ?? null,
+      doc.paymentMethods ?? { cashEnabled: true, cardEnabled: true, transferEnabled: true },
       doc.createdAt,
       doc.updatedAt,
     );

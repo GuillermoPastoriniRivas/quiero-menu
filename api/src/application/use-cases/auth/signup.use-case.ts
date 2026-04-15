@@ -58,6 +58,7 @@ export class SignupUseCase {
       status: RestaurantStatus.ACTIVE,
       customDomain: null,
       socialLinks: null,
+      paymentMethods: { cashEnabled: true, cardEnabled: true, transferEnabled: true },
     });
 
     await this.userRestaurantRepo.create({

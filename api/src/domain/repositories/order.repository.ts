@@ -19,6 +19,7 @@ export interface OrderRepository {
   findByCode(restaurantId: string, code: string): Promise<Order | null>;
   findByFilters(filters: OrderFilters): Promise<PaginatedResult<Order>>;
   updateStatus(id: string, status: OrderStatus, timestamps?: Partial<Pick<Order, 'confirmedAt' | 'readyAt' | 'deliveredAt'>>): Promise<Order | null>;
+  updateReceiptUrl(id: string, receiptUrl: string): Promise<Order | null>;
   generateNextCode(restaurantId: string): Promise<string>;
   countByRestaurantIdSince(restaurantId: string, since: Date): Promise<number>;
   findNthOrderCreatedAt(restaurantId: string, since: Date, n: number): Promise<Date | null>;

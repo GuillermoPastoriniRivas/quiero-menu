@@ -51,6 +51,27 @@ export class RestaurantModel {
   @Prop({ type: Object, default: null })
   socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null;
 
+  @Prop({
+    type: Object,
+    default: {
+      cashEnabled: true,
+      cardEnabled: true,
+      transferEnabled: true,
+    },
+  })
+  paymentMethods!: {
+    cashEnabled: boolean;
+    cardEnabled: boolean;
+    transferEnabled: boolean;
+    transferBankName?: string;
+    transferAccountType?: string;
+    transferAccountNumber?: string;
+    transferAccountHolder?: string;
+    transferCbu?: string;
+    transferAlias?: string;
+    transferNotes?: string;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }

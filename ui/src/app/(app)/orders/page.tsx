@@ -239,6 +239,12 @@ export default function OrdersPage() {
                       {order.paymentMethod && (
                         <span className="text-xs text-on-surface-variant ml-2 capitalize">{order.paymentMethod}</span>
                       )}
+                      {order.receiptUrl && (
+                        <a href={order.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary ml-2 hover:underline inline-flex items-center gap-0.5">
+                          <MaterialIcon name="receipt" size="xs" />
+                          Comprobante
+                        </a>
+                      )}
                     </div>
                     {nextAction && (
                       <Button

@@ -25,6 +25,7 @@ interface CartState {
   deliveryType: DeliveryType;
   deliveryZoneId: string;
   paymentMethod: string;
+  receiptUrl: string | null;
   notes: string;
 
   addItem: (item: CartItem) => void;
@@ -34,6 +35,7 @@ interface CartState {
   setLocation: (lat: number | null, lng: number | null) => void;
   setDelivery: (data: Partial<Pick<CartState, 'deliveryType' | 'deliveryZoneId'>>) => void;
   setPaymentMethod: (method: string) => void;
+  setReceiptUrl: (url: string | null) => void;
   setNotes: (notes: string) => void;
   clear: () => void;
   subtotal: () => number;
@@ -49,6 +51,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   deliveryType: 'pickup' as DeliveryType,
   deliveryZoneId: '',
   paymentMethod: 'efectivo',
+  receiptUrl: null,
   notes: '',
 
   addItem: (item) => set((s) => ({ items: [...s.items, item] })),
@@ -61,6 +64,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   setLocation: (lat, lng) => set({ customerLatitude: lat, customerLongitude: lng }),
   setDelivery: (data) => set(data),
   setPaymentMethod: (method) => set({ paymentMethod: method }),
+  setReceiptUrl: (url) => set({ receiptUrl: url }),
   setNotes: (notes) => set({ notes }),
   clear: () =>
     set({
@@ -73,6 +77,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       deliveryType: 'pickup' as DeliveryType,
       deliveryZoneId: '',
       paymentMethod: 'efectivo',
+      receiptUrl: null,
       notes: '',
     }),
   subtotal: () => get().items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),

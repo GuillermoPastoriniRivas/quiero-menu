@@ -32,6 +32,19 @@ export enum UserRole {
 }
 
 // Entities
+export interface PaymentMethodsConfig {
+  cashEnabled: boolean;
+  cardEnabled: boolean;
+  transferEnabled: boolean;
+  transferBankName?: string;
+  transferAccountType?: string;
+  transferAccountNumber?: string;
+  transferAccountHolder?: string;
+  transferCbu?: string;
+  transferAlias?: string;
+  transferNotes?: string;
+}
+
 export interface Restaurant {
   id: string;
   slug: string;
@@ -49,6 +62,7 @@ export interface Restaurant {
   status: RestaurantStatus;
   customDomain: string | null;
   socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null;
+  paymentMethods: PaymentMethodsConfig;
   createdAt: string;
   updatedAt: string;
 }
@@ -129,6 +143,7 @@ export interface Order {
   subtotal: number;
   total: number;
   paymentMethod: string;
+  receiptUrl: string | null;
   notes: string;
   source: string;
   createdAt: string;

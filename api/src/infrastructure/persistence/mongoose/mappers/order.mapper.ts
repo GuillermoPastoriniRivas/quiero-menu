@@ -22,6 +22,7 @@ export class OrderMapper {
       doc.subtotal,
       doc.total,
       doc.paymentMethod,
+      doc.receiptUrl ?? null,
       doc.notes,
       doc.source as OrderSource,
       doc.createdAt,

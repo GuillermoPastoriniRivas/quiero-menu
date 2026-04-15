@@ -1,5 +1,18 @@
 import { RestaurantStatus } from '../enums/restaurant-status.enum.js';
 
+export interface PaymentMethodsConfig {
+  cashEnabled: boolean;
+  cardEnabled: boolean;
+  transferEnabled: boolean;
+  transferBankName?: string;
+  transferAccountType?: string;
+  transferAccountNumber?: string;
+  transferAccountHolder?: string;
+  transferCbu?: string;
+  transferAlias?: string;
+  transferNotes?: string;
+}
+
 export class Restaurant {
   constructor(
     public readonly id: string,
@@ -18,6 +31,7 @@ export class Restaurant {
     public readonly status: RestaurantStatus,
     public readonly customDomain: string | null,
     public readonly socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null,
+    public readonly paymentMethods: PaymentMethodsConfig,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}

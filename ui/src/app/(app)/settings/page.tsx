@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import type { OperatingHours, DeliveryZone, KitchenAccessToken } from '@/types';
+import type { OperatingHours, DeliveryZone, KitchenAccessToken, PaymentMethodsConfig } from '@/types';
 import { PlanTier } from '@/types';
 import { toast } from 'sonner';
 import { MaterialIcon } from '@/components/ui/material-icon';
@@ -29,6 +29,14 @@ export default function SettingsPage() {
   const [currency, setCurrency] = useState('');
   const [instagram, setInstagram] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Payment methods
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodsConfig>({
+    cashEnabled: true,
+    cardEnabled: true,
+    transferEnabled: true,
+  });
+  const [savingPayments, setSavingPayments] = useState(false);
 
   // Delivery zones
   const [zones, setZones] = useState<DeliveryZone[]>([]);
@@ -72,6 +80,9 @@ export default function SettingsPage() {
       setCity(restaurant.city);
       setCurrency(restaurant.currency);
       setInstagram(restaurant.socialLinks?.instagram || '');
+      if (restaurant.paymentMethods) {
+        setPaymentMethods(restaurant.paymentMethods);
+      }
     }
   }, [restaurant]);
 
@@ -142,6 +153,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="general">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="payments">Pagos</TabsTrigger>
           <TabsTrigger value="billing">Plan</TabsTrigger>
           <TabsTrigger value="delivery">Zonas de delivery</TabsTrigger>
           <TabsTrigger value="kitchen">Cocina</TabsTrigger>
@@ -203,6 +215,91 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Metodos de pago</CardTitle>
+              <CardDescription>Activa o desactiva los metodos de pago que aceptas en tu storefront</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Efectivo</p>
+                  <p className="text-sm text-muted-foreground">El cliente paga en efectivo al recibir el pedido</p>
+                </div>
+                <Switch checked={paymentMethods.cashEnabled} onCheckedChange={(checked) => setPaymentMethods((p) => ({ ...p, cashEnabled: checked }))} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Tarjeta</p>
+                  <p className="text-sm text-muted-foreground">El cliente paga con tarjeta al recibir el pedido</p>
+                </div>
+                <Switch checked={paymentMethods.cardEnabled} onCheckedChange={(checked) => setPaymentMethods((p) => ({ ...p, cardEnabled: checked }))} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Transferencia</p>
+                  <p className="text-sm text-muted-foreground">El cliente transfiere antes de recibir el pedido</p>
+                </div>
+                <Switch checked={paymentMethods.transferEnabled} onCheckedChange={(checked) => setPaymentMethods((p) => ({ ...p, transferEnabled: checked }))} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {paymentMethods.transferEnabled && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Datos para transferencia</CardTitle>
+                <CardDescription>Estos datos se muestran al cliente cuando elige pagar por transferencia</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Banco</Label>
+                    <Input value={paymentMethods.transferBankName || ''} onChange={(e) => setPaymentMethods((p) => ({ ...p, transferBankName: e.target.value }))} placeholder="Ej: Banco Nacion" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo de cuenta</Label>
+                    <Input value={paymentMethods.transferAccountType || ''} onChange={(e) => setPaymentMethods((p) => ({ ...p, transferAccountType: e.target.value }))} placeholder="Ej: Cuenta corriente" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Numero de cuenta</Label>
+                    <Input value={paymentMethods.transferAccountNumber || ''} onChange={(e) => setPaymentMethods((p) => ({ ...p, transferAccountNumber: e.target.value }))} placeholder="Ej: 123-456789/0" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Titular</Label>
+                    <Input value={paymentMethods.transferAccountHolder || ''} onChange={(e) => setPaymentMethods((p) => ({ ...p, transferAccountHolder: e.target.value }))} placeholder="Nombre del titular" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CBU / CVU</Label>
+                    <Input value={paymentMethods.transferCbu || ''} onChange={(e) => setPaymentMethods((p) => ({ ...p, transferCbu: e.target.value }))} placeholder="0000000000000000000000" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Alias</Label>
+                    <Input value={paymentMethods.transferAlias || ''} onChange={(e) => setPaymentMethods((p) => ({ ...p, transferAlias: e.target.value }))} placeholder="mi.alias.transferencia" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notas adicionales</Label>
+                  <Textarea value={paymentMethods.transferNotes || ''} onChange={(e) => setPaymentMethods((p) => ({ ...p, transferNotes: e.target.value }))} placeholder="Ej: Enviar comprobante por WhatsApp" rows={2} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Button disabled={savingPayments} onClick={async () => {
+            setSavingPayments(true);
+            try {
+              await update({ paymentMethods });
+              toast.success('Metodos de pago guardados');
+            } catch (err: any) {
+              toast.error(err.message);
+            } finally {
+              setSavingPayments(false);
+            }
+          }}>{savingPayments ? 'Guardando...' : 'Guardar pagos'}</Button>
         </TabsContent>
 
         <TabsContent value="billing" className="space-y-4 mt-4">

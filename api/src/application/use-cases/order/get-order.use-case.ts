@@ -77,6 +77,7 @@ export class GetOrderUseCase {
       0,
       0,
       '',
+      null,
       '',
       order.source,
       order.createdAt,

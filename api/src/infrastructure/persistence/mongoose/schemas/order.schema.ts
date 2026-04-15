@@ -50,6 +50,9 @@ export class OrderModel {
   @Prop({ default: '' })
   paymentMethod: string;
 
+  @Prop({ type: String, default: null })
+  receiptUrl: string | null;
+
   @Prop({ default: '' })
   notes: string;
 

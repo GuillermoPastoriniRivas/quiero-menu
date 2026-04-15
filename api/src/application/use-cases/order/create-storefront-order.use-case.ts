@@ -32,6 +32,7 @@ export interface CreateStorefrontOrderInput {
   deliveryType: DeliveryType;
   deliveryZoneId?: string;
   paymentMethod: string;
+  receiptUrl?: string | null;
   notes: string;
 }
 
@@ -129,6 +130,7 @@ export class CreateStorefrontOrderUseCase {
       subtotal,
       total,
       paymentMethod: input.paymentMethod,
+      receiptUrl: input.receiptUrl ?? null,
       notes: input.notes,
       source: OrderSource.STOREFRONT,
     });

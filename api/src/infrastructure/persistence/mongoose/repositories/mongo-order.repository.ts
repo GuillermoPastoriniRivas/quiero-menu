@@ -60,6 +60,11 @@ export class MongoOrderRepository implements OrderRepository {
     return doc ? OrderMapper.toDomain(doc) : null;
   }
 
+  async updateReceiptUrl(id: string, receiptUrl: string): Promise<Order | null> {
+    const doc = await this.model.findByIdAndUpdate(id, { $set: { receiptUrl } }, { returnDocument: 'after' });
+    return doc ? OrderMapper.toDomain(doc) : null;
+  }
+
   async countByRestaurantIdSince(restaurantId: string, since: Date): Promise<number> {
     return this.model.countDocuments({
       restaurantId: new Types.ObjectId(restaurantId),

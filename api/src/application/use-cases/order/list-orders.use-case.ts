@@ -40,6 +40,7 @@ function redactOrder(order: Order): OrderWithRedaction {
       0,
       0,
       '',
+      null,
       '',
       order.source,
       order.createdAt,

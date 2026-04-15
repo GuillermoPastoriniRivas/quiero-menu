@@ -18,6 +18,7 @@ export const CreateStorefrontOrderRequestSchema = z.object({
   deliveryType: z.nativeEnum(DeliveryType),
   deliveryZoneId: z.string().optional(),
   paymentMethod: z.string().optional().default('efectivo'),
+  receiptUrl: z.string().url().nullable().optional().default(null),
   notes: z.string().max(500).optional().default(''),
 });
 export type CreateStorefrontOrderRequestDto = z.infer<typeof CreateStorefrontOrderRequestSchema>;
