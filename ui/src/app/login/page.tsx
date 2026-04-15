@@ -85,6 +85,12 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-xs text-primary font-semibold hover:underline">
+                Olvidaste tu contrasena?
+              </Link>
+            </div>
+
             <Button type="submit" className="w-full mt-6" size="lg" disabled={loading}>
               {loading ? 'Ingresando...' : 'Ingresar'}
             </Button>
