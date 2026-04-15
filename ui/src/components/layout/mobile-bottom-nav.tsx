@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const NAV_ITEMS = [
   { href: '/orders', label: 'Pedidos', icon: 'confirmation_number' },
   { href: '/menu', label: 'Menú', icon: 'restaurant_menu' },
-  { href: '/mi-menu', label: 'Publicar', icon: 'share' },
+  { href: '/publicar', label: 'Publicar', icon: 'share' },
   { href: '/settings', label: 'Cuenta', icon: 'person' },
 ];
 

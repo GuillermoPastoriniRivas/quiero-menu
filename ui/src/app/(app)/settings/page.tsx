@@ -212,7 +212,7 @@ export default function SettingsPage() {
                     <MaterialIcon name="content_copy" size="sm" />
                   </Button>
                 </div>
-                <a href="/mi-menu" className="inline-flex items-center gap-1 text-sm text-primary font-medium hover:underline">
+                <a href="/publicar" className="inline-flex items-center gap-1 text-sm text-primary font-medium hover:underline">
                   <MaterialIcon name="qr_code_2" size="sm" />
                   QR, WhatsApp y mas opciones
                 </a>

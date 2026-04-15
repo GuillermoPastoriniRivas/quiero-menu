@@ -69,8 +69,8 @@ export default function LandingPage() {
                   <div className="relative">
                     <img
                       alt="Pizzeria cover"
-                      className="w-full h-40 object-cover object-top"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLBC89WbgjxI3A9hWf296UcipvrpO80HZfyBLeINShHNQy_q56JDOIer_ZV6SxmBXbArmWLztNKBwTPo8iQUuB7ehNU_pIvNwQPyCJSpHABgIxJOAkvnSEij5wDexlNCgUwMSOrNUujnzmMj2GLRSU3Ye_YNDE_3aoZU1dOa4B5ph2Nmnxhty_MUvXP3NShU6fqhgOxgDy1VtsFHf_-MBas5hJI6OGgz3X91hc6eY1xRGiXqGllUkDaPjCtGSSrm6H1bgDErzIgzY"
+                      className="w-full h-40 object-cover"
+                      src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=640&q=80"
                     />
                     <div className="absolute -bottom-5 left-3 w-11 h-11 bg-white rounded-xl shadow-md flex items-center justify-center border border-gray-100">
                       <MaterialIcon name="local_pizza" className="text-primary" size="lg" />
@@ -108,9 +108,7 @@ export default function LandingPage() {
                   {/* Products */}
                   <div className="px-3 pb-20 space-y-2 mt-1">
                     <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100">
-                      <div className="w-16 h-16 bg-orange-50 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
-                        <MaterialIcon name="local_pizza" size="xl" className="text-primary/40" />
-                      </div>
+                      <img src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=200&q=80" alt="Margherita" className="w-16 h-16 rounded-lg flex-shrink-0 object-cover" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-xs text-on-surface">Pizza Margherita</p>
                         <p className="text-[9px] text-on-surface-variant mt-0.5 line-clamp-2">Salsa de tomate, mozzarella fresca y albahaca.</p>
@@ -123,9 +121,7 @@ export default function LandingPage() {
                       </div>
                     </div>
                     <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100">
-                      <div className="w-16 h-16 bg-orange-50 rounded-lg flex-shrink-0 flex items-center justify-center">
-                        <MaterialIcon name="local_pizza" size="xl" className="text-primary/40" />
-                      </div>
+                      <img src="https://images.unsplash.com/photo-1628840042765-356cda07504e?w=200&q=80" alt="Pepperoni" className="w-16 h-16 rounded-lg flex-shrink-0 object-cover" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-xs text-on-surface">Pizza Pepperoni</p>
                         <p className="text-[9px] text-on-surface-variant mt-0.5 line-clamp-2">Mucho pepperoni con extra queso mozzarella.</p>
@@ -139,9 +135,7 @@ export default function LandingPage() {
                     </div>
                     <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100 relative">
                       <div className="absolute top-1.5 right-1.5 bg-amber-100 text-amber-700 text-[7px] font-bold px-1.5 py-0.5 rounded-full">MAS PEDIDA</div>
-                      <div className="w-16 h-16 bg-orange-50 rounded-lg flex-shrink-0 flex items-center justify-center">
-                        <MaterialIcon name="local_pizza" size="xl" className="text-primary/40" />
-                      </div>
+                      <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&q=80" alt="4 Quesos" className="w-16 h-16 rounded-lg flex-shrink-0 object-cover" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-xs text-on-surface">Pizza 4 Quesos</p>
                         <p className="text-[9px] text-on-surface-variant mt-0.5 line-clamp-2">Mozzarella, provolone, roquefort y parmesano.</p>

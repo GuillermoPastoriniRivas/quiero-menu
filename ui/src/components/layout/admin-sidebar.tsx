@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Analytics', icon: 'bar_chart' },
   { href: '/orders', label: 'Pedidos', icon: 'receipt_long' },
   { href: '/menu', label: 'Menu', icon: 'restaurant_menu' },
-  { href: '/mi-menu', label: 'Publicar', icon: 'share' },
+  { href: '/publicar', label: 'Publicar', icon: 'share' },
   { href: '/settings', label: 'Configuracion', icon: 'settings' },
 ];
 
