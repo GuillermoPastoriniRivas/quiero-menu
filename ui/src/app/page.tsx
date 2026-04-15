@@ -352,8 +352,8 @@ export default function LandingPage() {
             <a className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#funciones">Funciones</a>
             <a className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#precios">Precios</a>
             <Link className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/dashboard">Panel</Link>
-            <a className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Soporte</a>
-            <a className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacidad</a>
+            <Link className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/terms">Terminos</Link>
+            <Link className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/privacy">Privacidad</Link>
           </div>
         </div>
       </footer>
