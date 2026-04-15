@@ -46,7 +46,7 @@ export async function uploadImage(
     body: compressed,
   });
 
-  if (!res.ok) throw new Error('Upload failed');
+  if (!res.ok) throw new Error('Error al subir la imagen');
 
   onProgress?.(100);
   return publicUrl;

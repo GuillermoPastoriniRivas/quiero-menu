@@ -6,10 +6,10 @@ import { MaterialIcon } from '@/components/ui/material-icon';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Store', icon: 'storefront' },
-  { href: '/orders', label: 'Orders', icon: 'confirmation_number' },
-  { href: '/menu', label: 'Menu', icon: 'restaurant_menu' },
-  { href: '/settings', label: 'Account', icon: 'person' },
+  { href: '/dashboard', label: 'Tienda', icon: 'storefront' },
+  { href: '/orders', label: 'Pedidos', icon: 'confirmation_number' },
+  { href: '/menu', label: 'Menú', icon: 'restaurant_menu' },
+  { href: '/settings', label: 'Cuenta', icon: 'person' },
 ];
 
 export function MobileBottomNav() {
