@@ -29,4 +29,9 @@ export class MongoUserRepository implements UserRepository {
     const doc = await this.model.findByIdAndUpdate(id, { $set: { passwordHash } }, { returnDocument: 'after' });
     return doc ? UserMapper.toDomain(doc) : null;
   }
+
+  async updateEmailVerified(id: string, emailVerified: boolean): Promise<User | null> {
+    const doc = await this.model.findByIdAndUpdate(id, { $set: { emailVerified } }, { returnDocument: 'after' });
+    return doc ? UserMapper.toDomain(doc) : null;
+  }
 }

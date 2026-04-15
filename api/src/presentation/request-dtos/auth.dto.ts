@@ -19,3 +19,19 @@ export const RefreshTokenRequestSchema = z.object({
   refreshToken: z.string().min(1),
 });
 export type RefreshTokenRequestDto = z.infer<typeof RefreshTokenRequestSchema>;
+
+export const VerifyEmailRequestSchema = z.object({
+  token: z.string().min(1),
+});
+export type VerifyEmailRequestDto = z.infer<typeof VerifyEmailRequestSchema>;
+
+export const ForgotPasswordRequestSchema = z.object({
+  email: z.string().email(),
+});
+export type ForgotPasswordRequestDto = z.infer<typeof ForgotPasswordRequestSchema>;
+
+export const ResetPasswordRequestSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(6),
+});
+export type ResetPasswordRequestDto = z.infer<typeof ResetPasswordRequestSchema>;

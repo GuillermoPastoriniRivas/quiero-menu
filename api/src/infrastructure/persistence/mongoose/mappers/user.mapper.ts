@@ -8,6 +8,7 @@ export class UserMapper {
       doc.email,
       doc.passwordHash,
       doc.name,
+      doc.emailVerified ?? false,
       doc.createdAt,
     );
   }

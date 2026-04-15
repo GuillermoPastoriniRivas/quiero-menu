@@ -16,6 +16,7 @@ import { RefreshTokenModel, RefreshTokenSchema } from './mongoose/schemas/refres
 import { KitchenAccessTokenModel, KitchenAccessTokenSchema } from './mongoose/schemas/kitchen-access-token.schema.js';
 import { SubscriptionModel, SubscriptionSchema } from './mongoose/schemas/subscription.schema.js';
 import { BillingRecordModel, BillingRecordSchema } from './mongoose/schemas/billing-record.schema.js';
+import { VerificationTokenModel, VerificationTokenSchema } from './mongoose/schemas/verification-token.schema.js';
 
 import { MongoRestaurantRepository } from './mongoose/repositories/mongo-restaurant.repository.js';
 import { MongoOperatingHoursRepository } from './mongoose/repositories/mongo-operating-hours.repository.js';
@@ -32,6 +33,7 @@ import { MongoRefreshTokenRepository } from './mongoose/repositories/mongo-refre
 import { MongoKitchenAccessTokenRepository } from './mongoose/repositories/mongo-kitchen-access-token.repository.js';
 import { MongoSubscriptionRepository } from './mongoose/repositories/mongo-subscription.repository.js';
 import { MongoBillingRecordRepository } from './mongoose/repositories/mongo-billing-record.repository.js';
+import { MongoVerificationTokenRepository } from './mongoose/repositories/mongo-verification-token.repository.js';
 
 const schemas = MongooseModule.forFeature([
   { name: RestaurantModel.name, schema: RestaurantSchema },
@@ -50,6 +52,7 @@ const schemas = MongooseModule.forFeature([
   { name: KitchenAccessTokenModel.name, schema: KitchenAccessTokenSchema },
   { name: SubscriptionModel.name, schema: SubscriptionSchema },
   { name: BillingRecordModel.name, schema: BillingRecordSchema },
+  { name: VerificationTokenModel.name, schema: VerificationTokenSchema },
 ]);
 
 const repositories = [
@@ -68,6 +71,7 @@ const repositories = [
   { provide: 'KitchenAccessTokenRepository', useClass: MongoKitchenAccessTokenRepository },
   { provide: 'SubscriptionRepository', useClass: MongoSubscriptionRepository },
   { provide: 'BillingRecordRepository', useClass: MongoBillingRecordRepository },
+  { provide: 'VerificationTokenRepository', useClass: MongoVerificationTokenRepository },
 ];
 
 @Module({

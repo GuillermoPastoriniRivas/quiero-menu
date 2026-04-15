@@ -1,12 +1,22 @@
-import { Controller, Post, Get, Body, Inject, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Inject, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { Public } from '../decorators/public.decorator.js';
 import { CurrentUser, RequestUser } from '../decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '../pipes/zod-validation.pipe.js';
-import { LoginRequestSchema, LoginRequestDto, SignupRequestSchema, SignupRequestDto, RefreshTokenRequestSchema, RefreshTokenRequestDto } from '../request-dtos/auth.dto.js';
+import {
+  LoginRequestSchema, LoginRequestDto,
+  SignupRequestSchema, SignupRequestDto,
+  RefreshTokenRequestSchema, RefreshTokenRequestDto,
+  VerifyEmailRequestSchema, VerifyEmailRequestDto,
+  ForgotPasswordRequestSchema, ForgotPasswordRequestDto,
+  ResetPasswordRequestSchema, ResetPasswordRequestDto,
+} from '../request-dtos/auth.dto.js';
 import type { LoginUseCase } from '../../application/use-cases/auth/login.use-case.js';
 import type { SignupUseCase } from '../../application/use-cases/auth/signup.use-case.js';
 import type { RefreshTokenUseCase } from '../../application/use-cases/auth/refresh-token.use-case.js';
 import type { GetCurrentUserUseCase } from '../../application/use-cases/auth/get-current-user.use-case.js';
+import type { VerifyEmailUseCase } from '../../application/use-cases/auth/verify-email.use-case.js';
+import type { ForgotPasswordUseCase } from '../../application/use-cases/auth/forgot-password.use-case.js';
+import type { ResetPasswordUseCase } from '../../application/use-cases/auth/reset-password.use-case.js';
 
 @Controller('auth')
 export class AuthController {
@@ -15,6 +25,9 @@ export class AuthController {
     @Inject('SignupUseCase') private readonly signupUseCase: SignupUseCase,
     @Inject('RefreshTokenUseCase') private readonly refreshTokenUseCase: RefreshTokenUseCase,
     @Inject('GetCurrentUserUseCase') private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
+    @Inject('VerifyEmailUseCase') private readonly verifyEmailUseCase: VerifyEmailUseCase,
+    @Inject('ForgotPasswordUseCase') private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    @Inject('ResetPasswordUseCase') private readonly resetPasswordUseCase: ResetPasswordUseCase,
   ) {}
 
   @Public()
@@ -39,6 +52,29 @@ export class AuthController {
     const result = await this.refreshTokenUseCase.execute(body.refreshToken);
     if (!result.ok) throw new UnauthorizedException(result.error.message);
     return result.value;
+  }
+
+  @Public()
+  @Post('verify-email')
+  async verifyEmail(@Body(new ZodValidationPipe(VerifyEmailRequestSchema)) body: VerifyEmailRequestDto) {
+    const result = await this.verifyEmailUseCase.execute(body.token);
+    if (!result.ok) throw new BadRequestException(result.error.message);
+    return { ok: true };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  async forgotPassword(@Body(new ZodValidationPipe(ForgotPasswordRequestSchema)) body: ForgotPasswordRequestDto) {
+    await this.forgotPasswordUseCase.execute(body.email);
+    return { ok: true };
+  }
+
+  @Public()
+  @Post('reset-password')
+  async resetPassword(@Body(new ZodValidationPipe(ResetPasswordRequestSchema)) body: ResetPasswordRequestDto) {
+    const result = await this.resetPasswordUseCase.execute(body.token, body.password);
+    if (!result.ok) throw new BadRequestException(result.error.message);
+    return { ok: true };
   }
 
   @Get('me')

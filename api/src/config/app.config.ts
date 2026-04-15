@@ -28,6 +28,10 @@ export default () => ({
     region: process.env.S3_REGION ?? 'us-east-1',
     cloudfrontDomain: process.env.CLOUDFRONT_DOMAIN ?? 'd2y3u1bswha7un.cloudfront.net',
   },
+  ses: {
+    region: process.env.SES_REGION ?? 'us-east-1',
+    fromEmail: process.env.SES_FROM_EMAIL ?? 'quiero.menu <no-reply@quiero.menu>',
+  },
   lemonSqueezy: {
     apiKey: process.env.LEMON_SQUEEZY_API_KEY ?? '',
     storeId: process.env.LEMON_SQUEEZY_STORE_ID ?? '',

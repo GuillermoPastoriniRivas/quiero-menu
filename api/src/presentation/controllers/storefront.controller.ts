@@ -6,6 +6,7 @@ import { PresignedUrlRequestSchema, PresignedUrlRequestDto } from '../request-dt
 import type { GetRestaurantBySlugUseCase } from '../../application/use-cases/restaurant/get-restaurant-by-slug.use-case.js';
 import type { CreateStorefrontOrderUseCase } from '../../application/use-cases/order/create-storefront-order.use-case.js';
 import type { GenerateUploadUrlUseCase } from '../../application/use-cases/upload/generate-upload-url.use-case.js';
+import type { NotifyReceiptUploadedUseCase } from '../../application/use-cases/order/notify-receipt-uploaded.use-case.js';
 import type { OrderRepository } from '../../domain/repositories/order.repository.js';
 import { DeliveryType } from '../../domain/enums/delivery-type.enum.js';
 
@@ -15,6 +16,7 @@ export class StorefrontController {
     @Inject('GetRestaurantBySlugUseCase') private readonly getBySlug: GetRestaurantBySlugUseCase,
     @Inject('CreateStorefrontOrderUseCase') private readonly createOrder: CreateStorefrontOrderUseCase,
     @Inject('GenerateUploadUrlUseCase') private readonly generateUploadUrl: GenerateUploadUrlUseCase,
+    @Inject('NotifyReceiptUploadedUseCase') private readonly notifyReceipt: NotifyReceiptUploadedUseCase,
     @Inject('OrderRepository') private readonly orderRepo: OrderRepository,
   ) {}
 
@@ -68,6 +70,10 @@ export class StorefrontController {
   ) {
     const order = await this.orderRepo.updateReceiptUrl(id, body.receiptUrl);
     if (!order) throw new NotFoundException('Order not found');
+
+    // Notify owner (fire-and-forget)
+    this.notifyReceipt.execute(id, body.receiptUrl).catch(() => {});
+
     return { ok: true };
   }
 }

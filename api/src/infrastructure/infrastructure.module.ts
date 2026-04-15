@@ -5,9 +5,10 @@ import { WebSocketInfraModule } from './websocket/websocket.module.js';
 import { AiModule } from './ai/ai.module.js';
 import { PaymentModule } from './payment/payment.module.js';
 import { StorageModule } from './storage/storage.module.js';
+import { EmailModule } from './email/email.module.js';
 
 @Module({
-  imports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule, StorageModule],
-  exports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule, StorageModule],
+  imports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule, StorageModule, EmailModule],
+  exports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule, StorageModule, EmailModule],
 })
 export class InfrastructureModule {}

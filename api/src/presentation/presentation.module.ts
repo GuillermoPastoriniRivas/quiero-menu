@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 import { InfrastructureModule } from '../infrastructure/infrastructure.module.js';
 
 // Guards
@@ -26,6 +27,9 @@ import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
 import { SignupUseCase } from '../application/use-cases/auth/signup.use-case.js';
 import { RefreshTokenUseCase } from '../application/use-cases/auth/refresh-token.use-case.js';
 import { GetCurrentUserUseCase } from '../application/use-cases/auth/get-current-user.use-case.js';
+import { VerifyEmailUseCase } from '../application/use-cases/auth/verify-email.use-case.js';
+import { ForgotPasswordUseCase } from '../application/use-cases/auth/forgot-password.use-case.js';
+import { ResetPasswordUseCase } from '../application/use-cases/auth/reset-password.use-case.js';
 
 // Use Cases — Restaurant
 import { GetRestaurantUseCase } from '../application/use-cases/restaurant/get-restaurant.use-case.js';
@@ -56,6 +60,7 @@ import { CreateStorefrontOrderUseCase } from '../application/use-cases/order/cre
 import { ListOrdersUseCase } from '../application/use-cases/order/list-orders.use-case.js';
 import { GetOrderUseCase } from '../application/use-cases/order/get-order.use-case.js';
 import { UpdateOrderStatusUseCase } from '../application/use-cases/order/update-order-status.use-case.js';
+import { NotifyReceiptUploadedUseCase } from '../application/use-cases/order/notify-receipt-uploaded.use-case.js';
 
 // Use Cases — Delivery Zone
 import { CreateDeliveryZoneUseCase } from '../application/use-cases/delivery-zone/create-delivery-zone.use-case.js';
@@ -93,9 +98,9 @@ const useCaseProviders = [
   },
   {
     provide: 'SignupUseCase',
-    useFactory: (userRepo: any, restRepo: any, urRepo: any, rtRepo: any, hasher: any, tokenProvider: any, subRepo: any) =>
-      new SignupUseCase(userRepo, restRepo, urRepo, rtRepo, hasher, tokenProvider, subRepo),
-    inject: ['UserRepository', 'RestaurantRepository', 'UserRestaurantRepository', 'RefreshTokenRepository', 'PasswordHasherPort', 'TokenProviderPort', 'SubscriptionRepository'],
+    useFactory: (userRepo: any, restRepo: any, urRepo: any, rtRepo: any, hasher: any, tokenProvider: any, subRepo: any, vtRepo: any, emailService: any, config: ConfigService) =>
+      new SignupUseCase(userRepo, restRepo, urRepo, rtRepo, hasher, tokenProvider, subRepo, vtRepo, emailService, config.get<string>('frontendUrl')!),
+    inject: ['UserRepository', 'RestaurantRepository', 'UserRestaurantRepository', 'RefreshTokenRepository', 'PasswordHasherPort', 'TokenProviderPort', 'SubscriptionRepository', 'VerificationTokenRepository', 'EmailServicePort', ConfigService],
   },
   {
     provide: 'RefreshTokenUseCase',
@@ -108,6 +113,25 @@ const useCaseProviders = [
     useFactory: (userRepo: any, urRepo: any, restRepo: any) =>
       new GetCurrentUserUseCase(userRepo, urRepo, restRepo),
     inject: ['UserRepository', 'UserRestaurantRepository', 'RestaurantRepository'],
+  },
+
+  {
+    provide: 'VerifyEmailUseCase',
+    useFactory: (userRepo: any, vtRepo: any) =>
+      new VerifyEmailUseCase(userRepo, vtRepo),
+    inject: ['UserRepository', 'VerificationTokenRepository'],
+  },
+  {
+    provide: 'ForgotPasswordUseCase',
+    useFactory: (userRepo: any, vtRepo: any, emailService: any, config: ConfigService) =>
+      new ForgotPasswordUseCase(userRepo, vtRepo, emailService, config.get<string>('frontendUrl')!),
+    inject: ['UserRepository', 'VerificationTokenRepository', 'EmailServicePort', ConfigService],
+  },
+  {
+    provide: 'ResetPasswordUseCase',
+    useFactory: (userRepo: any, vtRepo: any, rtRepo: any, hasher: any) =>
+      new ResetPasswordUseCase(userRepo, vtRepo, rtRepo, hasher),
+    inject: ['UserRepository', 'VerificationTokenRepository', 'RefreshTokenRepository', 'PasswordHasherPort'],
   },
 
   // Restaurant
@@ -244,6 +268,12 @@ const useCaseProviders = [
     provide: 'UpdateOrderStatusUseCase',
     useFactory: (orderRepo: any, gateway: any) => new UpdateOrderStatusUseCase(orderRepo, gateway),
     inject: ['OrderRepository', 'RealtimeGatewayPort'],
+  },
+  {
+    provide: 'NotifyReceiptUploadedUseCase',
+    useFactory: (orderRepo: any, restRepo: any, urRepo: any, userRepo: any, emailService: any, config: ConfigService) =>
+      new NotifyReceiptUploadedUseCase(orderRepo, restRepo, urRepo, userRepo, emailService, config.get<string>('frontendUrl')!),
+    inject: ['OrderRepository', 'RestaurantRepository', 'UserRestaurantRepository', 'UserRepository', 'EmailServicePort', ConfigService],
   },
 
   // Delivery Zone

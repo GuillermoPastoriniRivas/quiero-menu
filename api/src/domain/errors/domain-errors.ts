@@ -97,3 +97,15 @@ export class DeliveryZoneNotFoundError extends DomainError {
     super('DELIVERY_ZONE_NOT_FOUND', 'Delivery zone not found.');
   }
 }
+
+export class InvalidTokenError extends DomainError {
+  constructor() {
+    super('INVALID_TOKEN', 'The token is invalid or has already been used.');
+  }
+}
+
+export class TokenExpiredError extends DomainError {
+  constructor() {
+    super('TOKEN_EXPIRED', 'The token has expired.');
+  }
+}

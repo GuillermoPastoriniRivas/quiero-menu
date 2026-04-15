@@ -4,6 +4,7 @@ export class User {
     public readonly email: string,
     public readonly passwordHash: string,
     public readonly name: string,
+    public readonly emailVerified: boolean,
     public readonly createdAt: Date,
   ) {}
 }

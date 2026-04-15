@@ -14,6 +14,9 @@ export class UserModel {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ default: false })
+  emailVerified: boolean;
+
   createdAt: Date;
 }
 
