@@ -422,7 +422,7 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
 
       {/* ── Item detail sheet ── */}
       <Sheet open={!!selectedItem} onOpenChange={(open) => { if (!open) closeItemDetail(); }}>
-        <SheetContent side="bottom" className="h-[85vh] overflow-auto rounded-t-3xl">
+        <SheetContent side="bottom" className="h-[85vh] overflow-auto rounded-t-3xl" showCloseButton={false}>
           {selectedItem && (
             <div className="space-y-5 p-6">
               <div className="flex items-start justify-between">
