@@ -21,11 +21,8 @@ export const metadata: Metadata = {
   title: "Quiero Menu - Menu digital para restaurantes",
   description: "Crea tu menu digital y recibe pedidos por WhatsApp",
   icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" },
-    ],
-    apple: "/icon.svg",
+    icon: [{ url: "/icon.svg?v=2", type: "image/svg+xml", sizes: "any" }],
+    apple: [{ url: "/icon.svg?v=2", type: "image/svg+xml", sizes: "any" }],
   },
 };
 
@@ -37,9 +34,8 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}>
       <head>
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="icon" href="/icon.svg?v=2" type="image/svg+xml" sizes="any" />
+        <link rel="apple-touch-icon" href="/icon.svg?v=2" type="image/svg+xml" sizes="any" />
         <link rel="manifest" href="/manifest.json" />
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
