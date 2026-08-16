@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { Logo } from '@/components/ui/logo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -37,8 +38,7 @@ export default function LoginPage() {
       {/* Header */}
       <header className="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 bg-surface">
         <div className="flex items-center gap-2">
-          <MaterialIcon name="receipt_long" size="lg" className="text-primary" />
-          <span className="font-extrabold text-xl tracking-tight text-on-background" style={{ fontFamily: 'var(--font-heading)' }}>Quiero Menu</span>
+          <Logo size="md" />
         </div>
         <Link href="/signup" className="text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors">
           Registrate

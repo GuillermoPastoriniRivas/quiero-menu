@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { Logo } from '@/components/ui/logo';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -14,8 +15,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 bg-white/90 bg-glass border-b border-outline-variant/30">
         <div className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
           <div className="flex items-center">
-            <span className="text-2xl font-extrabold text-on-surface tracking-tight font-[family-name:var(--font-heading)]">quiero</span>
-            <span className="text-2xl font-extrabold text-primary tracking-tight font-[family-name:var(--font-heading)]">.menu</span>
+            <Logo size="md" />
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a className="text-primary font-semibold font-[family-name:var(--font-heading)]" href="#inicio">Inicio</a>
@@ -409,8 +409,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col gap-2 items-center md:items-start">
             <div className="flex items-center">
-              <span className="text-xl font-extrabold text-on-surface tracking-tight font-[family-name:var(--font-heading)]">quiero</span>
-              <span className="text-xl font-extrabold text-primary tracking-tight font-[family-name:var(--font-heading)]">.menu</span>
+              <Logo size="sm" />
             </div>
             <p className="text-sm text-on-surface-variant">&copy; 2026 quiero.menu. Todos los derechos reservados.</p>
           </div>

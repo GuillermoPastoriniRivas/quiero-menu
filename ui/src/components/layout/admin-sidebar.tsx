@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRestaurantStore } from '@/stores/restaurant.store';
+import { Logo } from '@/components/ui/logo';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { cn } from '@/lib/utils';
 
@@ -27,9 +28,7 @@ export function AdminSidebar() {
     <aside className="hidden lg:flex flex-col h-screen w-72 bg-white sticky top-0 shadow-[4px_0_16px_rgba(0,0,0,0.03)]">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-8">
-        <span className="text-2xl font-extrabold text-on-background tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-          Quiero Menu
-        </span>
+        <Logo size="lg" />
       </div>
 
       {/* Navigation */}

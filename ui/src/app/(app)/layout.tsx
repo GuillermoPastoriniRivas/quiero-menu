@@ -1,6 +1,7 @@
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { Logo } from '@/components/ui/logo';
 import { MaterialIcon } from '@/components/ui/material-icon';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -12,8 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Mobile Top Bar */}
           <header className="lg:hidden flex justify-between items-center w-full px-6 h-16 bg-white/90 backdrop-blur-xl sticky top-0 z-40 border-b border-outline-variant/10">
             <div className="flex items-center gap-2">
-              <MaterialIcon name="receipt_long" size="md" className="text-primary" />
-              <span className="text-lg font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Quiero Menu</span>
+              <Logo size="sm" />
             </div>
             <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
               <MaterialIcon name="person" size="sm" className="text-on-surface-variant" />

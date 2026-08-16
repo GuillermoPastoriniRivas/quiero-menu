@@ -135,7 +135,7 @@ export default function DeliveryBoardPage() {
       const count = newReadyOrders.length;
       new Notification(count === 1 ? 'Pedido listo para recoger!' : `${count} pedidos listos!`, {
         body: newReadyOrders.map((o) => `#${o.code} - ${o.customerName}`).join('\n'),
-        icon: '/icon-192x192.png',
+        icon: '/icon.svg',
         tag: 'new-delivery',
       });
     }

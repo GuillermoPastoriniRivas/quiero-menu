@@ -20,6 +20,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Quiero Menu - Menu digital para restaurantes",
   description: "Crea tu menu digital y recibe pedidos por WhatsApp",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

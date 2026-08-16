@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { Logo } from '@/components/ui/logo';
 import { DeliveryType } from '@/types';
 import type { StorefrontOrderResponse } from '@/types';
 
@@ -251,8 +252,7 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
       {/* ── Top App Bar ── */}
       <header className="bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 border-b border-outline-variant/10">
         <div className="flex items-center gap-2">
-          <MaterialIcon name="receipt_long" size="md" className="text-primary" />
-          <span className="font-bold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Quiero Menu</span>
+          <Logo size="sm" />
         </div>
         <button className="p-2 rounded-full hover:bg-surface-container-low transition-colors">
           <MaterialIcon name="search" size="md" className="text-on-surface" />

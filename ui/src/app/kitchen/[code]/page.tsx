@@ -143,7 +143,7 @@ export default function KitchenBoardPage() {
       const count = newNewOrders.length;
       new Notification(count === 1 ? 'Nuevo pedido!' : `${count} pedidos nuevos!`, {
         body: newNewOrders.map((o) => `#${o.code} - ${o.customerName}`).join('\n'),
-        icon: '/icon-192x192.png',
+        icon: '/icon.svg',
         tag: 'new-order',
       });
     }
