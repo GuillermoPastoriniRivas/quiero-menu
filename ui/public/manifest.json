@@ -1,0 +1,17 @@
+{
+  "name": "Quiero Menu",
+  "short_name": "Quiero Menu",
+  "description": "Tu menu digital sin comisiones. Recibe pedidos directos por WhatsApp.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E8532C",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
