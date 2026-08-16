@@ -1,6 +1,8 @@
 name: Deploy quiero-menu to shared ARM host
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -67,20 +69,38 @@ jobs:
           script: |
             set -euo pipefail
             cd ${{ env.APP_DIR }}
-            mkdir -p static/quiero-menu
+            mkdir -p static/quiero-menu quiero-menu/api nginx-enabled certbot
+
             install -m 600 quiero-menu-api.env quiero-menu/api/.env
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
             docker pull ${{ env.ECR_API }}:latest
             docker tag ${{ env.ECR_API }}:latest shared-quiero-menu-api:latest
+
+            rm -rf static/quiero-menu
+            mkdir -p static/quiero-menu
             tar -xzf quiero-menu-static.tar.gz -C static/quiero-menu
+
             docker compose -f docker-compose.yml up -d --no-deps quiero-menu-api
-            if docker inspect -f '{{.State.Health.Status}}' shared-asis-api 2>/dev/null | grep -q healthy; then
-              if ! sudo test -f /etc/letsencrypt/live/quiero.menu/fullchain.pem; then
-                sudo certbot certonly --standalone --non-interactive --agree-tos \
-                  -m "${{ secrets.TLS_EMAIL }}" \
-                  -d quiero.menu -d www.quiero.menu
-              fi
-              docker compose -f docker-compose.yml up -d nginx
+
+            if ! sudo test -f /etc/letsencrypt/live/quiero.menu/fullchain.pem; then
+              sudo certbot certonly --webroot -w "$PWD/certbot" --non-interactive --agree-tos \
+                -m "${{ secrets.TLS_EMAIL }}" --keep-until-expiring \
+                -d quiero.menu -d www.quiero.menu
             fi
-            rm -f quiero-menu-api.env
-            rm -f quiero-menu-static.tar.gz
+
+            cp infra/nginx/shared/20-quiero-menu.conf nginx-enabled/
+            docker exec shared-nginx nginx -t
+            docker exec shared-nginx nginx -s reload
+
+            rm -f quiero-menu-api.env quiero-menu-static.tar.gz
+            docker image prune -f
+
+      - name: Verify quiero-menu is serving
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://quiero.menu/api/health || true)
+            [ "$code" = "200" ] && echo "quiero.menu/api/health OK" && exit 0
+            sleep 6
+          done
+          echo "quiero.menu/api/health no respondió 200 (último: ${code:-sin respuesta})"
+          exit 1
