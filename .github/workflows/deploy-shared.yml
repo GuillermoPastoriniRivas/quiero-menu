@@ -1,0 +1,86 @@
+name: Deploy quiero-menu to shared ARM host
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  ECR_API: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/quiero-menu/api
+  APP_DIR: /home/ubuntu/shared
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push ARM API
+        run: |
+          docker buildx build --platform linux/arm64 --push \
+            -t ${{ env.ECR_API }}:${{ github.sha }} \
+            -t ${{ env.ECR_API }}:latest ./api
+
+      - name: Build static UI
+        working-directory: ui
+        env:
+          NEXT_PUBLIC_API_URL: https://quiero.menu/api
+        run: |
+          npm ci
+          npm run build
+          tar -czf ../quiero-menu-static.tar.gz -C out .
+
+      - name: Materialize API environment for transfer
+        env:
+          QM_API_ENV: ${{ secrets.QM_API_ENV }}
+        run: printf '%s' "$QM_API_ENV" > quiero-menu-api.env
+
+      - name: Copy static UI
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SHARED_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SHARED_EC2_SSH_KEY }}
+          source: "quiero-menu-static.tar.gz,quiero-menu-api.env"
+          target: ${{ env.APP_DIR }}
+
+      - name: Activate quiero-menu API and static UI
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SHARED_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SHARED_EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd ${{ env.APP_DIR }}
+            mkdir -p static/quiero-menu
+            install -m 600 quiero-menu-api.env quiero-menu/api/.env
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+            docker pull ${{ env.ECR_API }}:latest
+            docker tag ${{ env.ECR_API }}:latest shared-quiero-menu-api:latest
+            tar -xzf quiero-menu-static.tar.gz -C static/quiero-menu
+            docker compose -f docker-compose.yml up -d --no-deps quiero-menu-api
+            if docker inspect -f '{{.State.Health.Status}}' shared-asis-api 2>/dev/null | grep -q healthy; then
+              if ! sudo test -f /etc/letsencrypt/live/quiero.menu/fullchain.pem; then
+                sudo certbot certonly --standalone --non-interactive --agree-tos \
+                  -m "${{ secrets.TLS_EMAIL }}" \
+                  -d quiero.menu -d www.quiero.menu
+              fi
+              docker compose -f docker-compose.yml up -d nginx
+            fi
+            rm -f quiero-menu-api.env
+            rm -f quiero-menu-static.tar.gz
