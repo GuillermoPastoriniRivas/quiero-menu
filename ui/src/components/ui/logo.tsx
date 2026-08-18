@@ -12,7 +12,7 @@ const sizes = {
   lg: 48,
 } as const;
 
-export function Logo({ size = 'md', showText = false, className = '' }: LogoProps) {
+export function Logo({ size = 'md', showText = true, className = '' }: LogoProps) {
   const px = sizes[size];
 
   return (
@@ -29,9 +29,10 @@ export function Logo({ size = 'md', showText = false, className = '' }: LogoProp
           className={`font-extrabold tracking-tight text-on-background ${
             size === 'sm' ? 'text-lg' : size === 'md' ? 'text-xl' : 'text-2xl'
           }`}
-          style={{ fontFamily: 'var(--font-heading)' }}
+          style={{ fontFamily: 'var(--font-logo)' }}
         >
-          Quiero Menu
+          quiero
+          <span className="text-brand-orange">.menu</span>
         </span>
       )}
     </div>

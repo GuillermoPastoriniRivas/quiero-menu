@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import type { OperatingHours, DeliveryZone, KitchenAccessToken, PaymentMethodsConfig } from '@/types';
+import type { OperatingHours, DeliveryZone, KitchenAccessToken, DeliveryAccessToken, PaymentMethodsConfig } from '@/types';
 import { PlanTier } from '@/types';
 import { toast } from 'sonner';
 import { MaterialIcon } from '@/components/ui/material-icon';
@@ -46,6 +46,9 @@ export default function SettingsPage() {
   // Kitchen tokens
   const [tokens, setTokens] = useState<KitchenAccessToken[]>([]);
 
+  // Delivery tokens
+  const [deliveryTokens, setDeliveryTokens] = useState<DeliveryAccessToken[]>([]);
+
   // Operating hours
   const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const defaultHours: Omit<OperatingHours, 'id' | 'restaurantId'>[] = Array.from({ length: 7 }, (_, i) => ({
@@ -67,6 +70,7 @@ export default function SettingsPage() {
     fetchRestaurant();
     loadZones();
     loadTokens();
+    loadDeliveryTokens();
     billing.fetch();
     billing.fetchHistory();
   }, []);
@@ -146,6 +150,31 @@ export default function SettingsPage() {
     toast.success('Link copiado');
   };
 
+  const loadDeliveryTokens = async () => {
+    const data = await api.get<DeliveryAccessToken[]>('/delivery/tokens');
+    setDeliveryTokens(data);
+  };
+
+  const handleCreateDeliveryToken = async () => {
+    const name = `Delivery ${deliveryTokens.length + 1}`;
+    await api.post('/delivery/tokens', { name });
+    loadDeliveryTokens();
+    toast.success('Acceso delivery creado');
+  };
+
+  const handleRevokeDeliveryToken = async (id: string) => {
+    await api.delete(`/delivery/tokens/${id}`);
+    loadDeliveryTokens();
+    toast.success('Acceso delivery eliminado');
+  };
+
+  const getDeliveryUrl = (token: string) => `${window.location.origin}/delivery/${token}`;
+
+  const copyDeliveryLink = (token: string) => {
+    navigator.clipboard.writeText(getDeliveryUrl(token));
+    toast.success('Link copiado');
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Configuración</h1>
@@ -157,6 +186,7 @@ export default function SettingsPage() {
           <TabsTrigger value="billing">Plan</TabsTrigger>
           <TabsTrigger value="delivery">Zonas de delivery</TabsTrigger>
           <TabsTrigger value="kitchen">Cocina</TabsTrigger>
+          <TabsTrigger value="delivery-portal">Delivery</TabsTrigger>
           <TabsTrigger value="hours">Horarios</TabsTrigger>
         </TabsList>
 
@@ -492,6 +522,30 @@ export default function SettingsPage() {
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" onClick={() => copyKitchenLink(t.token)}><MaterialIcon name="content_copy" size="sm" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => handleRevokeToken(t.id)}><MaterialIcon name="delete" size="sm" className="text-destructive" /></Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="delivery-portal" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Acceso Delivery</CardTitle>
+              <CardDescription>Crea links para que los repartidores vean pedidos listos para recoger</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button onClick={handleCreateDeliveryToken}><MaterialIcon name="add" size="sm" className="mr-1" />Crear acceso</Button>
+              {deliveryTokens.map((t) => (
+                <div key={t.id} className="flex items-center justify-between rounded-md border p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{t.name || `Delivery ${deliveryTokens.indexOf(t) + 1}`}</p>
+                    <p className="text-xs text-muted-foreground font-mono truncate">{getDeliveryUrl(t.token)}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => copyDeliveryLink(t.token)}><MaterialIcon name="content_copy" size="sm" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleRevokeDeliveryToken(t.id)}><MaterialIcon name="delete" size="sm" className="text-destructive" /></Button>
                   </div>
                 </div>
               ))}

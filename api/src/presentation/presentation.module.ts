@@ -16,6 +16,7 @@ import { MenuController } from './controllers/menu.controller.js';
 import { OrderController } from './controllers/order.controller.js';
 import { DeliveryZoneController } from './controllers/delivery-zone.controller.js';
 import { KitchenController } from './controllers/kitchen.controller.js';
+import { DeliveryController } from './controllers/delivery.controller.js';
 import { OnboardingController } from './controllers/onboarding.controller.js';
 import { BillingController } from './controllers/billing.controller.js';
 import { PaymentWebhookController } from './controllers/payment-webhook.controller.js';
@@ -73,6 +74,12 @@ import { CreateKitchenTokenUseCase } from '../application/use-cases/kitchen/crea
 import { ValidateKitchenTokenUseCase } from '../application/use-cases/kitchen/validate-kitchen-token.use-case.js';
 import { ListKitchenTokensUseCase } from '../application/use-cases/kitchen/list-kitchen-tokens.use-case.js';
 import { RevokeKitchenTokenUseCase } from '../application/use-cases/kitchen/revoke-kitchen-token.use-case.js';
+
+// Use Cases — Delivery
+import { CreateDeliveryTokenUseCase } from '../application/use-cases/delivery/create-delivery-token.use-case.js';
+import { ValidateDeliveryTokenUseCase } from '../application/use-cases/delivery/validate-delivery-token.use-case.js';
+import { ListDeliveryTokensUseCase } from '../application/use-cases/delivery/list-delivery-tokens.use-case.js';
+import { RevokeDeliveryTokenUseCase } from '../application/use-cases/delivery/revoke-delivery-token.use-case.js';
 
 // Use Cases — Onboarding
 import { AnalyzeMenuUseCase } from '../application/use-cases/onboarding/analyze-menu.use-case.js';
@@ -372,6 +379,28 @@ const useCaseProviders = [
     useFactory: (tokenRepo: any) => new RevokeKitchenTokenUseCase(tokenRepo),
     inject: ['KitchenAccessTokenRepository'],
   },
+
+  // Delivery
+  {
+    provide: 'CreateDeliveryTokenUseCase',
+    useFactory: (tokenRepo: any) => new CreateDeliveryTokenUseCase(tokenRepo),
+    inject: ['DeliveryAccessTokenRepository'],
+  },
+  {
+    provide: 'ValidateDeliveryTokenUseCase',
+    useFactory: (tokenRepo: any) => new ValidateDeliveryTokenUseCase(tokenRepo),
+    inject: ['DeliveryAccessTokenRepository'],
+  },
+  {
+    provide: 'ListDeliveryTokensUseCase',
+    useFactory: (tokenRepo: any) => new ListDeliveryTokensUseCase(tokenRepo),
+    inject: ['DeliveryAccessTokenRepository'],
+  },
+  {
+    provide: 'RevokeDeliveryTokenUseCase',
+    useFactory: (tokenRepo: any) => new RevokeDeliveryTokenUseCase(tokenRepo),
+    inject: ['DeliveryAccessTokenRepository'],
+  },
 ];
 
 @Module({
@@ -385,6 +414,7 @@ const useCaseProviders = [
     OrderController,
     DeliveryZoneController,
     KitchenController,
+    DeliveryController,
     OnboardingController,
     BillingController,
     PaymentWebhookController,

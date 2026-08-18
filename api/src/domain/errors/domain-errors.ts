@@ -92,6 +92,12 @@ export class KitchenTokenInvalidError extends DomainError {
   }
 }
 
+export class DeliveryTokenInvalidError extends DomainError {
+  constructor() {
+    super('DELIVERY_TOKEN_INVALID', 'Delivery access token is invalid or expired.');
+  }
+}
+
 export class DeliveryZoneNotFoundError extends DomainError {
   constructor() {
     super('DELIVERY_ZONE_NOT_FOUND', 'Delivery zone not found.');

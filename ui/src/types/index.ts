@@ -176,6 +176,16 @@ export interface KitchenAccessToken {
   revokedAt: string | null;
 }
 
+export interface DeliveryAccessToken {
+  id: string;
+  restaurantId: string;
+  token: string;
+  name: string;
+  createdAt: string;
+  expiresAt: string | null;
+  revokedAt: string | null;
+}
+
 // AI Menu Vision
 export interface MenuVisionItem {
   name: string;
