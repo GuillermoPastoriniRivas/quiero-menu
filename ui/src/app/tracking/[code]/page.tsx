@@ -10,6 +10,7 @@ import { MaterialIcon } from '@/components/ui/material-icon';
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
 import { browserPathParam } from '@/lib/static-route-param';
 import { getRoomSocket } from '@/lib/socket';
+import { subscribeOrderPush, isPushSupported, isPushSubscribed } from '@/lib/push';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -48,6 +49,7 @@ export default function TrackingPage() {
   const [loading, setLoading] = useState(true);
   const [invalid, setInvalid] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [pushState, setPushState] = useState<'idle' | 'busy' | 'on'>('idle');
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -78,6 +80,26 @@ export default function TrackingPage() {
     const interval = setInterval(fetchTracking, 10000);
     return () => clearInterval(interval);
   }, [code, slug, fetchTracking]);
+
+  useEffect(() => {
+    if (!code || !slug) return;
+    (async () => {
+      if (await isPushSupported()) {
+        if (await isPushSubscribed()) setPushState('on');
+      }
+    })();
+  }, [code, slug]);
+
+  const handleEnablePush = async () => {
+    if (!data) return;
+    setPushState('busy');
+    try {
+      const ok = await subscribeOrderPush(slug, code);
+      if (ok) setPushState('on');
+    } finally {
+      setPushState((s) => (s === 'busy' ? 'idle' : s));
+    }
+  };
 
   const restaurantId = data?.restaurant.id;
   useEffect(() => {
@@ -229,6 +251,19 @@ export default function TrackingPage() {
             <MaterialIcon name="chat" size="sm" />
             Confirmar por WhatsApp
           </a>
+        )}
+
+        {/* Push notifications */}
+        {pushState !== 'on' && (
+          <button
+            type="button"
+            disabled={pushState === 'busy'}
+            onClick={handleEnablePush}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors disabled:opacity-60"
+          >
+            <MaterialIcon name="notifications" size="sm" />
+            {pushState === 'busy' ? 'Activando...' : 'Avísame cuando avance mi pedido'}
+          </button>
         )}
 
         {/* Transfer data + receipt */}

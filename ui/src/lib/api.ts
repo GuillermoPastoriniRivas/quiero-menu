@@ -14,6 +14,7 @@ class ApiClient {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private onUnauthorized: (() => void) | null = null;
+  private refreshPromise: Promise<boolean> | null = null;
 
   setTokens(access: string, refresh: string) {
     this.accessToken = access;
@@ -89,18 +90,31 @@ class ApiClient {
   }
 
   private async tryRefresh(): Promise<boolean> {
+    // Single-flight: si ya hay un refresh corriendo, esperamos el mismo resultado.
+    // El refresh ROTA el token (crea uno nuevo y borra el viejo), así que disparar
+    // varios en paralelo con el mismo refreshToken hace que todos menos el primero fallen.
+    if (this.refreshPromise) return this.refreshPromise;
+
+    this.refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: this.refreshToken }),
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        this.setTokens(data.accessToken, data.refreshToken);
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+
     try {
-      const res = await fetch(`${API_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: this.refreshToken }),
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      this.setTokens(data.accessToken, data.refreshToken);
-      return true;
-    } catch {
-      return false;
+      return await this.refreshPromise;
+    } finally {
+      this.refreshPromise = null;
     }
   }
 

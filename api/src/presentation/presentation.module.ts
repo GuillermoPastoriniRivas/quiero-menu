@@ -22,6 +22,7 @@ import { BillingController } from './controllers/billing.controller.js';
 import { PaymentWebhookController } from './controllers/payment-webhook.controller.js';
 import { HealthController } from './controllers/health.controller.js';
 import { UploadController } from './controllers/upload.controller.js';
+import { PushController } from './controllers/push.controller.js';
 
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
@@ -258,9 +259,9 @@ const useCaseProviders = [
   // Order
   {
     provide: 'CreateStorefrontOrderUseCase',
-    useFactory: (orderRepo: any, orderItemRepo: any, restRepo: any, itemRepo: any, varRepo: any, optRepo: any, zoneRepo: any) =>
-      new CreateStorefrontOrderUseCase(orderRepo, orderItemRepo, restRepo, itemRepo, varRepo, optRepo, zoneRepo),
-    inject: ['OrderRepository', 'OrderItemRepository', 'RestaurantRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository', 'DeliveryZoneRepository'],
+    useFactory: (orderRepo: any, orderItemRepo: any, restRepo: any, itemRepo: any, varRepo: any, optRepo: any, zoneRepo: any, gateway: any, pushService: any) =>
+      new CreateStorefrontOrderUseCase(orderRepo, orderItemRepo, restRepo, itemRepo, varRepo, optRepo, zoneRepo, gateway, pushService),
+    inject: ['OrderRepository', 'OrderItemRepository', 'RestaurantRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository', 'DeliveryZoneRepository', 'RealtimeGatewayPort', 'PushServicePort'],
   },
   {
     provide: 'GetOrderTrackingUseCase',
@@ -280,8 +281,8 @@ const useCaseProviders = [
   },
   {
     provide: 'UpdateOrderStatusUseCase',
-    useFactory: (orderRepo: any, gateway: any) => new UpdateOrderStatusUseCase(orderRepo, gateway),
-    inject: ['OrderRepository', 'RealtimeGatewayPort'],
+    useFactory: (orderRepo: any, gateway: any, pushService: any) => new UpdateOrderStatusUseCase(orderRepo, gateway, pushService),
+    inject: ['OrderRepository', 'RealtimeGatewayPort', 'PushServicePort'],
   },
   {
     provide: 'NotifyReceiptUploadedUseCase',
@@ -426,6 +427,7 @@ const useCaseProviders = [
     BillingController,
     PaymentWebhookController,
     UploadController,
+    PushController,
   ],
   providers: [
     ...useCaseProviders,

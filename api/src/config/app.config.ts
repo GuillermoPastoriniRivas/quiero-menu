@@ -40,4 +40,9 @@ export default () => ({
       pro: process.env.LEMON_SQUEEZY_VARIANT_PRO ?? '',
     },
   },
+  vapid: {
+    publicKey: process.env.VAPID_PUBLIC_KEY ?? 'BJf6QtpJOjPEEei6210-omLn-Of425e-akBFvtNXxcfoN2n714AFPo_-RgEhZVJQX9NELwPWyKQY-RGXMJRMU7E',
+    privateKey: process.env.VAPID_PRIVATE_KEY ?? 'ptGoYh-Ar72CosCzxTW1WRRjhxuUZtFpg3dlwyKU0zI',
+    subject: process.env.VAPID_SUBJECT ?? 'mailto:soporte@quiero.menu',
+  },
 });

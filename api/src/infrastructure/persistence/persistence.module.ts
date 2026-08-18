@@ -18,6 +18,7 @@ import { DeliveryAccessTokenModel, DeliveryAccessTokenSchema } from './mongoose/
 import { SubscriptionModel, SubscriptionSchema } from './mongoose/schemas/subscription.schema.js';
 import { BillingRecordModel, BillingRecordSchema } from './mongoose/schemas/billing-record.schema.js';
 import { VerificationTokenModel, VerificationTokenSchema } from './mongoose/schemas/verification-token.schema.js';
+import { PushSubscriptionModel, PushSubscriptionSchema } from './mongoose/schemas/push-subscription.schema.js';
 
 import { MongoRestaurantRepository } from './mongoose/repositories/mongo-restaurant.repository.js';
 import { MongoOperatingHoursRepository } from './mongoose/repositories/mongo-operating-hours.repository.js';
@@ -36,6 +37,7 @@ import { MongoDeliveryAccessTokenRepository } from './mongoose/repositories/mong
 import { MongoSubscriptionRepository } from './mongoose/repositories/mongo-subscription.repository.js';
 import { MongoBillingRecordRepository } from './mongoose/repositories/mongo-billing-record.repository.js';
 import { MongoVerificationTokenRepository } from './mongoose/repositories/mongo-verification-token.repository.js';
+import { MongoPushSubscriptionRepository } from './mongoose/repositories/mongo-push-subscription.repository.js';
 
 const schemas = MongooseModule.forFeature([
   { name: RestaurantModel.name, schema: RestaurantSchema },
@@ -56,6 +58,7 @@ const schemas = MongooseModule.forFeature([
   { name: SubscriptionModel.name, schema: SubscriptionSchema },
   { name: BillingRecordModel.name, schema: BillingRecordSchema },
   { name: VerificationTokenModel.name, schema: VerificationTokenSchema },
+  { name: PushSubscriptionModel.name, schema: PushSubscriptionSchema },
 ]);
 
 const repositories = [
@@ -76,6 +79,7 @@ const repositories = [
   { provide: 'SubscriptionRepository', useClass: MongoSubscriptionRepository },
   { provide: 'BillingRecordRepository', useClass: MongoBillingRecordRepository },
   { provide: 'VerificationTokenRepository', useClass: MongoVerificationTokenRepository },
+  { provide: 'PushSubscriptionRepository', useClass: MongoPushSubscriptionRepository },
 ];
 
 @Module({

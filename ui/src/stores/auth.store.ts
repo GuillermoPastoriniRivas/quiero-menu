@@ -36,7 +36,14 @@ export const useAuthStore = create<AuthState>((set) => ({
           isLoading: false,
         });
       })
-      .catch(() => {
+      .catch((err) => {
+        // Solo un 401 real invalida la sesión (request ya limpió los tokens y
+        // disparó onUnauthorized). Errores de red/API no deben borrar los tokens:
+        // la sesión sigue válida y el usuario puede reintentar.
+        if (err?.status !== 401) {
+          set({ isLoading: false, isAuthenticated: false, user: null });
+          return;
+        }
         api.clearTokens();
         set({ isLoading: false, isAuthenticated: false, user: null });
       });

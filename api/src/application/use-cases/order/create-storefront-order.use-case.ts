@@ -5,6 +5,8 @@ import { MenuItemRepository } from '../../../domain/repositories/menu-item.repos
 import { MenuItemVariantRepository } from '../../../domain/repositories/menu-item-variant.repository.js';
 import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item-option.repository.js';
 import { DeliveryZoneRepository } from '../../../domain/repositories/delivery-zone.repository.js';
+import { RealtimeGatewayPort } from '../../ports/realtime-gateway.port.js';
+import { PushServicePort } from '../../ports/push-service.port.js';
 import { Order } from '../../../domain/entities/order.entity.js';
 import { OrderItem, SelectedOption } from '../../../domain/entities/order-item.entity.js';
 import { OrderStatus } from '../../../domain/enums/order-status.enum.js';
@@ -51,6 +53,8 @@ export class CreateStorefrontOrderUseCase {
     private readonly variantRepo: MenuItemVariantRepository,
     private readonly optionRepo: MenuItemOptionRepository,
     private readonly zoneRepo: DeliveryZoneRepository,
+    private readonly gateway: RealtimeGatewayPort,
+    private readonly pushService: PushServicePort,
   ) {}
 
   async execute(slug: string, input: CreateStorefrontOrderInput): Promise<Result<CreateStorefrontOrderOutput, RestaurantNotFoundError | RestaurantPausedError | MenuItemNotFoundError | CrossRestaurantAccessError>> {
@@ -162,6 +166,17 @@ export class CreateStorefrontOrderUseCase {
     const phone = restaurant.phone.replace(/[^0-9]/g, '');
     const encodedMessage = encodeURIComponent(messageLines.join('\n'));
     const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
+
+    // Realtime + push al staff del restaurante (fire-and-forget)
+    this.gateway.emitToRestaurant(restaurant.id, 'order.updated', order);
+    this.pushService
+      .sendToRestaurant(restaurant.id, {
+        title: `Nuevo pedido #${code}`,
+        body: `${input.customerName} · ${items.reduce((s, it) => s + it.quantity, 0)} ítems · $${total.toLocaleString('es-AR')}`,
+        url: '/orders',
+        tag: `order-${order.id}`,
+      })
+      .catch(() => {});
 
     return ok({ order, items, whatsappUrl });
   }

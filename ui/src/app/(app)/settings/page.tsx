@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { formatDate } from '@/lib/format';
+import { subscribeStaffPush, unsubscribePush, isPushSupported, isPushSubscribed } from '@/lib/push';
 
 export default function SettingsPage() {
   const { restaurant, fetch: fetchRestaurant, update } = useRestaurantStore();
@@ -65,6 +66,44 @@ export default function SettingsPage() {
   const billing = useBillingStore();
   const [upgrading, setUpgrading] = useState(false);
   const [canceling, setCanceling] = useState(false);
+
+  // Notifications (web push)
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const supported = await isPushSupported();
+      setPushSupported(supported);
+      if (supported) setPushEnabled(await isPushSubscribed());
+    })();
+  }, []);
+
+  const handleTogglePush = async (enabled: boolean) => {
+    setPushBusy(true);
+    try {
+      if (enabled) {
+        const token = api.getAccessToken();
+        if (!token) return;
+        const ok = await subscribeStaffPush(token);
+        if (!ok) {
+          toast.error('No se pudo activar. Revisá los permisos del navegador.');
+          return;
+        }
+        setPushEnabled(true);
+        toast.success('Notificaciones activadas');
+      } else {
+        await unsubscribePush();
+        setPushEnabled(false);
+        toast.success('Notificaciones desactivadas');
+      }
+    } catch {
+      toast.error('Error al cambiar notificaciones');
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   useEffect(() => {
     fetchRestaurant();
@@ -188,6 +227,7 @@ export default function SettingsPage() {
           <TabsTrigger value="kitchen">Cocina</TabsTrigger>
           <TabsTrigger value="delivery-portal">Delivery</TabsTrigger>
           <TabsTrigger value="hours">Horarios</TabsTrigger>
+          <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4 mt-4">
@@ -589,6 +629,38 @@ export default function SettingsPage() {
                   setSavingHours(false);
                 }
               }}>{savingHours ? 'Guardando...' : 'Guardar horarios'}</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notificaciones</CardTitle>
+              <CardDescription>Recibí un aviso en el celular cuando llegue un pedido nuevo</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!pushSupported ? (
+                <div className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
+                  Tu navegador no soporta notificaciones push. Probá con Chrome o Edge en el celular.
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium">Notificaciones de pedidos</p>
+                    <p className="text-sm text-muted-foreground">
+                      {pushEnabled
+                        ? 'Vas a recibir un aviso cuando entre un pedido nuevo'
+                        : 'Activá para enterarte al instante cuando entra un pedido'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={pushEnabled}
+                    disabled={pushBusy}
+                    onCheckedChange={handleTogglePush}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

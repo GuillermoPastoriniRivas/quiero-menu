@@ -1,5 +1,5 @@
 /* quiero.menu service worker - offline-first for the static export */
-const VERSION = 'qm-v1';
+const VERSION = 'qm-v2';
 const CACHE = `quiero-menu-${VERSION}`;
 const PRECACHE = 'quiero-menu-precache';
 
@@ -96,6 +96,46 @@ self.addEventListener('fetch', (event) => {
         }
         return resp;
       });
+    })
+  );
+});
+
+/* ---- Push notifications ---- */
+
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: 'Notificacion' };
+  }
+
+  const title = data.title || 'quiero.menu';
+  const options = {
+    body: data.body || '',
+    icon: data.icon || '/icon-192.png',
+    badge: data.badge || '/icon-192.png',
+    tag: data.tag || 'qm-notification',
+    data: { url: data.url || '/' },
+    vibrate: [100, 50, 100],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(target).catch(() => {});
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(target);
     })
   );
 });
