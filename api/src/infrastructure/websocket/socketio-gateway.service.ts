@@ -17,6 +17,14 @@ export class SocketIoGatewayService implements RealtimeGatewayPort, OnGatewayCon
   ) {}
 
   handleConnection(client: Socket): void {
+    // Public order rooms (tracking page): no auth needed, join the room by name
+    const room = (client.handshake.query?.room as string | undefined)?.trim();
+    if (room && room.startsWith('order:')) {
+      client.join(room);
+      this.logger.log(`Client ${client.id} joined public room ${room}`);
+      return;
+    }
+
     const token = (client.handshake.auth?.token ?? client.handshake.query?.token) as string | undefined;
     if (!token) {
       this.logger.warn(`Client ${client.id} disconnected: no auth token`);
@@ -41,5 +49,9 @@ export class SocketIoGatewayService implements RealtimeGatewayPort, OnGatewayCon
 
   emitToRestaurant(restaurantId: string, event: string, data: unknown): void {
     this.server?.to(`restaurant:${restaurantId}`).emit(event, data);
+  }
+
+  emitToOrderRoom(restaurantId: string, code: string, event: string, data: unknown): void {
+    this.server?.to(`order:${restaurantId}:${code}`).emit(event, data);
   }
 }

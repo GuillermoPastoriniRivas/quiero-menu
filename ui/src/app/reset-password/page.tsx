@@ -67,7 +67,7 @@ function ResetPasswordContent() {
       <div className="min-h-screen flex flex-col bg-surface">
         <header className="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 bg-surface">
           <div className="flex items-center gap-2">
-            <Logo size="md" />
+            <Logo size="md" href="/" />
           </div>
         </header>
         <main className="flex-grow flex items-center justify-center p-6">

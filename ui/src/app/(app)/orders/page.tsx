@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useOrderStore } from '@/stores/order.store';
+import { useRestaurantStore } from '@/stores/restaurant.store';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,6 +39,8 @@ const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; label: str
 
 export default function OrdersPage() {
   const { orders, planInfo, fetch: fetchOrders, updateStatus, getOrder, connectRealtime, disconnectRealtime } = useOrderStore();
+  const restaurant = useRestaurantStore((s) => s.restaurant);
+  const fetchRestaurant = useRestaurantStore((s) => s.fetch);
   const [tab, setTab] = useState('all');
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
 
@@ -60,6 +64,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
+    fetchRestaurant();
     connectRealtime();
     return () => disconnectRealtime();
   }, []);
@@ -72,6 +77,19 @@ export default function OrdersPage() {
     try {
       await updateStatus(id, status);
       toast.success(`Pedido actualizado a ${STATUS_LABELS[status]}`);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const openBoard = async (type: 'kitchen' | 'delivery') => {
+    try {
+      const tokens = await api.get<{ token: string }[]>(`/${type}/tokens`);
+      if (tokens.length === 0) {
+        toast.error(`No hay accesos de ${type === 'kitchen' ? 'cocina' : 'delivery'} creados. Creá uno en Configuracion.`);
+        return;
+      }
+      window.open(`${window.location.origin}/${type}/${tokens[0].token}`, '_blank');
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -99,7 +117,17 @@ export default function OrdersPage() {
         </div>
       </section>
 
-      <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Gestion de Pedidos</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Gestion de Pedidos</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => openBoard('kitchen')}>
+            <MaterialIcon name="restaurant" size="sm" className="mr-1" />Cocina
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => openBoard('delivery')}>
+            <MaterialIcon name="delivery_dining" size="sm" className="mr-1" />Delivery
+          </Button>
+        </div>
+      </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
@@ -159,9 +187,23 @@ export default function OrdersPage() {
                       </p>
                     )}
                   </div>
-                  <Badge variant={STATUS_BADGE_VARIANT[order.status] as any}>
-                    {STATUS_LABELS[order.status]}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {!isRedacted && restaurant && (
+                      <a
+                        href={`/tracking/${order.code}?slug=${restaurant.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline inline-flex items-center gap-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MaterialIcon name="open_in_new" size="xs" />
+                        Tracking
+                      </a>
+                    )}
+                    <Badge variant={STATUS_BADGE_VARIANT[order.status] as any}>
+                      {STATUS_LABELS[order.status]}
+                    </Badge>
+                  </div>
                 </div>
 
                 {/* Delivery type + address */}

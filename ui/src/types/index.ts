@@ -325,3 +325,33 @@ export interface StorefrontOrderResponse {
   items: OrderItem[];
   whatsappUrl: string;
 }
+
+export interface TrackingOrder {
+  id: string;
+  code: string;
+  status: OrderStatus;
+  deliveryType: DeliveryType;
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+  paymentMethod: string;
+  receiptUrl: string | null;
+  notes: string;
+  createdAt: string;
+  confirmedAt: string | null;
+  readyAt: string | null;
+  deliveredAt: string | null;
+}
+
+export interface TrackingResponse {
+  order: TrackingOrder;
+  items: OrderItem[];
+  restaurant: {
+    id: string;
+    slug: string;
+    name: string;
+    currency: string;
+    paymentMethods: PaymentMethodsConfig;
+    phone: string;
+  };
+}

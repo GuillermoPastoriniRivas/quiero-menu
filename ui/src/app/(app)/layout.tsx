@@ -13,7 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Mobile Top Bar */}
           <header className="lg:hidden flex justify-between items-center w-full px-6 h-16 bg-white/90 backdrop-blur-xl sticky top-0 z-40 border-b border-outline-variant/10">
             <div className="flex items-center gap-2">
-              <Logo size="sm" />
+              <Logo size="sm" href="/dashboard" />
             </div>
             <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
               <MaterialIcon name="person" size="sm" className="text-on-surface-variant" />

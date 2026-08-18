@@ -58,6 +58,7 @@ import { DeleteMenuItemOptionUseCase } from '../application/use-cases/menu/delet
 
 // Use Cases — Order
 import { CreateStorefrontOrderUseCase } from '../application/use-cases/order/create-storefront-order.use-case.js';
+import { GetOrderTrackingUseCase } from '../application/use-cases/order/get-order-tracking.use-case.js';
 import { ListOrdersUseCase } from '../application/use-cases/order/list-orders.use-case.js';
 import { GetOrderUseCase } from '../application/use-cases/order/get-order.use-case.js';
 import { UpdateOrderStatusUseCase } from '../application/use-cases/order/update-order-status.use-case.js';
@@ -260,6 +261,12 @@ const useCaseProviders = [
     useFactory: (orderRepo: any, orderItemRepo: any, restRepo: any, itemRepo: any, varRepo: any, optRepo: any, zoneRepo: any) =>
       new CreateStorefrontOrderUseCase(orderRepo, orderItemRepo, restRepo, itemRepo, varRepo, optRepo, zoneRepo),
     inject: ['OrderRepository', 'OrderItemRepository', 'RestaurantRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository', 'DeliveryZoneRepository'],
+  },
+  {
+    provide: 'GetOrderTrackingUseCase',
+    useFactory: (orderRepo: any, orderItemRepo: any, restRepo: any) =>
+      new GetOrderTrackingUseCase(orderRepo, orderItemRepo, restRepo),
+    inject: ['OrderRepository', 'OrderItemRepository', 'RestaurantRepository'],
   },
   {
     provide: 'ListOrdersUseCase',

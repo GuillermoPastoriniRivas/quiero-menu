@@ -5,6 +5,7 @@ import { CreateStorefrontOrderRequestSchema, CreateStorefrontOrderRequestDto } f
 import { PresignedUrlRequestSchema, PresignedUrlRequestDto } from '../request-dtos/upload.dto.js';
 import type { GetRestaurantBySlugUseCase } from '../../application/use-cases/restaurant/get-restaurant-by-slug.use-case.js';
 import type { CreateStorefrontOrderUseCase } from '../../application/use-cases/order/create-storefront-order.use-case.js';
+import type { GetOrderTrackingUseCase } from '../../application/use-cases/order/get-order-tracking.use-case.js';
 import type { GenerateUploadUrlUseCase } from '../../application/use-cases/upload/generate-upload-url.use-case.js';
 import type { NotifyReceiptUploadedUseCase } from '../../application/use-cases/order/notify-receipt-uploaded.use-case.js';
 import type { OrderRepository } from '../../domain/repositories/order.repository.js';
@@ -15,6 +16,7 @@ export class StorefrontController {
   constructor(
     @Inject('GetRestaurantBySlugUseCase') private readonly getBySlug: GetRestaurantBySlugUseCase,
     @Inject('CreateStorefrontOrderUseCase') private readonly createOrder: CreateStorefrontOrderUseCase,
+    @Inject('GetOrderTrackingUseCase') private readonly getOrderTracking: GetOrderTrackingUseCase,
     @Inject('GenerateUploadUrlUseCase') private readonly generateUploadUrl: GenerateUploadUrlUseCase,
     @Inject('NotifyReceiptUploadedUseCase') private readonly notifyReceipt: NotifyReceiptUploadedUseCase,
     @Inject('OrderRepository') private readonly orderRepo: OrderRepository,
@@ -42,6 +44,14 @@ export class StorefrontController {
       receiptUrl: body.receiptUrl,
     });
     if (!result.ok) throw new BadRequestException(result.error.message);
+    return result.value;
+  }
+
+  @Public()
+  @Get(':slug/orders/by-code/:code')
+  async getOrderByCode(@Param('slug') slug: string, @Param('code') code: string) {
+    const result = await this.getOrderTracking.execute(slug, code);
+    if (!result.ok) throw new NotFoundException(result.error.message);
     return result.value;
   }
 

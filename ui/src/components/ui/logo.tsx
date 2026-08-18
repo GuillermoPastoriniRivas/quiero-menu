@@ -1,9 +1,11 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
   className?: string;
+  href?: string;
 }
 
 const sizes = {
@@ -12,11 +14,11 @@ const sizes = {
   lg: 48,
 } as const;
 
-export function Logo({ size = 'md', showText = true, className = '' }: LogoProps) {
+export function Logo({ size = 'md', showText = true, className = '', href }: LogoProps) {
   const px = sizes[size];
 
-  return (
-    <div className={`flex items-center gap-2 ${className}`}>
+  const content = (
+    <>
       <Image
         src="/logo.svg"
         alt="Quiero Menu"
@@ -35,6 +37,16 @@ export function Logo({ size = 'md', showText = true, className = '' }: LogoProps
           <span className="text-brand-orange">.menu</span>
         </span>
       )}
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className={`flex items-center gap-2 ${className}`}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={`flex items-center gap-2 ${className}`}>{content}</div>;
 }

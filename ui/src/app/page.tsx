@@ -15,19 +15,24 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 bg-white/90 bg-glass border-b border-outline-variant/30">
         <div className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
           <div className="flex items-center">
-            <Logo size="md" />
+            <Logo size="md" href="/" />
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a className="text-primary font-semibold font-[family-name:var(--font-heading)]" href="#inicio">Inicio</a>
             <a className="text-on-surface-variant font-medium hover:text-primary transition-colors font-[family-name:var(--font-heading)]" href="#funciones">Funciones</a>
             <a className="text-on-surface-variant font-medium hover:text-primary transition-colors font-[family-name:var(--font-heading)]" href="#precios">Precios</a>
           </div>
-          <Link
-            href="/signup"
-            className="gradient-cta text-white px-6 py-2.5 rounded-lg font-bold hover:opacity-90 transition-all"
-          >
-            Empezar gratis
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="hidden md:block text-on-surface-variant font-semibold hover:text-primary transition-colors font-[family-name:var(--font-heading)]">
+              Iniciar sesion
+            </Link>
+            <Link
+              href="/signup"
+              className="gradient-cta text-white px-6 py-2.5 rounded-lg font-bold hover:opacity-90 transition-all"
+            >
+              Empezar gratis
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -409,7 +414,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col gap-2 items-center md:items-start">
             <div className="flex items-center">
-              <Logo size="sm" />
+              <Logo size="sm" href="/" />
             </div>
             <p className="text-sm text-on-surface-variant">&copy; 2026 quiero.menu. Todos los derechos reservados.</p>
           </div>

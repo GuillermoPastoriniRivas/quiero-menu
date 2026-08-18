@@ -37,6 +37,7 @@ export class UpdateOrderStatusUseCase {
     if (!updated) return err(new OrderNotFoundError());
 
     this.gateway.emitToRestaurant(order.restaurantId, 'order.updated', updated);
+    this.gateway.emitToOrderRoom(order.restaurantId, order.code, 'order.updated', updated);
 
     return ok(updated);
   }

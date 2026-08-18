@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { StorefrontData, MenuItem, MenuItemVariant, MenuItemOption } from '@/types';
 import { useCartStore, CartItem } from '@/stores/cart.store';
 import { formatCurrency } from '@/lib/format';
@@ -20,6 +21,7 @@ type FullMenuItem = MenuItem & { variants: MenuItemVariant[]; options: MenuItemO
 export function StorefrontView({ data, slug }: { data: StorefrontData; slug: string }) {
   const { restaurant, categories, operatingHours, deliveryZones, showPoweredByFooter } = data;
   const cart = useCartStore();
+  const router = useRouter();
 
   // ── Helpers ──
   const cleanPhone = restaurant.phone ? restaurant.phone.replace(/\D/g, '') : '';
@@ -43,11 +45,9 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [orderResult, setOrderResult] = useState<StorefrontOrderResponse | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(categories[0]?.id ?? null);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState('');
-  const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
   const pm = restaurant.paymentMethods ?? { cashEnabled: true, cardEnabled: true, transferEnabled: true };
   const availablePaymentMethods = [
@@ -205,45 +205,12 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
       });
       if (!res.ok) throw new Error('Error al crear el pedido');
       const result: StorefrontOrderResponse = await res.json();
-      setOrderResult(result);
       cart.clear();
+      router.push(`/tracking/${encodeURIComponent(result.order.code)}?slug=${encodeURIComponent(slug)}`);
     } catch {
       alert('Error al crear el pedido. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
-
-  const handleConfirmationReceiptUpload = async (file: File) => {
-    if (!orderResult) return;
-    setUploadingReceipt(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/storefront/${slug}/receipt-upload`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'receipt', contentType: file.type }),
-      });
-      if (!res.ok) throw new Error('Error al obtener URL de subida');
-      const { uploadUrl, publicUrl } = await res.json();
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-      if (!uploadRes.ok) throw new Error('Error al subir comprobante');
-      setReceiptUrl(publicUrl);
-      // Update the order with the receipt URL
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/storefront/${slug}/orders/${orderResult.order.id}/receipt`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receiptUrl: publicUrl }),
-      });
-    } catch {
-      alert('Error al subir el comprobante. Intenta de nuevo.');
-    } finally {
-      setUploadingReceipt(false);
     }
   };
 
@@ -252,7 +219,7 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
       {/* ── Top App Bar ── */}
       <header className="bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 border-b border-outline-variant/10">
         <div className="flex items-center gap-2">
-          <Logo size="sm" />
+          <Logo size="sm" href="/" />
         </div>
         <button className="p-2 rounded-full hover:bg-surface-container-low transition-colors">
           <MaterialIcon name="search" size="md" className="text-on-surface" />
@@ -713,80 +680,6 @@ export function StorefrontView({ data, slug }: { data: StorefrontData; slug: str
               {submitting ? 'Creando pedido...' : 'Confirmar pedido'}
             </Button>
           </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* ── Order confirmation sheet ── */}
-      <Sheet open={!!orderResult} onOpenChange={(open) => { if (!open) { setOrderResult(null); setReceiptUrl(null); } }}>
-        <SheetContent side="bottom" className="h-[85vh] overflow-auto rounded-t-3xl">
-          {orderResult && (
-            <div className="p-6 space-y-5">
-              <div className="text-center space-y-3">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                  <MaterialIcon name="check_circle" size="xl" className="text-green-600" />
-                </div>
-                <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Pedido creado</h2>
-                <p className="text-on-surface-variant">Tu pedido <strong>{orderResult.order.code}</strong> fue creado. Envialo por WhatsApp para confirmarlo.</p>
-              </div>
-
-              <a
-                href={orderResult.whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 text-sm font-bold text-white hover:bg-green-700 transition-colors"
-              >
-                <MaterialIcon name="chat" size="sm" />
-                Enviar por WhatsApp
-              </a>
-
-              {orderResult.order.paymentMethod === 'transferencia' && pm.transferEnabled && (
-                <div className="space-y-4 pt-2">
-                  {(pm.transferBankName || pm.transferAccountNumber || pm.transferCbu || pm.transferAlias) && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-1.5">
-                      <p className="text-sm font-semibold text-blue-900">Datos para transferir</p>
-                      {pm.transferBankName && <p className="text-sm text-blue-800"><span className="font-medium">Banco:</span> {pm.transferBankName}</p>}
-                      {pm.transferAccountType && <p className="text-sm text-blue-800"><span className="font-medium">Tipo:</span> {pm.transferAccountType}</p>}
-                      {pm.transferAccountHolder && <p className="text-sm text-blue-800"><span className="font-medium">Titular:</span> {pm.transferAccountHolder}</p>}
-                      {pm.transferAccountNumber && <p className="text-sm text-blue-800"><span className="font-medium">Cuenta:</span> {pm.transferAccountNumber}</p>}
-                      {pm.transferCbu && <p className="text-sm text-blue-800"><span className="font-medium">CBU/CVU:</span> {pm.transferCbu}</p>}
-                      {pm.transferAlias && <p className="text-sm text-blue-800"><span className="font-medium">Alias:</span> {pm.transferAlias}</p>}
-                      {pm.transferNotes && <p className="text-xs text-blue-700 mt-2 italic">{pm.transferNotes}</p>}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label className="text-sm">Comprobante (opcional)</Label>
-                    {receiptUrl ? (
-                      <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl p-3">
-                        <MaterialIcon name="check_circle" size="sm" className="text-green-600" />
-                        <span className="text-sm text-green-800 flex-1">Comprobante enviado</span>
-                      </div>
-                    ) : (
-                      <label className="flex items-center justify-center gap-2 bg-surface-container-low hover:bg-surface-container text-on-surface rounded-xl py-3 text-sm font-medium transition-colors cursor-pointer active:scale-[0.98]">
-                        {uploadingReceipt ? (
-                          <MaterialIcon name="progress_activity" size="sm" className="animate-spin" />
-                        ) : (
-                          <MaterialIcon name="upload" size="sm" className="text-primary" />
-                        )}
-                        {uploadingReceipt ? 'Subiendo...' : 'Subir comprobante'}
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          className="hidden"
-                          disabled={uploadingReceipt}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleConfirmationReceiptUpload(file);
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </SheetContent>
       </Sheet>
     </div>

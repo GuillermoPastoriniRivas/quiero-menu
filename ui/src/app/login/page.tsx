@@ -38,7 +38,7 @@ export default function LoginPage() {
       {/* Header */}
       <header className="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 bg-surface">
         <div className="flex items-center gap-2">
-          <Logo size="md" />
+          <Logo size="md" href="/" />
         </div>
         <Link href="/signup" className="text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors">
           Registrate

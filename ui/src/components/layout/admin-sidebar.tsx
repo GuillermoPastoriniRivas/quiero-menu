@@ -28,7 +28,7 @@ export function AdminSidebar() {
     <aside className="hidden lg:flex flex-col h-screen w-72 bg-white sticky top-0 shadow-[4px_0_16px_rgba(0,0,0,0.03)]">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-8">
-        <Logo size="lg" />
+        <Logo size="lg" href="/dashboard" />
       </div>
 
       {/* Navigation */}
