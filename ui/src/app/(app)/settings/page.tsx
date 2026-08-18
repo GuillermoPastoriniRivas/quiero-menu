@@ -370,7 +370,7 @@ export default function SettingsPage() {
                 <CardDescription>Para restaurantes en crecimiento</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-3xl font-bold">$19<span className="text-sm font-normal text-muted-foreground"> USD/mes</span></p>
+                <p className="text-3xl font-bold">$10<span className="text-sm font-normal text-muted-foreground"> USD/mes</span></p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Pedidos ilimitados</li>
                   <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Menú digital completo</li>
@@ -485,9 +485,9 @@ export default function SettingsPage() {
               <CardTitle>Zonas de delivery</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input placeholder="Nombre de zona" value={newZoneName} onChange={(e) => setNewZoneName(e.target.value)} />
-                <Input type="number" placeholder="Precio" value={newZonePrice} onChange={(e) => setNewZonePrice(e.target.value)} className="w-32" />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input placeholder="Nombre de zona" value={newZoneName} onChange={(e) => setNewZoneName(e.target.value)} className="flex-1" />
+                <Input type="number" placeholder="Precio" value={newZonePrice} onChange={(e) => setNewZonePrice(e.target.value)} className="w-full sm:w-32" />
                 <Button onClick={handleCreateZone}><MaterialIcon name="add" size="sm" className="mr-1" />Agregar</Button>
               </div>
               {zones.map((zone) => (
@@ -561,15 +561,21 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {hours.map((h, i) => (
-                <div key={h.dayOfWeek} className="flex items-center gap-4 rounded-md border p-3">
-                  <span className="w-24 font-medium">{DAY_NAMES[i]}</span>
-                  <div className="flex items-center gap-2">
-                    <Switch checked={h.isClosed} onCheckedChange={(checked) => setHours((prev) => prev.map((row, j) => j === i ? { ...row, isClosed: checked } : row))} />
-                    <Label className="text-sm text-muted-foreground">Cerrado</Label>
+                <div key={h.dayOfWeek} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-md border p-3">
+                  <span className="font-medium">{DAY_NAMES[i]}</span>
+                  <div className="flex items-center gap-3 sm:ml-auto">
+                    <div className="flex items-center gap-2">
+                      <Switch checked={h.isClosed} onCheckedChange={(checked) => setHours((prev) => prev.map((row, j) => j === i ? { ...row, isClosed: checked } : row))} />
+                      <Label className="text-sm text-muted-foreground">Cerrado</Label>
+                    </div>
+                    {!h.isClosed && (
+                      <div className="flex items-center gap-2">
+                        <Input type="time" value={h.opensAt} className="w-28" onChange={(e) => setHours((prev) => prev.map((row, j) => j === i ? { ...row, opensAt: e.target.value } : row))} />
+                        <span className="text-muted-foreground">a</span>
+                        <Input type="time" value={h.closesAt} className="w-28" onChange={(e) => setHours((prev) => prev.map((row, j) => j === i ? { ...row, closesAt: e.target.value } : row))} />
+                      </div>
+                    )}
                   </div>
-                  <Input type="time" value={h.opensAt} disabled={h.isClosed} className="w-32" onChange={(e) => setHours((prev) => prev.map((row, j) => j === i ? { ...row, opensAt: e.target.value } : row))} />
-                  <span className="text-muted-foreground">a</span>
-                  <Input type="time" value={h.closesAt} disabled={h.isClosed} className="w-32" onChange={(e) => setHours((prev) => prev.map((row, j) => j === i ? { ...row, closesAt: e.target.value } : row))} />
                 </div>
               ))}
               <Button disabled={savingHours} onClick={async () => {

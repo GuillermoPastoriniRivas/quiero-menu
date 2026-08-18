@@ -223,6 +223,46 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* The math: one order pays for the whole month */}
+        <section className="py-24 px-6 max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">La matematica es simple</h2>
+            <p className="text-on-surface-variant text-lg">Con un solo pedido ya evitaste pagar mas que un mes de quiero.menu.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+            <div className="bg-white rounded-2xl border border-error/20 p-8 flex flex-col">
+              <div className="flex items-center gap-2 text-error font-bold mb-4">
+                <MaterialIcon name="trending_down" />
+                Apps de delivery
+              </div>
+              <p className="text-5xl font-extrabold text-error mb-2">-$3.750</p>
+              <p className="text-sm text-on-surface-variant mb-6">por cada pedido de $15.000, al 25% de comision</p>
+              <div className="bg-error/5 rounded-xl p-4 text-sm text-on-surface space-y-1 flex-1">
+                <div className="flex justify-between"><span>Pedido del cliente</span><span className="font-bold">$15.000</span></div>
+                <div className="flex justify-between text-error"><span>Comision 25%</span><span className="font-bold">-$3.750</span></div>
+                <div className="border-t border-error/20 pt-2 flex justify-between font-extrabold"><span>Te queda</span><span>$11.250</span></div>
+              </div>
+            </div>
+            <div className="bg-primary/5 rounded-2xl border-2 border-primary p-8 flex flex-col relative overflow-hidden">
+              <div className="absolute top-4 right-4 gradient-cta text-white text-[10px] font-bold px-2 py-1 rounded">TODOS LOS PEDIDOS</div>
+              <div className="flex items-center gap-2 text-primary font-bold mb-4">
+                <MaterialIcon name="trending_up" />
+                quiero.menu
+              </div>
+              <p className="text-5xl font-extrabold text-primary mb-2">$0 comision</p>
+              <p className="text-sm text-on-surface-variant mb-6">el 100% del pedido va a tu bolsillo, siempre</p>
+              <div className="bg-white rounded-xl p-4 text-sm text-on-surface space-y-1 flex-1">
+                <div className="flex justify-between"><span>Pedido del cliente</span><span className="font-bold">$15.000</span></div>
+                <div className="flex justify-between text-primary"><span>Comision quiero.menu</span><span className="font-bold">$0</span></div>
+                <div className="border-t border-primary/20 pt-2 flex justify-between font-extrabold"><span>Te queda</span><span>$15.000</span></div>
+              </div>
+            </div>
+          </div>
+          <p className="text-center text-on-surface-variant mt-8 max-w-2xl mx-auto">
+            Pro cuesta <span className="font-bold text-on-surface">US$10 al mes</span>. Con un solo pedido de $15.000 evitando el 25% de comision, te lo pagaste entero y te sobraron $3.750.
+          </p>
+        </section>
+
         {/* Process */}
         <section className="py-24 px-6 max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-16">Empezar es asi de simple</h2>
@@ -247,6 +287,111 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold mb-3">3. Recibi los pedidos en tu panel</h3>
               <p className="text-on-surface-variant">Tus pedidos llegan organizados y listos para preparar. Tambien podes derivarlos a tu WhatsApp si queres.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Tracking: the differentiator */}
+        <section className="bg-white py-24 px-6">
+          <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+            <div className="space-y-6">
+              <span className="inline-flex items-center gap-2 gradient-cta text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                <MaterialIcon name="local_shipping" size="xs" />
+                NOVEDAD
+              </span>
+              <h2 className="text-4xl font-bold leading-tight">
+                Tus clientes dejan de llamar para preguntar <span className="text-primary">donde esta su pedido</span>
+              </h2>
+              <p className="text-lg text-on-surface-variant">
+                Despues de confirmar el pedido, tu cliente ve una pagina de seguimiento en vivo con cada estado: recibido, en preparacion, listo, en camino, entregado. Sin apps, sin login, sin que nadie llame a tu local.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  ['qr_code_2', 'Link publico en cada pedido', 'Al confirmar el carrito, el cliente cae directo al seguimiento.'],
+                  ['sync', 'Estados en tiempo real', 'Se actualiza solo cuando cambias el estado desde tu panel o cocina.'],
+                  ['check_circle', 'Sin apps ni login', 'Cualquier persona con el link lo ve, en cualquier telefono.'],
+                  ['chat', 'Confirmacion por WhatsApp', 'Con un toque arma el mensaje para confirmar el pedido con vos.'],
+                  ['payments', 'Transferencia con comprobante', 'Le muestras los datos de tu banco y sube el comprobante ahi mismo.'],
+                ].map(([icon, t, d]) => (
+                  <li key={t} className="flex gap-4">
+                    <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MaterialIcon name={icon} size="sm" className="text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-bold">{t}</p>
+                      <p className="text-sm text-on-surface-variant">{d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Phone mockup: tracking timeline */}
+            <div className="relative flex justify-center">
+              <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-primary/5 rounded-full blur-3xl" />
+              <div className="relative mx-auto w-[280px] md:w-[310px] aspect-[9/19.5] bg-black rounded-[3rem] border-[8px] border-stone-800 shadow-2xl overflow-hidden">
+                <div className="absolute top-0 w-full h-6 bg-black flex justify-center pt-1 z-20">
+                  <div className="w-20 h-4 bg-stone-900 rounded-full" />
+                </div>
+                <div className="h-full w-full bg-surface overflow-y-auto hide-scrollbar">
+                  {/* Tracking header */}
+                  <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-outline-variant/10 px-3 py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-xs text-on-surface leading-tight">Pizzeria Napoli</p>
+                      <p className="text-[9px] text-on-surface-variant">Seguimiento de pedido</p>
+                    </div>
+                    <span className="font-extrabold text-xs text-primary">#1042</span>
+                  </div>
+                  {/* Status card */}
+                  <div className="px-3 pt-3">
+                    <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100">
+                      <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MaterialIcon name="restaurant" size="sm" className="text-primary" />
+                      </div>
+                      <p className="font-bold text-xs text-on-surface mt-2">En preparacion</p>
+                      <p className="text-[9px] text-on-surface-variant">Pedido creado hace 5 min</p>
+                    </div>
+                  </div>
+                  {/* Timeline */}
+                  <div className="px-3 pt-2">
+                    <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 space-y-1">
+                      {[
+                        ['check', 'Recibido', true],
+                        ['restaurant', 'En preparacion', true],
+                        ['check_circle', 'Listo', false],
+                        ['local_shipping', 'En camino', false],
+                        ['handshake', 'Entregado', false],
+                      ].map(([icon, label, done], i) => (
+                        <div key={label as string} className="flex items-center gap-2">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center ${done ? 'bg-primary' : 'bg-surface-container-low'}`}>
+                            <MaterialIcon name={icon as string} size="xs" className={done ? 'text-white' : 'text-on-surface-variant'} />
+                          </div>
+                          <span className={`text-[10px] font-semibold ${done ? 'text-on-surface' : 'text-on-surface-variant'}`}>{label}</span>
+                          {i < 4 && <div className={`flex-1 h-0.5 ${i === 0 ? 'bg-primary' : 'bg-outline-variant/40'}`} />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* WhatsApp button */}
+                  <div className="px-3 pt-2">
+                    <div className="flex items-center justify-center gap-1.5 bg-green-600 rounded-xl py-2.5 text-[10px] font-bold text-white">
+                      <MaterialIcon name="chat" size="xs" />
+                      Confirmar por WhatsApp
+                    </div>
+                  </div>
+                  {/* Transfer data */}
+                  <div className="px-3 pt-2 pb-3">
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1">
+                      <p className="text-[9px] font-bold text-blue-800">Pagar por transferencia</p>
+                      <p className="text-[9px] text-blue-700">Banco: Galicia · Cuenta: 1234-5678</p>
+                      <div className="flex items-center justify-center gap-1 bg-white border border-blue-200 rounded-lg py-1.5 text-[9px] font-medium text-blue-800">
+                        <MaterialIcon name="upload" size="xs" />
+                        Subir comprobante
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -347,6 +492,139 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Pricing */}
+        <section id="precios" className="py-24 px-6 max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Precios simples y honestos</h2>
+            <p className="text-on-surface-variant text-lg max-w-2xl mx-auto">
+              Empeza gratis y usa quiero.menu sin pagar nada. Cuando tu negocio arranque a recibir pedidos, recien ahi decidis si lo llevas al siguiente nivel.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+            {/* FREE */}
+            <div className="bg-white rounded-2xl border border-outline-variant/30 p-8 flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold">Gratis</h3>
+                  <p className="text-sm text-on-surface-variant">Para arrancar sin riesgo</p>
+                </div>
+                <span className="bg-surface-container-low text-on-surface-variant text-xs font-bold px-3 py-1 rounded-full">SIN TARJETA</span>
+              </div>
+              <div className="mb-6">
+                <span className="text-5xl font-extrabold">$0</span>
+                <span className="text-on-surface-variant"> / mes</span>
+              </div>
+              <ul className="space-y-3 text-sm flex-1">
+                {[
+                  ['Hasta 50 pedidos al mes'],
+                  ['Menu digital con QR'],
+                  ['Pedidos online directos'],
+                  ['Confirmacion por WhatsApp'],
+                  ['Pagos por transferencia o efectivo'],
+                  ['Panel de pedidos y Kitchen Board'],
+                  ['Productos y categorias ilimitados'],
+                ].map(([t]) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <MaterialIcon name="check" size="sm" className="text-primary mt-0.5" />
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-on-surface-variant mt-4 flex items-center gap-1.5">
+                <MaterialIcon name="info" size="xs" />
+                Incluye la marca "Powered by quiero.menu"
+              </p>
+              <Link href="/signup" className="mt-6 text-center border border-primary text-primary font-bold py-3 rounded-xl hover:bg-primary/5 transition-colors">
+                Empezar gratis
+              </Link>
+            </div>
+
+            {/* PRO */}
+            <div className="bg-primary/5 rounded-2xl border-2 border-primary p-8 flex flex-col relative overflow-hidden">
+              <div className="absolute top-4 right-4 gradient-cta text-white text-[10px] font-bold px-2 py-1 rounded">RECOMENDADO</div>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold">Pro</h3>
+                  <p className="text-sm text-on-surface-variant">Para negocios que ya venden todos los dias</p>
+                </div>
+              </div>
+              <div className="mb-6">
+                <span className="text-5xl font-extrabold">US$10</span>
+                <span className="text-on-surface-variant"> / mes</span>
+              </div>
+              <ul className="space-y-3 text-sm flex-1">
+                {[
+                  ['Pedidos ilimitados'],
+                  ['Todo lo del plan gratis'],
+                  ['Sin marca quiero.menu'],
+                  ['Estadisticas avanzadas'],
+                  ['Dominio personalizado'],
+                  ['Soporte prioritario'],
+                ].map(([t]) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <MaterialIcon name="check" size="sm" className="text-primary mt-0.5" />
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-on-surface-variant mt-4">
+                Con un solo pedido de $15.000 sin comision te lo pagaste entero.
+              </p>
+              <Link href="/signup" className="mt-6 text-center gradient-cta text-white font-bold py-3 rounded-xl hover:opacity-90 transition-opacity">
+                Subir a Pro
+              </Link>
+            </div>
+          </div>
+          <p className="text-center text-sm text-on-surface-variant mt-8">
+            Sin costos ocultos, sin comisiones por pedido, sin permanencia. Podes cancelar cuando quieras.
+          </p>
+        </section>
+
+        {/* WhatsApp teaser (asis.chat) */}
+        <section className="py-16 px-6 max-w-7xl mx-auto">
+          <div className="bg-inverse-surface text-inverse-on-surface rounded-[2.5rem] p-10 md:p-14 relative overflow-hidden">
+            <div className="absolute -top-20 -left-20 w-80 h-80 bg-green-500/20 rounded-full blur-[100px]" />
+            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/20 rounded-full blur-[100px]" />
+            <div className="relative z-10 grid md:grid-cols-[1fr_auto] gap-8 items-center">
+              <div className="space-y-4">
+                <span className="inline-flex items-center gap-2 bg-green-500/20 text-green-300 text-xs font-bold px-3 py-1.5 rounded-full">
+                  <MaterialIcon name="bolt" size="xs" />
+                  PROXIMAMENTE
+                </span>
+                <h2 className="text-3xl md:text-4xl font-extrabold leading-tight">
+                  Potencia tu WhatsApp
+                </h2>
+                <p className="text-inverse-on-surface/70 max-w-xl">
+                  Responder tus pedidos por chat, recuperar clientes que ya te compraron y hacer campañas por WhatsApp. El mismo canal de siempre, automatizado.
+                </p>
+                <a
+                  href="https://asis.chat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-white text-on-surface font-bold px-6 py-3 rounded-xl hover:bg-surface-container-low transition-colors"
+                >
+                  Conocer asis.chat
+                  <MaterialIcon name="open_in_new" size="sm" />
+                </a>
+              </div>
+              <div className="hidden md:flex flex-col gap-4">
+                <div className="bg-white/10 rounded-2xl p-5 w-72">
+                  <p className="text-xs text-inverse-on-surface/60 font-bold uppercase tracking-wider mb-2">Tu restoran</p>
+                  <p className="text-2xl font-extrabold">187 clientes</p>
+                  <p className="text-sm text-inverse-on-surface/70">ya compraron en tu local</p>
+                </div>
+                <div className="bg-white/10 rounded-2xl p-5 w-72">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MaterialIcon name="campaign" size="sm" className="text-green-400" />
+                    <p className="text-sm font-bold">Promo para traerlos de vuelta</p>
+                  </div>
+                  <p className="text-xs text-inverse-on-surface/70">Enviada por WhatsApp a tus 187 clientes. Automatico.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* FAQ Section */}
         <section className="py-24 px-6 bg-white">
           <div className="max-w-3xl mx-auto">
@@ -362,8 +640,8 @@ export default function LandingPage() {
                   a: 'Podes tener tu menu listo en menos de 10 minutos. Nuestra herramienta de IA te ayuda a cargar tus platos si ya tenes una foto de tu menu fisico.',
                 },
                 {
-                  q: 'Puedo cobrar online con Mercado Pago?',
-                  a: 'Si, podes integrar Mercado Pago para recibir pagos con tarjeta o transferencia, o simplemente recibir el pedido y cobrar al entregar.',
+                  q: 'Como cobro los pedidos?',
+                  a: 'Como ya lo haces hoy: en efectivo al retirar o contra entrega, o por transferencia. Quiero.menu te muestra los datos de tu banco al cliente y el comprobante lo sube directamente en el seguimiento del pedido.',
                 },
                 {
                   q: 'Como me entero de un pedido nuevo?',
@@ -391,7 +669,7 @@ export default function LandingPage() {
         </section>
 
         {/* Final CTA */}
-        <section id="precios" className="py-24 px-6">
+        <section className="py-24 px-6">
           <div className="max-w-4xl mx-auto bg-inverse-surface text-inverse-on-surface rounded-[2.5rem] p-12 md:p-20 text-center relative overflow-hidden">
             <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/20 rounded-full blur-[100px]" />
             <div className="relative z-10">

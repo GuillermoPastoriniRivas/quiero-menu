@@ -117,7 +117,7 @@ export default function OrdersPage() {
         </div>
       </section>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Gestion de Pedidos</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => openBoard('kitchen')}>
@@ -275,7 +275,7 @@ export default function OrdersPage() {
                   )}
 
                   {/* Total + action */}
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
                     <div>
                       <span className="font-bold text-lg text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>{formatCurrency(order.total)}</span>
                       {order.paymentMethod && (
@@ -291,7 +291,7 @@ export default function OrdersPage() {
                     {nextAction && (
                       <Button
                         onClick={() => handleStatusChange(order.id, nextAction.status)}
-                        className="shadow-md shadow-primary/20"
+                        className="w-full sm:w-auto shadow-md shadow-primary/20"
                       >
                         <MaterialIcon name={nextAction.icon} size="sm" />
                         {nextAction.label}

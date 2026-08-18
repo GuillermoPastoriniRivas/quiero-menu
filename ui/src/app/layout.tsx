@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter, Poppins } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { RegisterSW } from "@/components/register-sw";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -27,9 +28,16 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Quiero Menu - Menu digital para restaurantes",
   description: "Crea tu menu digital y recibe pedidos por WhatsApp",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "quiero.menu",
+  },
+  applicationName: "quiero.menu",
   icons: {
-    icon: [{ url: "/icon.svg?v=3", type: "image/svg+xml", sizes: "any" }],
-    apple: [{ url: "/icon.svg?v=3", type: "image/svg+xml", sizes: "any" }],
+    icon: [{ url: "/icon-192.png", type: "image/png", sizes: "192x192" }, { url: "/icon.svg", type: "image/svg+xml", sizes: "any" }],
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
   },
 };
 
@@ -41,9 +49,12 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${plusJakartaSans.variable} ${inter.variable} ${poppins.variable} h-full antialiased`}>
       <head>
-        <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" sizes="any" />
-        <link rel="apple-touch-icon" href="/icon.svg?v=3" type="image/svg+xml" sizes="any" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" sizes="any" />
         <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#E8532C" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="quiero.menu" />
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
@@ -51,6 +62,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         {children}
+        <RegisterSW />
         <Toaster />
       </body>
     </html>

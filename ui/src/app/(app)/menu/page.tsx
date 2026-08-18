@@ -246,7 +246,7 @@ export default function MenuPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Menu</h1>
         <div className="flex items-center gap-2">
           <Link
@@ -261,7 +261,7 @@ export default function MenuPage() {
       </div>
 
       {/* ---- add category ---- */}
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <Input
           placeholder="Nueva categoria..."
           value={newCatName}
@@ -280,15 +280,15 @@ export default function MenuPage() {
         return (
           <Card key={cat.id}>
             <CardHeader
-              className="flex flex-row items-center justify-between cursor-pointer select-none"
+              className="flex flex-row items-center justify-between gap-2 flex-wrap cursor-pointer select-none"
               onClick={() => toggleCat(cat.id)}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 {catOpen ? <MaterialIcon name="expand_more" size="sm" /> : <MaterialIcon name="chevron_right" size="sm" />}
-                <CardTitle className="text-lg">{cat.name}</CardTitle>
-                <Badge variant="outline" className="ml-2">{cat.items.length} productos</Badge>
+                <CardTitle className="text-lg truncate">{cat.name}</CardTitle>
+                <Badge variant="outline" className="ml-2 shrink-0">{cat.items.length} productos</Badge>
               </div>
-              <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+              <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                 <Button
                   size="sm"
                   variant="outline"
@@ -323,10 +323,10 @@ export default function MenuPage() {
                     <div key={item.id} className="border rounded-lg">
                       {/* item header */}
                       <div
-                        className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+                        className="flex items-center justify-between px-4 py-3 cursor-pointer select-none gap-3"
                         onClick={() => toggleItem(item.id)}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           {hasExtras ? (
                             itemOpen ? <MaterialIcon name="expand_more" size="sm" className="text-muted-foreground" /> : <MaterialIcon name="chevron_right" size="sm" className="text-muted-foreground" />
                           ) : (
@@ -339,16 +339,16 @@ export default function MenuPage() {
                               <MaterialIcon name="restaurant" size="sm" className="text-muted-foreground" />
                             </div>
                           )}
-                          <div>
+                          <div className="min-w-0">
                             <span className="font-medium">{item.name}</span>
                             {item.description && (
-                              <p className="text-xs text-muted-foreground">{item.description}</p>
+                              <p className="text-xs text-muted-foreground line-clamp-1">{item.description}</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-sm font-semibold">{formatCurrency(item.basePrice)}</span>
+                        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-sm font-semibold whitespace-nowrap">{formatCurrency(item.basePrice)}</span>
                           {!item.isAvailable && <Badge variant="secondary">No disponible</Badge>}
                           <Switch
                             checked={item.isAvailable}
