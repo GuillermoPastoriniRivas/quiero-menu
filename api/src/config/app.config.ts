@@ -16,7 +16,10 @@ export default () => ({
   jwt: {
     secret: requireEnv('JWT_SECRET', 'dev-secret-do-not-use-in-prod'),
     expiresIn: process.env.JWT_EXPIRES_IN ?? '3d',
-    refreshSecret: requireEnv('JWT_REFRESH_SECRET', 'dev-refresh-secret-do-not-use-in-prod'),
+    refreshSecret: requireEnv(
+      'JWT_REFRESH_SECRET',
+      'dev-refresh-secret-do-not-use-in-prod',
+    ),
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
   },
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3001',
@@ -26,11 +29,13 @@ export default () => ({
   s3: {
     bucket: process.env.S3_BUCKET ?? 'quiero-menu-images',
     region: process.env.S3_REGION ?? 'us-east-1',
-    cloudfrontDomain: process.env.CLOUDFRONT_DOMAIN ?? 'd2y3u1bswha7un.cloudfront.net',
+    cloudfrontDomain:
+      process.env.CLOUDFRONT_DOMAIN ?? 'd2y3u1bswha7un.cloudfront.net',
   },
   ses: {
     region: process.env.SES_REGION ?? 'us-east-1',
-    fromEmail: process.env.SES_FROM_EMAIL ?? 'quiero.menu <no-reply@quiero.menu>',
+    fromEmail:
+      process.env.SES_FROM_EMAIL ?? 'quiero.menu <no-reply@quiero.menu>',
   },
   lemonSqueezy: {
     apiKey: process.env.LEMON_SQUEEZY_API_KEY ?? '',
@@ -40,9 +45,21 @@ export default () => ({
       pro: process.env.LEMON_SQUEEZY_VARIANT_PRO ?? '',
     },
   },
+  mercadoPago: {
+    accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN ?? '',
+    webhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET ?? '',
+    planId: process.env.MERCADO_PAGO_PLAN_ID ?? '',
+    amount: parseInt(process.env.MERCADO_PAGO_AMOUNT ?? '1000', 10),
+    currency: process.env.MERCADO_PAGO_CURRENCY ?? 'ARS',
+    trialDays: parseInt(process.env.MERCADO_PAGO_TRIAL_DAYS ?? '30', 10),
+  },
   vapid: {
-    publicKey: process.env.VAPID_PUBLIC_KEY ?? 'BJf6QtpJOjPEEei6210-omLn-Of425e-akBFvtNXxcfoN2n714AFPo_-RgEhZVJQX9NELwPWyKQY-RGXMJRMU7E',
-    privateKey: process.env.VAPID_PRIVATE_KEY ?? 'ptGoYh-Ar72CosCzxTW1WRRjhxuUZtFpg3dlwyKU0zI',
+    publicKey:
+      process.env.VAPID_PUBLIC_KEY ??
+      'BJf6QtpJOjPEEei6210-omLn-Of425e-akBFvtNXxcfoN2n714AFPo_-RgEhZVJQX9NELwPWyKQY-RGXMJRMU7E',
+    privateKey:
+      process.env.VAPID_PRIVATE_KEY ??
+      'ptGoYh-Ar72CosCzxTW1WRRjhxuUZtFpg3dlwyKU0zI',
     subject: process.env.VAPID_SUBJECT ?? 'mailto:soporte@quiero.menu',
   },
 });

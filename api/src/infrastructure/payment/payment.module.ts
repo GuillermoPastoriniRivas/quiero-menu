@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { LemonSqueezyPaymentService } from './lemon-squeezy-payment.service.js';
+import { MercadoPagoPaymentService } from './mercado-pago-payment.service.js';
 
 @Module({
   providers: [
-    { provide: 'PaymentProviderPort', useClass: LemonSqueezyPaymentService },
+    { provide: 'PaymentProviderPort', useClass: MercadoPagoPaymentService },
   ],
   exports: ['PaymentProviderPort'],
 })

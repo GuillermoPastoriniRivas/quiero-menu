@@ -36,12 +36,29 @@ export class HandlePaymentWebhookUseCase {
 
     const plan = event.plan ?? PlanTier.PRO;
     const now = new Date();
-    const periodEnd = event.currentPeriodEnd ?? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const periodEnd =
+      event.currentPeriodEnd ??
+      new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    const existing = await this.subscriptionRepo.findByRestaurantId(event.tenantId);
+    const existing = await this.subscriptionRepo.findByRestaurantId(
+      event.tenantId,
+    );
 
     if (existing) {
-      if (existing.externalSubscriptionId === event.externalSubscriptionId && existing.status === SubscriptionStatus.ACTIVE) {
+      if (
+        existing.externalSubscriptionId === event.externalSubscriptionId &&
+        existing.status === SubscriptionStatus.ACTIVE
+      ) {
+        if (
+          event.currentPeriodEnd &&
+          (!existing.currentPeriodEnd ||
+            event.currentPeriodEnd.getTime() !==
+              existing.currentPeriodEnd.getTime())
+        ) {
+          await this.subscriptionRepo.update(existing.id, {
+            currentPeriodEnd: event.currentPeriodEnd,
+          });
+        }
         return;
       }
 
@@ -51,7 +68,7 @@ export class HandlePaymentWebhookUseCase {
         currentPeriodStart: now,
         currentPeriodEnd: periodEnd,
         canceledAt: null,
-        paymentProvider: PaymentProvider.LEMON_SQUEEZY,
+        paymentProvider: event.provider,
         externalCustomerId: event.externalCustomerId,
         externalSubscriptionId: event.externalSubscriptionId,
       });
@@ -63,7 +80,7 @@ export class HandlePaymentWebhookUseCase {
         currentPeriodStart: now,
         currentPeriodEnd: periodEnd,
         canceledAt: null,
-        paymentProvider: PaymentProvider.LEMON_SQUEEZY,
+        paymentProvider: event.provider,
         externalCustomerId: event.externalCustomerId,
         externalSubscriptionId: event.externalSubscriptionId,
       });
@@ -75,12 +92,15 @@ export class HandlePaymentWebhookUseCase {
       eventType: BillingEventType.SUBSCRIPTION_CREATED,
       plan,
       amountCents: limits.priceMonthly,
-      description: `Subscribed to ${plan} plan via Lemon Squeezy`,
+      description: `Subscribed to ${plan} plan (${event.provider})`,
     });
   }
 
   private async handleSubscriptionUpdated(event: WebhookEvent): Promise<void> {
-    const subscription = await this.subscriptionRepo.findByExternalSubscriptionId(event.externalSubscriptionId);
+    const subscription =
+      await this.subscriptionRepo.findByExternalSubscriptionId(
+        event.externalSubscriptionId,
+      );
     if (!subscription) return;
 
     const updates: Record<string, unknown> = {};
@@ -96,7 +116,10 @@ export class HandlePaymentWebhookUseCase {
 
     const activeStatuses = new Set(['active', 'on_trial', 'past_due']);
     if (activeStatuses.has(event.status)) {
-      updates.status = event.status === 'past_due' ? SubscriptionStatus.PAST_DUE : SubscriptionStatus.ACTIVE;
+      updates.status =
+        event.status === 'past_due'
+          ? SubscriptionStatus.PAST_DUE
+          : SubscriptionStatus.ACTIVE;
     }
 
     if (Object.keys(updates).length > 0) {
@@ -115,7 +138,10 @@ export class HandlePaymentWebhookUseCase {
   }
 
   private async handlePaymentSuccess(event: WebhookEvent): Promise<void> {
-    const subscription = await this.subscriptionRepo.findByExternalSubscriptionId(event.externalSubscriptionId);
+    const subscription =
+      await this.subscriptionRepo.findByExternalSubscriptionId(
+        event.externalSubscriptionId,
+      );
     if (!subscription) return;
 
     const plan = event.plan ?? subscription.plan;
@@ -138,7 +164,10 @@ export class HandlePaymentWebhookUseCase {
   }
 
   private async handlePaymentFailed(event: WebhookEvent): Promise<void> {
-    const subscription = await this.subscriptionRepo.findByExternalSubscriptionId(event.externalSubscriptionId);
+    const subscription =
+      await this.subscriptionRepo.findByExternalSubscriptionId(
+        event.externalSubscriptionId,
+      );
     if (!subscription) return;
 
     await this.subscriptionRepo.update(subscription.id, {
@@ -155,7 +184,10 @@ export class HandlePaymentWebhookUseCase {
   }
 
   private async handleSubscriptionEnded(event: WebhookEvent): Promise<void> {
-    const subscription = await this.subscriptionRepo.findByExternalSubscriptionId(event.externalSubscriptionId);
+    const subscription =
+      await this.subscriptionRepo.findByExternalSubscriptionId(
+        event.externalSubscriptionId,
+      );
     if (!subscription) return;
 
     await this.subscriptionRepo.update(subscription.id, {
@@ -177,6 +209,8 @@ export class HandlePaymentWebhookUseCase {
     });
 
     // Clear custom domain on downgrade
-    await this.restaurantRepo.update(subscription.restaurantId, { customDomain: null });
+    await this.restaurantRepo.update(subscription.restaurantId, {
+      customDomain: null,
+    });
   }
 }
