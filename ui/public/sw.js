@@ -1,5 +1,5 @@
 /* quiero.menu service worker - offline-first for the static export */
-const VERSION = 'qm-v2';
+const VERSION = 'qm-v3';
 const CACHE = `quiero-menu-${VERSION}`;
 const PRECACHE = 'quiero-menu-precache';
 
@@ -33,15 +33,14 @@ const PRECACHE_URLS = [
   '/apple-touch-icon.png',
   '/icon.svg',
   '/logo.svg',
-  '/notification.wav',
 ];
 
-const PREFIX = '/_next/';
-
 self.addEventListener('install', (event) => {
+  // Install must never hang on a single failing request (e.g. slow mobile
+  // network): cache each URL independently and resolve the install anyway.
   event.waitUntil(
     caches.open(PRECACHE)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) => Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url))))
       .then(() => self.skipWaiting())
   );
 });
