@@ -28,12 +28,13 @@ export function Logo({ size = 'md', showText = true, className = '', href }: Log
       />
       {showText && (
         <span
-          className={`font-extrabold tracking-tight text-brand-orange ${
+          className={`font-extrabold tracking-tight text-on-background ${
             size === 'sm' ? 'text-lg' : size === 'md' ? 'text-xl' : 'text-2xl'
           }`}
           style={{ fontFamily: 'var(--font-logo)' }}
         >
-          Quiero
+          quiero
+          <span className="text-brand-orange">.menu</span>
         </span>
       )}
     </>
