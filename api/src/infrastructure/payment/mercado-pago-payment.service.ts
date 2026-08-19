@@ -30,6 +30,13 @@ interface Preapproval {
   init_point?: string;
 }
 
+interface PreapprovalPlan {
+  id?: string;
+  status?: string;
+  external_reference?: string;
+  init_point?: string;
+}
+
 interface AuthorizedPayment {
   preapproval_id?: string;
   status?: string;
@@ -48,11 +55,13 @@ export class MercadoPagoPaymentService implements PaymentProviderPort {
 
   private readonly accessToken: string;
   private readonly webhookSecret: string;
-  private readonly configuredPlanId: string;
   private readonly amount: number;
   private readonly currency: string;
   private readonly trialDays: number;
-  private cachedPlanId: string | null = null;
+  private readonly planCache = new Map<
+    string,
+    { id: string; initPoint: string }
+  >();
 
   constructor(private readonly config: ConfigService) {
     this.accessToken = this.config.get<string>('mercadoPago.accessToken', '');
@@ -60,7 +69,6 @@ export class MercadoPagoPaymentService implements PaymentProviderPort {
       'mercadoPago.webhookSecret',
       '',
     );
-    this.configuredPlanId = this.config.get<string>('mercadoPago.planId', '');
     this.amount = this.config.get<number>('mercadoPago.amount', 1000);
     this.currency = this.config.get<string>('mercadoPago.currency', 'ARS');
     this.trialDays = this.config.get<number>('mercadoPago.trialDays', 30);
@@ -69,24 +77,9 @@ export class MercadoPagoPaymentService implements PaymentProviderPort {
   async createCheckout(
     params: CreateCheckoutParams,
   ): Promise<CreateCheckoutResult> {
-    const planId = await this.ensurePlan();
+    const plan = await this.ensurePlan(params.tenantId);
 
-    const preapproval = await this.request<Preapproval>(
-      '/preapproval',
-      'POST',
-      {
-        preapproval_plan_id: planId,
-        payer_email: params.customerEmail,
-        external_reference: params.tenantId,
-        back_url: params.successUrl,
-      },
-    );
-
-    if (!preapproval.init_point) {
-      throw new Error('Mercado Pago response missing init_point');
-    }
-
-    return { checkoutUrl: preapproval.init_point };
+    return { checkoutUrl: plan.initPoint };
   }
 
   async cancelSubscription(externalSubscriptionId: string): Promise<void> {
@@ -186,10 +179,14 @@ export class MercadoPagoPaymentService implements PaymentProviderPort {
       externalSubscriptionId: resourceId,
       externalCustomerId:
         preapproval.payer_id != null ? String(preapproval.payer_id) : '',
-      tenantId: preapproval.external_reference ?? null,
-      plan: preapproval.preapproval_plan_id
-        ? this.planFromId(preapproval.preapproval_plan_id)
-        : null,
+      tenantId:
+        preapproval.external_reference ??
+        (preapproval.preapproval_plan_id
+          ? await this.resolvePlanExternalReference(
+              preapproval.preapproval_plan_id,
+            )
+          : null),
+      plan: PlanTier.PRO,
       status,
       currentPeriodEnd: preapproval.next_payment_date
         ? new Date(preapproval.next_payment_date)
@@ -251,15 +248,19 @@ export class MercadoPagoPaymentService implements PaymentProviderPort {
     };
   }
 
-  private async ensurePlan(): Promise<string> {
-    if (this.configuredPlanId) return this.configuredPlanId;
-    if (this.cachedPlanId) return this.cachedPlanId;
+  private async ensurePlan(tenantId: string): Promise<{
+    id: string;
+    initPoint: string;
+  }> {
+    const cached = this.planCache.get(tenantId);
+    if (cached) return cached;
 
-    const plan = await this.request<{ id?: string }>(
+    const plan = await this.request<PreapprovalPlan>(
       '/preapproval_plan',
       'POST',
       {
         reason: 'Quiero Menú Pro',
+        external_reference: tenantId,
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
@@ -271,20 +272,28 @@ export class MercadoPagoPaymentService implements PaymentProviderPort {
       },
     );
 
-    if (!plan.id) {
-      throw new Error('Mercado Pago plan creation missing id');
+    if (!plan.id || !plan.init_point) {
+      throw new Error('Mercado Pago plan creation missing id or init_point');
     }
 
-    this.cachedPlanId = plan.id;
+    this.planCache.set(tenantId, { id: plan.id, initPoint: plan.init_point });
     this.logger.log(
-      `Created Mercado Pago preapproval_plan ${plan.id} (ARS ${this.amount}/month, ${this.trialDays} days free)`,
+      `Created Mercado Pago preapproval_plan ${plan.id} for tenant ${tenantId} (ARS ${this.amount}/month, ${this.trialDays} days free)`,
     );
-    return plan.id;
+    return { id: plan.id, initPoint: plan.init_point };
   }
 
-  private planFromId(planId: string): PlanTier | null {
-    if (this.configuredPlanId && this.configuredPlanId !== planId) return null;
-    return PlanTier.PRO;
+  private async resolvePlanExternalReference(
+    planId: string,
+  ): Promise<string | null> {
+    try {
+      const plan = await this.request<PreapprovalPlan>(
+        `/preapproval_plan/${encodeURIComponent(planId)}`,
+      );
+      return plan.external_reference ?? null;
+    } catch {
+      return null;
+    }
   }
 
   private async request<T>(
