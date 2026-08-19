@@ -259,7 +259,7 @@ export default function LandingPage() {
             </div>
           </div>
           <p className="text-center text-on-surface-variant mt-8 max-w-2xl mx-auto">
-            Pro cuesta <span className="font-bold text-on-surface">US$10 al mes</span>. Con un solo pedido de $15.000 evitando el 25% de comision, te lo pagaste entero y te sobraron $3.750.
+            Pro cuesta <span className="font-bold text-on-surface">AR$15.000 al mes</span>. Con 4 pedidos de $15.000 evitando el 25% de comision, te lo pagaste entero.
           </p>
         </section>
 
@@ -549,7 +549,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="mb-6">
-                <span className="text-5xl font-extrabold">US$10</span>
+                <span className="text-5xl font-extrabold">AR$15.000</span>
                 <span className="text-on-surface-variant"> / mes</span>
               </div>
               <ul className="space-y-3 text-sm flex-1">
@@ -568,7 +568,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <p className="text-xs text-on-surface-variant mt-4">
-                Con un solo pedido de $15.000 sin comision te lo pagaste entero.
+                Con 4 pedidos de $15.000 sin comision lo pagas entero.
               </p>
               <Link href="/signup" className="mt-6 text-center gradient-cta text-white font-bold py-3 rounded-xl hover:opacity-90 transition-opacity">
                 Subir a Pro

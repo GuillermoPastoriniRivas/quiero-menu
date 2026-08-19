@@ -48,7 +48,7 @@ export default () => ({
   mercadoPago: {
     accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN ?? '',
     webhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET ?? '',
-    amount: parseInt(process.env.MERCADO_PAGO_AMOUNT ?? '1000', 10),
+    amount: parseInt(process.env.MERCADO_PAGO_AMOUNT ?? '15000', 10),
     currency: process.env.MERCADO_PAGO_CURRENCY ?? 'ARS',
     trialDays: parseInt(process.env.MERCADO_PAGO_TRIAL_DAYS ?? '30', 10),
   },

@@ -152,7 +152,7 @@ export class HandlePaymentWebhookUseCase {
       eventType: BillingEventType.PAYMENT_SUCCESS,
       plan,
       amountCents: limits.priceMonthly,
-      description: `Payment received — $${(limits.priceMonthly / 100).toFixed(2)}/mo`,
+      description: `Payment received — $${limits.priceMonthly.toLocaleString('es-AR')}/mes`,
     });
 
     if (event.currentPeriodEnd) {

@@ -18,6 +18,6 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     maxOrdersPerMonth: -1,
     showPoweredByFooter: false,
     customDomain: true,
-    priceMonthly: 1000,
+    priceMonthly: 15000,
   },
 };

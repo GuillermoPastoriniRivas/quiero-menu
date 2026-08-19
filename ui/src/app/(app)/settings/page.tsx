@@ -410,7 +410,7 @@ export default function SettingsPage() {
                 <CardDescription>Para restaurantes en crecimiento</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-3xl font-bold">$10<span className="text-sm font-normal text-muted-foreground"> USD/mes</span></p>
+                <p className="text-3xl font-bold">AR$ 15.000<span className="text-sm font-normal text-muted-foreground"> /mes</span></p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Pedidos ilimitados</li>
                   <li className="flex items-center gap-2"><MaterialIcon name="check" size="sm" className="text-green-600" />Menú digital completo</li>
@@ -509,7 +509,7 @@ export default function SettingsPage() {
                         <p className="text-xs text-muted-foreground">{formatDate(record.createdAt)}</p>
                       </div>
                       {record.amountCents > 0 && (
-                        <span className="font-medium">${(record.amountCents / 100).toFixed(2)}</span>
+                        <span className="font-medium">${record.amountCents.toLocaleString('es-AR')}</span>
                       )}
                     </div>
                   ))}
