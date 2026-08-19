@@ -46,18 +46,13 @@ jobs:
           npm run build
           tar -czf ../quiero-menu-static.tar.gz -C out .
 
-      - name: Materialize API environment for transfer
-        env:
-          QM_API_ENV: ${{ secrets.QM_API_ENV }}
-        run: printf '%s' "$QM_API_ENV" > quiero-menu-api.env
-
       - name: Copy static UI
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SHARED_EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.SHARED_EC2_SSH_KEY }}
-          source: "quiero-menu-static.tar.gz,quiero-menu-api.env"
+          source: "quiero-menu-static.tar.gz,infra/scripts/hydrate-env.sh"
           target: ${{ env.APP_DIR }}
 
       - name: Activate quiero-menu API and static UI
@@ -71,7 +66,9 @@ jobs:
             cd ${{ env.APP_DIR }}
             mkdir -p static/quiero-menu quiero-menu/api nginx-enabled certbot
 
-            install -m 600 quiero-menu-api.env quiero-menu/api/.env
+            chmod +x infra/scripts/hydrate-env.sh
+            bash infra/scripts/hydrate-env.sh /quiero-menu/api ./quiero-menu/api/.env
+            test -s ./quiero-menu/api/.env
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
             docker pull ${{ env.ECR_API }}:latest
             docker tag ${{ env.ECR_API }}:latest shared-quiero-menu-api:latest
@@ -92,7 +89,7 @@ jobs:
             docker exec shared-nginx nginx -t
             docker exec shared-nginx nginx -s reload
 
-            rm -f quiero-menu-api.env quiero-menu-static.tar.gz
+            rm -f quiero-menu-static.tar.gz
             docker image prune -f
 
       - name: Verify quiero-menu is serving
