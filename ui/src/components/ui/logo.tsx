@@ -33,8 +33,7 @@ export function Logo({ size = 'md', showText = true, className = '', href }: Log
           }`}
           style={{ fontFamily: 'var(--font-logo)' }}
         >
-          quiero
-          <span className="text-brand-orange">.menu</span>
+          Quiero
         </span>
       )}
     </>
