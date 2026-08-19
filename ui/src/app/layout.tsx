@@ -32,9 +32,9 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Qe Menu",
+    title: "Quiero",
   },
-  applicationName: "Qe Menu",
+  applicationName: "Quiero",
   icons: {
     icon: [{ url: "/icon-192.png", type: "image/png", sizes: "192x192" }, { url: "/icon.svg", type: "image/svg+xml", sizes: "any" }],
     apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
@@ -54,7 +54,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#E8532C" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Qe Menu" />
+        <meta name="apple-mobile-web-app-title" content="Quiero" />
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
