@@ -7,6 +7,10 @@ export function formatCurrency(amount: number, currency = 'COP'): string {
   }).format(amount);
 }
 
+export function formatARS(amount: number): string {
+  return `$${amount.toLocaleString('es-AR')}`;
+}
+
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat('es-CO', {
     dateStyle: 'medium',

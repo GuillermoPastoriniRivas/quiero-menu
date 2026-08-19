@@ -5,8 +5,10 @@ import { useOrderStore } from '@/stores/order.store';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMenuStore } from '@/stores/menu.store';
+import { useBillingStore } from '@/stores/billing.store';
 import { MaterialIcon } from '@/components/ui/material-icon';
-import { OrderStatus } from '@/types';
+import { Button } from '@/components/ui/button';
+import { OrderStatus, PlanTier } from '@/types';
 import { formatCurrency } from '@/lib/format';
 import Link from 'next/link';
 
@@ -14,10 +16,12 @@ export default function DashboardPage() {
   const { orders, fetch: fetchOrders } = useOrderStore();
   const { restaurant, fetch: fetchRestaurant } = useRestaurantStore();
   const { user } = useAuthStore();
+  const billing = useBillingStore();
 
   useEffect(() => {
     fetchOrders();
     fetchRestaurant();
+    billing.fetch();
   }, []);
 
   const todayOrders = orders.filter((o) => {
@@ -35,11 +39,39 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Welcome */}
       <section className="space-y-2">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-background" style={{ fontFamily: 'var(--font-heading)' }}>
-          Hola, {restaurant?.name || user?.name}!
-        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-background" style={{ fontFamily: 'var(--font-heading)' }}>
+            Hola, {restaurant?.name || user?.name}!
+          </h1>
+          {billing.info?.plan === PlanTier.PRO && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+              <MaterialIcon name="workspace_premium" size="xs" />
+              Plan Pro
+            </span>
+          )}
+        </div>
         <p className="text-on-surface-variant text-lg">Solo faltan unos pasos para empezar a recibir pedidos.</p>
       </section>
+
+      {/* Plan banner */}
+      {billing.info?.plan === PlanTier.FREE && (
+        <section className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <MaterialIcon name="workspace_premium" size="lg" />
+            </div>
+            <div>
+              <p className="font-bold">Plan Gratis · 50 pedidos/mes</p>
+              <p className="text-sm text-on-surface-variant">Subí a Pro por {formatCurrency(15000, 'ARS')}/mes con 30 días gratis: pedidos ilimitados y sin marca quiero.menu.</p>
+            </div>
+          </div>
+          <Link href="/billing">
+            <Button size="sm" className="gradient-cta text-white">
+              <MaterialIcon name="bolt" size="sm" className="mr-1" />Subir a Pro
+            </Button>
+          </Link>
+        </section>
+      )}
 
       {/* Onboarding Bento Grid */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">

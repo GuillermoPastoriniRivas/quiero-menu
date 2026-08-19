@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { useBillingStore } from '@/stores/billing.store';
 import { api } from '@/lib/api';
@@ -21,6 +23,14 @@ import { formatDate } from '@/lib/format';
 import { subscribeStaffPush, unsubscribePush, isPushSupported, isPushSubscribed } from '@/lib/push';
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageInner />
+    </Suspense>
+  );
+}
+
+function SettingsPageInner() {
   const { restaurant, fetch: fetchRestaurant, update } = useRestaurantStore();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -66,6 +76,11 @@ export default function SettingsPage() {
   const billing = useBillingStore();
   const [upgrading, setUpgrading] = useState(false);
   const [canceling, setCanceling] = useState(false);
+
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<string>(
+    searchParams.get('tab') ?? 'general',
+  );
 
   // Notifications (web push)
   const [pushSupported, setPushSupported] = useState(false);
@@ -218,11 +233,11 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Configuración</h1>
 
-      <Tabs defaultValue="general">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="billing">Plan y facturación</TabsTrigger>
           <TabsTrigger value="payments">Pagos</TabsTrigger>
-          <TabsTrigger value="billing">Plan</TabsTrigger>
           <TabsTrigger value="delivery">Zonas de delivery</TabsTrigger>
           <TabsTrigger value="kitchen">Cocina</TabsTrigger>
           <TabsTrigger value="delivery-portal">Delivery</TabsTrigger>
@@ -377,6 +392,17 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="billing" className="space-y-4 mt-4">
+          <Link href="/billing" className="flex items-center justify-between rounded-xl border bg-white p-4 hover:bg-surface-container-low transition-colors">
+            <div className="flex items-center gap-3">
+              <MaterialIcon name="workspace_premium" size="md" className="text-primary" />
+              <div>
+                <p className="font-bold text-sm">Plan y facturación</p>
+                <p className="text-xs text-muted-foreground">Estado del plan, límites e historial de cobros completo</p>
+              </div>
+            </div>
+            <MaterialIcon name="chevron_right" size="md" className="text-on-surface-variant" />
+          </Link>
+
           {/* Current plan */}
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Free plan card */}
@@ -435,14 +461,9 @@ export default function SettingsPage() {
                 )}
                 {billing.info?.plan === PlanTier.PRO && (
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={async () => {
-                      try {
-                        const url = await billing.getPortalUrl();
-                        window.open(url, '_blank');
-                      } catch {
-                        toast.error('No se pudo obtener el portal de pagos');
-                      }
-                    }}>Administrar pago</Button>
+                    <Link href="/billing" className="flex-1">
+                      <Button variant="outline" className="w-full">Ver facturación</Button>
+                    </Link>
                     <Button variant="ghost" className="text-destructive" disabled={canceling} onClick={async () => {
                       if (!confirm('¿Seguro que querés cancelar? Perderás acceso a las funciones Pro.')) return;
                       setCanceling(true);
@@ -495,12 +516,16 @@ export default function SettingsPage() {
           )}
 
           {/* Billing history */}
-          {billing.history.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Historial de facturación</CardTitle>
-              </CardHeader>
-              <CardContent>
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de cobros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {billing.history.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  Todavía no hay movimientos. Cuando se procese un cobro, aparece acá.
+                </p>
+              ) : (
                 <div className="space-y-2">
                   {billing.history.map((record) => (
                     <div key={record.id} className="flex items-center justify-between rounded-md border p-3 text-sm">
@@ -514,9 +539,9 @@ export default function SettingsPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="delivery" className="space-y-4 mt-4">

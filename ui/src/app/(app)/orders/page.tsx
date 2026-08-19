@@ -147,7 +147,7 @@ export default function OrdersPage() {
               <p className="text-sm text-on-surface-variant">Subi a Pro para ver todos tus pedidos sin limite.</p>
             </div>
           </div>
-          <Button size="sm" onClick={() => window.location.href = '/settings?tab=billing'}>
+          <Button size="sm" onClick={() => window.location.href = '/billing'}>
             <MaterialIcon name="bolt" size="sm" className="mr-1" />Subir a Pro
           </Button>
         </div>

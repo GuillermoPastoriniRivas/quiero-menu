@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/orders', label: 'Pedidos', icon: 'receipt_long' },
   { href: '/menu', label: 'Menu', icon: 'restaurant_menu' },
   { href: '/publicar', label: 'Publicar', icon: 'share' },
+  { href: '/billing', label: 'Plan y facturacion', icon: 'workspace_premium' },
   { href: '/settings', label: 'Configuracion', icon: 'settings' },
 ];
 
