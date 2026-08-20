@@ -3,6 +3,7 @@ name: Deploy quiero-menu to shared ARM host
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 env:
@@ -46,6 +47,7 @@ jobs:
 
   deploy:
     needs: [lint, tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
