@@ -1,0 +1,9 @@
+# fluws (memoria compartida local del CLI - no subir)
+.fluws/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.pem
+.vscode/
+.idea/
