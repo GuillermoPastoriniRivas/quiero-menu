@@ -48,12 +48,12 @@ export default function CustomersPage() {
   useEffect(() => {
     fetchRestaurant();
     fetchCustomers(1, '');
-  }, []);
+  }, [fetchRestaurant, fetchCustomers]);
 
   useEffect(() => {
     const t = setTimeout(() => fetchCustomers(1, search), 400);
     return () => clearTimeout(t);
-  }, [search]);
+  }, [fetchCustomers, search]);
 
   const toggleExpand = async (phone: string) => {
     if (expanded === phone) {

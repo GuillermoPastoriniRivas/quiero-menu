@@ -53,7 +53,7 @@ export default function CouponsPage() {
   useEffect(() => {
     fetchRestaurant();
     fetchCoupons();
-  }, []);
+  }, [fetchRestaurant, fetchCoupons]);
 
   const handleCreate = async () => {
     const trimmed = code.trim().toUpperCase();

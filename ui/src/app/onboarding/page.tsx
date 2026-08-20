@@ -6,7 +6,6 @@ import { useOnboardingStore } from '@/stores/onboarding.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { MenuImageUpload } from '@/components/onboarding/menu-image-upload';
 import { AiMenuPreview } from '@/components/onboarding/ai-menu-preview';
-import { OnboardingSteps } from '@/components/onboarding/onboarding-steps';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MaterialIcon } from '@/components/ui/material-icon';
@@ -90,7 +89,7 @@ function OnboardingFlow() {
     // hidratarla para ofrecer el flujo de import directo.
     useAuthStore.getState().hydrate();
     reset();
-  }, []);
+  }, [reset]);
 
   const handleSkip = () => {
     reset();

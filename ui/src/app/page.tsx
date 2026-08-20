@@ -74,6 +74,7 @@ export default function LandingPage() {
                 <div className="h-full w-full bg-surface overflow-y-auto hide-scrollbar">
                   {/* Cover + Logo */}
                   <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- imagen remota (unsplash) en mockup estatico; next/image no soporta hosts no configurados en modo export */}
                     <img
                       alt="Pizzeria cover"
                       className="w-full h-40 object-cover"
@@ -115,6 +116,7 @@ export default function LandingPage() {
                   {/* Products */}
                   <div className="px-3 pb-20 space-y-2 mt-1">
                     <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- imagen remota (unsplash) en mockup estatico */}
                       <img src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=200&q=80" alt="Margherita" className="w-16 h-16 rounded-lg flex-shrink-0 object-cover" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-xs text-on-surface">Pizza Margherita</p>
@@ -128,6 +130,7 @@ export default function LandingPage() {
                       </div>
                     </div>
                     <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- imagen remota (unsplash) en mockup estatico */}
                       <img src="https://images.unsplash.com/photo-1628840042765-356cda07504e?w=200&q=80" alt="Pepperoni" className="w-16 h-16 rounded-lg flex-shrink-0 object-cover" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-xs text-on-surface">Pizza Pepperoni</p>
@@ -142,6 +145,7 @@ export default function LandingPage() {
                     </div>
                     <div className="bg-white rounded-xl p-2.5 flex gap-2.5 shadow-sm border border-gray-100 relative">
                       <div className="absolute top-1.5 right-1.5 bg-amber-100 text-amber-700 text-[7px] font-bold px-1.5 py-0.5 rounded-full">MAS PEDIDA</div>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- imagen remota (unsplash) en mockup estatico */}
                       <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&q=80" alt="4 Quesos" className="w-16 h-16 rounded-lg flex-shrink-0 object-cover" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-xs text-on-surface">Pizza 4 Quesos</p>
@@ -534,7 +538,7 @@ export default function LandingPage() {
               </ul>
               <p className="text-xs text-on-surface-variant mt-4 flex items-center gap-1.5">
                 <MaterialIcon name="info" size="xs" />
-                Incluye la marca "Powered by quiero.menu"
+                Incluye la marca &ldquo;Powered by quiero.menu&rdquo;
               </p>
               <Link href="/onboarding" className="mt-6 text-center border border-primary text-primary font-bold py-3 rounded-xl hover:bg-primary/5 transition-colors">
                 Empezar gratis

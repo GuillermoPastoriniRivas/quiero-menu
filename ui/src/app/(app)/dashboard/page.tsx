@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useOrderStore } from '@/stores/order.store';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useMenuStore } from '@/stores/menu.store';
 import { useBillingStore } from '@/stores/billing.store';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Button } from '@/components/ui/button';
@@ -17,12 +16,13 @@ export default function DashboardPage() {
   const { restaurant, fetch: fetchRestaurant } = useRestaurantStore();
   const { user } = useAuthStore();
   const billing = useBillingStore();
+  const fetchBilling = useBillingStore((s) => s.fetch);
 
   useEffect(() => {
     fetchOrders();
     fetchRestaurant();
-    billing.fetch();
-  }, []);
+    fetchBilling();
+  }, [fetchOrders, fetchRestaurant, fetchBilling]);
 
   const todayOrders = orders.filter((o) => {
     const d = new Date(o.createdAt);
@@ -100,7 +100,7 @@ export default function DashboardPage() {
           <h3 className="font-bold text-lg mb-2 text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Zonas de entrega</h3>
           <p className="text-sm text-on-surface-variant mb-6">Define hasta donde llegas y tus costos de envio.</p>
           <Link
-            href="/settings?tab=delivery"
+            href="/business/zones"
             className="block w-full bg-surface-container-low text-primary border border-outline-variant/20 py-2.5 rounded-xl font-bold text-sm text-center active:scale-95 duration-200 transition-transform"
           >
             Configurar

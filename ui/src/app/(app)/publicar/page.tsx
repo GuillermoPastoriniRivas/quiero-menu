@@ -14,7 +14,7 @@ export default function MiMenuPage() {
 
   useEffect(() => {
     fetchRestaurant();
-  }, []);
+  }, [fetchRestaurant]);
 
   const menuUrl = typeof window !== 'undefined' && restaurant
     ? `${window.location.origin}/${restaurant.slug}`
@@ -27,11 +27,6 @@ export default function MiMenuPage() {
 
   const openMenu = useCallback(() => {
     window.open(menuUrl, '_blank');
-  }, [menuUrl]);
-
-  const shareWhatsApp = useCallback(() => {
-    const message = encodeURIComponent(`Mira nuestro menu: ${menuUrl}`);
-    window.open(`https://wa.me/?text=${message}`, '_blank');
   }, [menuUrl]);
 
   const downloadQR = useCallback(() => {

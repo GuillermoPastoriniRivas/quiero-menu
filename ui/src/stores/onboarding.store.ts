@@ -76,8 +76,8 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       const result = await api.postFormData<MenuVisionOutput>('/onboarding/analyze', formData);
       set({ aiResult: result, step: 'preview' });
       savePendingMenu(result);
-    } catch (e: any) {
-      set({ error: e.message || 'Error al analizar el menu', step: 'upload' });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Error al analizar el menu', step: 'upload' });
     }
   },
 
@@ -91,8 +91,8 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       const res = await api.post<{ success: boolean; counts: BulkImportResult }>('/onboarding/import', aiResult);
       set({ importResult: res.counts, step: 'done' });
       savePendingMenu(null);
-    } catch (e: any) {
-      set({ error: e.message || 'Error al importar el menu', step: 'preview' });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Error al importar el menu', step: 'preview' });
     }
   },
 

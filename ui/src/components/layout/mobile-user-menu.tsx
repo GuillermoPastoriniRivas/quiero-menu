@@ -64,9 +64,13 @@ export function MobileUserMenu() {
                 Mi menú público
               </Link>
             )}
-            <Link href="/settings" onClick={() => setOpen(false)} className={itemClass}>
-              <MaterialIcon name="settings" size="sm" className="text-on-surface-variant" />
-              Configuración
+            <Link href="/account" onClick={() => setOpen(false)} className={itemClass}>
+              <MaterialIcon name="notifications" size="sm" className="text-on-surface-variant" />
+              Notificaciones
+            </Link>
+            <Link href="/account?tab=access" onClick={() => setOpen(false)} className={itemClass}>
+              <MaterialIcon name="key" size="sm" className="text-on-surface-variant" />
+              Accesos
             </Link>
             <Link href="/billing" onClick={() => setOpen(false)} className={itemClass}>
               <MaterialIcon name="workspace_premium" size="sm" className="text-on-surface-variant" />
