@@ -6,14 +6,18 @@ export const CreateCategoryRequestSchema = z.object({
   description: z.string().optional().default(''),
   isVisible: z.boolean().optional().default(true),
 });
-export type CreateCategoryRequestDto = z.infer<typeof CreateCategoryRequestSchema>;
+export type CreateCategoryRequestDto = z.infer<
+  typeof CreateCategoryRequestSchema
+>;
 
 export const UpdateCategoryRequestSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   isVisible: z.boolean().optional(),
 });
-export type UpdateCategoryRequestDto = z.infer<typeof UpdateCategoryRequestSchema>;
+export type UpdateCategoryRequestDto = z.infer<
+  typeof UpdateCategoryRequestSchema
+>;
 
 export const ReorderRequestSchema = z.object({
   items: z.array(z.object({ id: z.string(), displayOrder: z.number() })),
@@ -50,7 +54,9 @@ export const CreateVariantRequestSchema = z.object({
   maxSelections: z.number().min(1).optional().default(1),
   displayOrder: z.number().optional().default(0),
 });
-export type CreateVariantRequestDto = z.infer<typeof CreateVariantRequestSchema>;
+export type CreateVariantRequestDto = z.infer<
+  typeof CreateVariantRequestSchema
+>;
 
 export const UpdateVariantRequestSchema = z.object({
   name: z.string().min(1).optional(),
@@ -58,7 +64,9 @@ export const UpdateVariantRequestSchema = z.object({
   maxSelections: z.number().min(1).optional(),
   displayOrder: z.number().optional(),
 });
-export type UpdateVariantRequestDto = z.infer<typeof UpdateVariantRequestSchema>;
+export type UpdateVariantRequestDto = z.infer<
+  typeof UpdateVariantRequestSchema
+>;
 
 export const CreateOptionRequestSchema = z.object({
   variantId: z.string().nullable().optional().default(null),

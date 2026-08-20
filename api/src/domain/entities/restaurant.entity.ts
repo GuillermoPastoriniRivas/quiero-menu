@@ -13,6 +13,17 @@ export interface PaymentMethodsConfig {
   transferNotes?: string;
 }
 
+export interface StorefrontTheme {
+  primaryColor: string;
+}
+
+export type CustomDomainStatus = {
+  state: 'pending' | 'provisioning' | 'active' | 'failed';
+  requestedAt?: Date;
+  verifiedAt?: Date;
+  failedReason?: string;
+} | null;
+
 export class Restaurant {
   constructor(
     public readonly id: string,
@@ -29,9 +40,22 @@ export class Restaurant {
     public readonly timezone: string,
     public readonly currency: string,
     public readonly status: RestaurantStatus,
+    /**
+     * Override manual del estado abierto/cerrado.
+     * - 'open'   => forzar abierto (ignora el horario).
+     * - 'closed' => forzar cerrado (ignora el horario).
+     * - null     => auto: sigue el horario programado.
+     */
+    public readonly openOverride: 'open' | 'closed' | null,
     public readonly customDomain: string | null,
-    public readonly socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null,
+    public readonly customDomainStatus: CustomDomainStatus,
+    public readonly socialLinks: {
+      instagram?: string;
+      facebook?: string;
+      tiktok?: string;
+    } | null,
     public readonly paymentMethods: PaymentMethodsConfig,
+    public readonly theme: StorefrontTheme,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}

@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+  Inject,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import type { TokenProviderPort } from '../../application/ports/token-provider.port.js';
@@ -7,7 +13,8 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
-    @Inject('TokenProviderPort') private readonly tokenProvider: TokenProviderPort,
+    @Inject('TokenProviderPort')
+    private readonly tokenProvider: TokenProviderPort,
     private readonly reflector: Reflector,
   ) {}
 
@@ -22,7 +29,9 @@ export class JwtAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader?.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing or invalid authorization header');
+      throw new UnauthorizedException(
+        'Missing or invalid authorization header',
+      );
     }
 
     const token = authHeader.slice(7);

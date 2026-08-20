@@ -8,7 +8,9 @@ import { UserMapper } from '../mappers/user.mapper.js';
 
 @Injectable()
 export class MongoUserRepository implements UserRepository {
-  constructor(@InjectModel(UserModel.name) private readonly model: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(UserModel.name) private readonly model: Model<UserDocument>,
+  ) {}
 
   async create(data: Omit<User, 'id' | 'createdAt'>): Promise<User> {
     const doc = await this.model.create(data);
@@ -25,13 +27,31 @@ export class MongoUserRepository implements UserRepository {
     return doc ? UserMapper.toDomain(doc) : null;
   }
 
-  async updatePasswordHash(id: string, passwordHash: string): Promise<User | null> {
-    const doc = await this.model.findByIdAndUpdate(id, { $set: { passwordHash } }, { returnDocument: 'after' });
+  async updatePasswordHash(
+    id: string,
+    passwordHash: string,
+  ): Promise<User | null> {
+    const doc = await this.model.findByIdAndUpdate(
+      id,
+      { $set: { passwordHash } },
+      { returnDocument: 'after' },
+    );
     return doc ? UserMapper.toDomain(doc) : null;
   }
 
-  async updateEmailVerified(id: string, emailVerified: boolean): Promise<User | null> {
-    const doc = await this.model.findByIdAndUpdate(id, { $set: { emailVerified } }, { returnDocument: 'after' });
+  async updateEmailVerified(
+    id: string,
+    emailVerified: boolean,
+  ): Promise<User | null> {
+    const doc = await this.model.findByIdAndUpdate(
+      id,
+      { $set: { emailVerified } },
+      { returnDocument: 'after' },
+    );
     return doc ? UserMapper.toDomain(doc) : null;
+  }
+  async delete(id: string): Promise<boolean> {
+    const result = await this.model.findByIdAndDelete(id);
+    return result !== null;
   }
 }

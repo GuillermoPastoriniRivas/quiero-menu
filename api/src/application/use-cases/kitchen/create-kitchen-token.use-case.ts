@@ -10,13 +10,21 @@ function generateCode(): string {
 export class CreateKitchenTokenUseCase {
   constructor(private readonly tokenRepo: KitchenAccessTokenRepository) {}
 
-  async execute(restaurantId: string, name: string = ''): Promise<KitchenAccessToken> {
+  async execute(
+    restaurantId: string,
+    name: string = '',
+  ): Promise<KitchenAccessToken> {
     let code: string;
     let exists: KitchenAccessToken | null;
     do {
       code = generateCode();
       exists = await this.tokenRepo.findByToken(code);
     } while (exists);
-    return this.tokenRepo.create({ restaurantId, token: code, name, expiresAt: null });
+    return this.tokenRepo.create({
+      restaurantId,
+      token: code,
+      name,
+      expiresAt: null,
+    });
   }
 }

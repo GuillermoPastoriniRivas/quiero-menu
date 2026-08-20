@@ -1,9 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-export type VerificationTokenDocument = HydratedDocument<VerificationTokenModel>;
+export type VerificationTokenDocument =
+  HydratedDocument<VerificationTokenModel>;
 
-@Schema({ collection: 'verification_tokens', timestamps: { createdAt: true, updatedAt: false } })
+@Schema({
+  collection: 'verification_tokens',
+  timestamps: { createdAt: true, updatedAt: false },
+})
 export class VerificationTokenModel {
   @Prop({ type: Types.ObjectId, required: true })
   userId: Types.ObjectId;
@@ -20,6 +24,8 @@ export class VerificationTokenModel {
   createdAt: Date;
 }
 
-export const VerificationTokenSchema = SchemaFactory.createForClass(VerificationTokenModel);
+export const VerificationTokenSchema = SchemaFactory.createForClass(
+  VerificationTokenModel,
+);
 VerificationTokenSchema.index({ userId: 1, type: 1 });
 VerificationTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

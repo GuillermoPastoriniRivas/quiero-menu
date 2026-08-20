@@ -3,12 +3,18 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { MenuItemOptionRepository } from '../../../../domain/repositories/menu-item-option.repository.js';
 import { MenuItemOption } from '../../../../domain/entities/menu-item-option.entity.js';
-import { MenuItemOptionModel, MenuItemOptionDocument } from '../schemas/menu-item-option.schema.js';
+import {
+  MenuItemOptionModel,
+  MenuItemOptionDocument,
+} from '../schemas/menu-item-option.schema.js';
 import { MenuItemOptionMapper } from '../mappers/menu-item-option.mapper.js';
 
 @Injectable()
 export class MongoMenuItemOptionRepository implements MenuItemOptionRepository {
-  constructor(@InjectModel(MenuItemOptionModel.name) private readonly model: Model<MenuItemOptionDocument>) {}
+  constructor(
+    @InjectModel(MenuItemOptionModel.name)
+    private readonly model: Model<MenuItemOptionDocument>,
+  ) {}
 
   async create(data: Omit<MenuItemOption, 'id'>): Promise<MenuItemOption> {
     const doc = await this.model.create({
@@ -25,12 +31,16 @@ export class MongoMenuItemOptionRepository implements MenuItemOptionRepository {
   }
 
   async findByItemIds(itemIds: string[]): Promise<MenuItemOption[]> {
-    const docs = await this.model.find({ itemId: { $in: itemIds.map((id) => new Types.ObjectId(id)) } });
+    const docs = await this.model.find({
+      itemId: { $in: itemIds.map((id) => new Types.ObjectId(id)) },
+    });
     return docs.map(MenuItemOptionMapper.toDomain);
   }
 
   async findByVariantId(variantId: string): Promise<MenuItemOption[]> {
-    const docs = await this.model.find({ variantId: new Types.ObjectId(variantId) });
+    const docs = await this.model.find({
+      variantId: new Types.ObjectId(variantId),
+    });
     return docs.map(MenuItemOptionMapper.toDomain);
   }
 
@@ -39,10 +49,20 @@ export class MongoMenuItemOptionRepository implements MenuItemOptionRepository {
     return doc ? MenuItemOptionMapper.toDomain(doc) : null;
   }
 
-  async update(id: string, data: Partial<Omit<MenuItemOption, 'id' | 'itemId'>>): Promise<MenuItemOption | null> {
+  async update(
+    id: string,
+    data: Partial<Omit<MenuItemOption, 'id' | 'itemId'>>,
+  ): Promise<MenuItemOption | null> {
     const update: Record<string, unknown> = { ...data };
-    if (data.variantId !== undefined) update.variantId = data.variantId ? new Types.ObjectId(data.variantId) : null;
-    const doc = await this.model.findByIdAndUpdate(id, { $set: update }, { returnDocument: 'after' });
+    if (data.variantId !== undefined)
+      update.variantId = data.variantId
+        ? new Types.ObjectId(data.variantId)
+        : null;
+    const doc = await this.model.findByIdAndUpdate(
+      id,
+      { $set: update },
+      { returnDocument: 'after' },
+    );
     return doc ? MenuItemOptionMapper.toDomain(doc) : null;
   }
 
@@ -53,5 +73,10 @@ export class MongoMenuItemOptionRepository implements MenuItemOptionRepository {
 
   async deleteByItemId(itemId: string): Promise<void> {
     await this.model.deleteMany({ itemId: new Types.ObjectId(itemId) });
+  }
+  async deleteManyByRestaurantId(restaurantId: string): Promise<void> {
+    await this.model.deleteMany({
+      restaurantId: new Types.ObjectId(restaurantId),
+    });
   }
 }

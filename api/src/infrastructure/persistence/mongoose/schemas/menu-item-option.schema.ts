@@ -24,6 +24,7 @@ export class MenuItemOptionModel {
   isAvailable: boolean;
 }
 
-export const MenuItemOptionSchema = SchemaFactory.createForClass(MenuItemOptionModel);
+export const MenuItemOptionSchema =
+  SchemaFactory.createForClass(MenuItemOptionModel);
 MenuItemOptionSchema.index({ itemId: 1 });
 MenuItemOptionSchema.index({ variantId: 1 });

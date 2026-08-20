@@ -11,14 +11,18 @@ const PushSubscriptionSchema = z.object({
 export const SubscribeStaffRequestSchema = z.object({
   subscription: PushSubscriptionSchema,
 });
-export type SubscribeStaffRequestDto = z.infer<typeof SubscribeStaffRequestSchema>;
+export type SubscribeStaffRequestDto = z.infer<
+  typeof SubscribeStaffRequestSchema
+>;
 
 export const SubscribeOrderRequestSchema = z.object({
   orderCode: z.string().min(1),
   slug: z.string().min(1),
   subscription: PushSubscriptionSchema,
 });
-export type SubscribeOrderRequestDto = z.infer<typeof SubscribeOrderRequestSchema>;
+export type SubscribeOrderRequestDto = z.infer<
+  typeof SubscribeOrderRequestSchema
+>;
 
 export const UnsubscribeRequestSchema = z.object({
   endpoint: z.string().min(1),

@@ -5,7 +5,9 @@ import { DeliveryTokenInvalidError } from '../../../domain/errors/domain-errors.
 export class ValidateDeliveryTokenUseCase {
   constructor(private readonly tokenRepo: DeliveryAccessTokenRepository) {}
 
-  async execute(token: string): Promise<Result<{ restaurantId: string }, DeliveryTokenInvalidError>> {
+  async execute(
+    token: string,
+  ): Promise<Result<{ restaurantId: string }, DeliveryTokenInvalidError>> {
     const stored = await this.tokenRepo.findByToken(token);
     if (!stored) return err(new DeliveryTokenInvalidError());
     if (stored.revokedAt) return err(new DeliveryTokenInvalidError());

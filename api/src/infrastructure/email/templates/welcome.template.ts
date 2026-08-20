@@ -1,6 +1,10 @@
 import { baseLayout } from './base-layout.js';
 
-export function welcomeTemplate(userName: string, restaurantName: string, loginUrl: string): string {
+export function welcomeTemplate(
+  userName: string,
+  restaurantName: string,
+  loginUrl: string,
+): string {
   return baseLayout(`
     <h1>Bienvenido a quiero-menu, ${userName}!</h1>
     <p>Tu cuenta y tu restaurante <strong>${restaurantName}</strong> ya están listos.</p>

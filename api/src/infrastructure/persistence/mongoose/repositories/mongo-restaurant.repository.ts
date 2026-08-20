@@ -3,14 +3,22 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RestaurantRepository } from '../../../../domain/repositories/restaurant.repository.js';
 import { Restaurant } from '../../../../domain/entities/restaurant.entity.js';
-import { RestaurantModel, RestaurantDocument } from '../schemas/restaurant.schema.js';
+import {
+  RestaurantModel,
+  RestaurantDocument,
+} from '../schemas/restaurant.schema.js';
 import { RestaurantMapper } from '../mappers/restaurant.mapper.js';
 
 @Injectable()
 export class MongoRestaurantRepository implements RestaurantRepository {
-  constructor(@InjectModel(RestaurantModel.name) private readonly model: Model<RestaurantDocument>) {}
+  constructor(
+    @InjectModel(RestaurantModel.name)
+    private readonly model: Model<RestaurantDocument>,
+  ) {}
 
-  async create(data: Omit<Restaurant, 'id' | 'createdAt' | 'updatedAt'>): Promise<Restaurant> {
+  async create(
+    data: Omit<Restaurant, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<Restaurant> {
     const doc = await this.model.create(data);
     return RestaurantMapper.toDomain(doc);
   }
@@ -25,8 +33,43 @@ export class MongoRestaurantRepository implements RestaurantRepository {
     return doc ? RestaurantMapper.toDomain(doc) : null;
   }
 
-  async update(id: string, data: Partial<Omit<Restaurant, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Restaurant | null> {
-    const doc = await this.model.findByIdAndUpdate(id, { $set: data }, { returnDocument: 'after' });
+  async findByCustomDomain(domain: string): Promise<Restaurant | null> {
+    const doc = await this.model.findOne({ customDomain: domain });
     return doc ? RestaurantMapper.toDomain(doc) : null;
+  }
+
+  async listByCustomDomainState(
+    state: 'pending' | 'provisioning' | 'active' | 'failed',
+  ): Promise<Restaurant[]> {
+    const docs = await this.model.find({
+      customDomain: { $ne: null },
+      'customDomainStatus.state': state,
+    });
+    return docs.map((doc) => RestaurantMapper.toDomain(doc));
+  }
+
+  async listStaleCustomDomainProvisioning(cutoff: Date): Promise<Restaurant[]> {
+    const docs = await this.model.find({
+      customDomain: { $ne: null },
+      'customDomainStatus.state': 'provisioning',
+      'customDomainStatus.requestedAt': { $lt: cutoff },
+    });
+    return docs.map((doc) => RestaurantMapper.toDomain(doc));
+  }
+
+  async update(
+    id: string,
+    data: Partial<Omit<Restaurant, 'id' | 'createdAt' | 'updatedAt'>>,
+  ): Promise<Restaurant | null> {
+    const doc = await this.model.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { returnDocument: 'after' },
+    );
+    return doc ? RestaurantMapper.toDomain(doc) : null;
+  }
+  async delete(id: string): Promise<boolean> {
+    const result = await this.model.findByIdAndDelete(id);
+    return result !== null;
   }
 }

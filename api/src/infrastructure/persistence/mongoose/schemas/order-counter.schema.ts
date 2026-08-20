@@ -12,4 +12,5 @@ export class OrderCounterModel {
   seq: number;
 }
 
-export const OrderCounterSchema = SchemaFactory.createForClass(OrderCounterModel);
+export const OrderCounterSchema =
+  SchemaFactory.createForClass(OrderCounterModel);

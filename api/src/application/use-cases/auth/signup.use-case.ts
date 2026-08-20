@@ -11,7 +11,10 @@ import type { EmailServicePort } from '../../ports/email-service.port.js';
 import { SignupInput } from '../../dtos/auth/signup-input.dto.js';
 import { LoginOutput } from '../../dtos/auth/login-output.dto.js';
 import { Result, ok, err } from '../../common/result.js';
-import { EmailAlreadyExistsError, SlugAlreadyExistsError } from '../../../domain/errors/domain-errors.js';
+import {
+  EmailAlreadyExistsError,
+  SlugAlreadyExistsError,
+} from '../../../domain/errors/domain-errors.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
 import { UserRole } from '../../../domain/enums/user-role.enum.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
@@ -34,11 +37,17 @@ export class SignupUseCase {
     private readonly frontendUrl: string,
   ) {}
 
-  async execute(input: SignupInput): Promise<Result<LoginOutput, EmailAlreadyExistsError | SlugAlreadyExistsError>> {
+  async execute(
+    input: SignupInput,
+  ): Promise<
+    Result<LoginOutput, EmailAlreadyExistsError | SlugAlreadyExistsError>
+  > {
     const existingUser = await this.userRepo.findByEmail(input.email);
     if (existingUser) return err(new EmailAlreadyExistsError());
 
-    const existingSlug = await this.restaurantRepo.findBySlug(input.restaurantSlug);
+    const existingSlug = await this.restaurantRepo.findBySlug(
+      input.restaurantSlug,
+    );
     if (existingSlug) return err(new SlugAlreadyExistsError());
 
     const passwordHash = await this.passwordHasher.hash(input.password);
@@ -64,9 +73,16 @@ export class SignupUseCase {
       timezone: 'America/Bogota',
       currency: 'COP',
       status: RestaurantStatus.ACTIVE,
+      openOverride: null,
       customDomain: null,
+      customDomainStatus: null,
       socialLinks: null,
-      paymentMethods: { cashEnabled: true, cardEnabled: true, transferEnabled: true },
+      paymentMethods: {
+        cashEnabled: true,
+        cardEnabled: true,
+        transferEnabled: true,
+      },
+      theme: { primaryColor: '#E8532C' },
     });
 
     await this.userRestaurantRepo.create({
@@ -87,16 +103,26 @@ export class SignupUseCase {
       externalSubscriptionId: null,
     });
 
-    const payload = { sub: user.id, restaurantId: restaurant.id, role: UserRole.OWNER };
+    const payload = {
+      sub: user.id,
+      restaurantId: restaurant.id,
+      role: UserRole.OWNER,
+    };
     const accessToken = this.tokenProvider.signAccess(payload);
     const refreshToken = this.tokenProvider.signRefresh(payload);
 
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await this.refreshTokenRepo.create({ userId: user.id, tokenHash, expiresAt });
+    await this.refreshTokenRepo.create({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    });
 
     // Send emails (fire-and-forget — don't block signup)
-    this.sendEmails(user.id, user.name, user.email, restaurant.name).catch(() => {});
+    this.sendEmails(user.id, user.name, user.email, restaurant.name).catch(
+      () => {},
+    );
 
     return ok({
       accessToken,
@@ -112,7 +138,12 @@ export class SignupUseCase {
     });
   }
 
-  private async sendEmails(userId: string, userName: string, email: string, restaurantName: string): Promise<void> {
+  private async sendEmails(
+    userId: string,
+    userName: string,
+    email: string,
+    restaurantName: string,
+  ): Promise<void> {
     // Welcome email
     await this.emailService.send({
       to: email,
@@ -122,7 +153,9 @@ export class SignupUseCase {
 
     // Email verification
     const rawToken = randomBytes(32).toString('hex');
-    const verificationHash = createHash('sha256').update(rawToken).digest('hex');
+    const verificationHash = createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
     const verifyExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     await this.verificationTokenRepo.create({

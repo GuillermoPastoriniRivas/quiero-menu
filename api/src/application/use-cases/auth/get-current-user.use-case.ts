@@ -18,7 +18,9 @@ export class GetCurrentUserUseCase {
     private readonly restaurantRepo: RestaurantRepository,
   ) {}
 
-  async execute(userId: string): Promise<Result<CurrentUserOutput, UserNotFoundError>> {
+  async execute(
+    userId: string,
+  ): Promise<Result<CurrentUserOutput, UserNotFoundError>> {
     const user = await this.userRepo.findById(userId);
     if (!user) return err(new UserNotFoundError());
 
@@ -26,7 +28,12 @@ export class GetCurrentUserUseCase {
     const restaurants = await Promise.all(
       userRestaurants.map(async (ur) => {
         const r = await this.restaurantRepo.findById(ur.restaurantId);
-        return { id: ur.restaurantId, slug: r?.slug ?? '', name: r?.name ?? '', role: ur.role };
+        return {
+          id: ur.restaurantId,
+          slug: r?.slug ?? '',
+          name: r?.name ?? '',
+          role: ur.role,
+        };
       }),
     );
 

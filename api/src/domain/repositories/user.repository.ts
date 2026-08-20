@@ -6,4 +6,5 @@ export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   updatePasswordHash(id: string, passwordHash: string): Promise<User | null>;
   updateEmailVerified(id: string, emailVerified: boolean): Promise<User | null>;
+  delete(id: string): Promise<boolean>;
 }

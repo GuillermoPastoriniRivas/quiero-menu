@@ -1,4 +1,7 @@
-import { VerificationToken, TokenType } from '../../../../domain/entities/verification-token.entity.js';
+import {
+  VerificationToken,
+  TokenType,
+} from '../../../../domain/entities/verification-token.entity.js';
 import { VerificationTokenDocument } from '../schemas/verification-token.schema.js';
 
 export class VerificationTokenMapper {

@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { TokenProviderPort, TokenPayload } from '../../application/ports/token-provider.port.js';
+import {
+  TokenProviderPort,
+  TokenPayload,
+} from '../../application/ports/token-provider.port.js';
 
 @Injectable()
 export class JwtTokenService implements TokenProviderPort {
@@ -12,8 +15,14 @@ export class JwtTokenService implements TokenProviderPort {
     private readonly jwtService: JwtService,
     configService: ConfigService,
   ) {
-    this.refreshSecret = configService.get<string>('JWT_REFRESH_SECRET', 'refresh-secret-change-me');
-    this.refreshExpiresIn = configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
+    this.refreshSecret = configService.get<string>(
+      'JWT_REFRESH_SECRET',
+      'refresh-secret-change-me',
+    );
+    this.refreshExpiresIn = configService.get<string>(
+      'JWT_REFRESH_EXPIRES_IN',
+      '7d',
+    );
   }
 
   signAccess(payload: TokenPayload): string {

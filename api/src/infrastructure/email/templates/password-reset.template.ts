@@ -1,6 +1,9 @@
 import { baseLayout } from './base-layout.js';
 
-export function passwordResetTemplate(userName: string, resetUrl: string): string {
+export function passwordResetTemplate(
+  userName: string,
+  resetUrl: string,
+): string {
   return baseLayout(`
     <h1>Restablecé tu contraseña</h1>
     <p>Hola ${userName}, recibimos una solicitud para restablecer la contraseña de tu cuenta.</p>

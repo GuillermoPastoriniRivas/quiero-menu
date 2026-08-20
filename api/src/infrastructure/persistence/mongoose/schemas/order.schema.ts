@@ -6,7 +6,10 @@ import { DeliveryType } from '../../../../domain/enums/delivery-type.enum.js';
 
 export type OrderDocument = HydratedDocument<OrderModel>;
 
-@Schema({ collection: 'orders', timestamps: { createdAt: true, updatedAt: false } })
+@Schema({
+  collection: 'orders',
+  timestamps: { createdAt: true, updatedAt: false },
+})
 export class OrderModel {
   @Prop({ type: Types.ObjectId, required: true })
   restaurantId: Types.ObjectId;
@@ -44,8 +47,14 @@ export class OrderModel {
   @Prop({ required: true })
   subtotal: number;
 
+  @Prop({ default: 0 })
+  discount: number;
+
   @Prop({ required: true })
   total: number;
+
+  @Prop({ type: String, default: null })
+  couponCode: string | null;
 
   @Prop({ default: '' })
   paymentMethod: string;

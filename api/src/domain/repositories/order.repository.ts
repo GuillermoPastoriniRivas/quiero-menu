@@ -8,19 +8,61 @@ export interface OrderFilters {
   limit?: number;
 }
 
+export interface CustomerSummary {
+  phone: string;
+  name: string;
+  address: string | null;
+  orderCount: number;
+  totalSpent: number;
+  lastOrderAt: Date;
+  lastOrderCode: string;
+}
+
+export interface CustomerFilters {
+  restaurantId: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface PaginatedResult<T> {
   data: T[];
   meta: { total: number; page: number; pages: number };
 }
 
 export interface OrderRepository {
-  create(data: Omit<Order, 'id' | 'createdAt' | 'confirmedAt' | 'readyAt' | 'deliveredAt'>): Promise<Order>;
+  create(
+    data: Omit<
+      Order,
+      'id' | 'createdAt' | 'confirmedAt' | 'readyAt' | 'deliveredAt'
+    >,
+  ): Promise<Order>;
   findById(id: string): Promise<Order | null>;
   findByCode(restaurantId: string, code: string): Promise<Order | null>;
   findByFilters(filters: OrderFilters): Promise<PaginatedResult<Order>>;
-  updateStatus(id: string, status: OrderStatus, timestamps?: Partial<Pick<Order, 'confirmedAt' | 'readyAt' | 'deliveredAt'>>): Promise<Order | null>;
+  updateStatus(
+    id: string,
+    status: OrderStatus,
+    timestamps?: Partial<
+      Pick<Order, 'confirmedAt' | 'readyAt' | 'deliveredAt'>
+    >,
+  ): Promise<Order | null>;
   updateReceiptUrl(id: string, receiptUrl: string): Promise<Order | null>;
   generateNextCode(restaurantId: string): Promise<string>;
   countByRestaurantIdSince(restaurantId: string, since: Date): Promise<number>;
-  findNthOrderCreatedAt(restaurantId: string, since: Date, n: number): Promise<Date | null>;
+  findNthOrderCreatedAt(
+    restaurantId: string,
+    since: Date,
+    n: number,
+  ): Promise<Date | null>;
+  listCustomers(
+    filters: CustomerFilters,
+  ): Promise<PaginatedResult<CustomerSummary>>;
+  findOrdersByCustomer(
+    restaurantId: string,
+    phone: string,
+    page?: number,
+    limit?: number,
+  ): Promise<PaginatedResult<Order>>;
+  deleteManyByRestaurantId(restaurantId: string): Promise<void>;
 }

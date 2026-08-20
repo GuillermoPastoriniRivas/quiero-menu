@@ -4,3 +4,6 @@ key_name         = "quiero-menu-key"
 allowed_ssh_cidr = "0.0.0.0/0"
 app_name         = "quiero-menu"
 domain           = "quiero.menu"
+alerts_email            = "tu-email@ejemplo.com"
+inbound_mail_recipients = ["contact@quiero.menu"]
+inbound_mail_forward_to = "tu-email@ejemplo.com"

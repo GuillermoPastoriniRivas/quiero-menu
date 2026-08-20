@@ -19,7 +19,9 @@ export class RefreshTokenUseCase {
     private readonly tokenProvider: TokenProviderPort,
   ) {}
 
-  async execute(token: string): Promise<Result<RefreshOutput, InvalidCredentialsError>> {
+  async execute(
+    token: string,
+  ): Promise<Result<RefreshOutput, InvalidCredentialsError>> {
     const tokenHash = createHash('sha256').update(token).digest('hex');
     const stored = await this.refreshTokenRepo.findByTokenHash(tokenHash);
 
@@ -35,13 +37,23 @@ export class RefreshTokenUseCase {
 
     const primary = userRestaurants[0];
 
-    const payload = { sub: user.id, restaurantId: primary.restaurantId, role: primary.role };
+    const payload = {
+      sub: user.id,
+      restaurantId: primary.restaurantId,
+      role: primary.role,
+    };
     const accessToken = this.tokenProvider.signAccess(payload);
     const newRefreshToken = this.tokenProvider.signRefresh(payload);
 
-    const newTokenHash = createHash('sha256').update(newRefreshToken).digest('hex');
+    const newTokenHash = createHash('sha256')
+      .update(newRefreshToken)
+      .digest('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await this.refreshTokenRepo.create({ userId: user.id, tokenHash: newTokenHash, expiresAt });
+    await this.refreshTokenRepo.create({
+      userId: user.id,
+      tokenHash: newTokenHash,
+      expiresAt,
+    });
 
     await this.refreshTokenRepo.delete(stored.id);
 

@@ -1,4 +1,7 @@
-import { OrderRepository, OrderFilters, PaginatedResult } from '../../../domain/repositories/order.repository.js';
+import {
+  OrderRepository,
+  OrderFilters,
+} from '../../../domain/repositories/order.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
 import { Order } from '../../../domain/entities/order.entity.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
@@ -39,6 +42,8 @@ function redactOrder(order: Order): OrderWithRedaction {
       0,
       0,
       0,
+      0,
+      null,
       '',
       null,
       '',
@@ -59,10 +64,13 @@ export class ListOrdersUseCase {
   ) {}
 
   async execute(filters: OrderFilters): Promise<ListOrdersOutput> {
-    const subscription = await this.subscriptionRepo.findByRestaurantId(filters.restaurantId);
-    const plan = subscription?.status === SubscriptionStatus.ACTIVE
-      ? subscription.plan
-      : PlanTier.FREE;
+    const subscription = await this.subscriptionRepo.findByRestaurantId(
+      filters.restaurantId,
+    );
+    const plan =
+      subscription?.status === SubscriptionStatus.ACTIVE
+        ? subscription.plan
+        : PlanTier.FREE;
     const limits = PLAN_LIMITS[plan];
 
     const result = await this.orderRepo.findByFilters(filters);
@@ -71,11 +79,16 @@ export class ListOrdersUseCase {
     monthStart.setUTCDate(1);
     monthStart.setUTCHours(0, 0, 0, 0);
 
-    const ordersUsed = await this.orderRepo.countByRestaurantIdSince(filters.restaurantId, monthStart);
+    const ordersUsed = await this.orderRepo.countByRestaurantIdSince(
+      filters.restaurantId,
+      monthStart,
+    );
 
     // If PRO or unlimited, no redaction
     if (limits.maxOrdersPerMonth === -1) {
-      const data = result.data.map((o) => Object.assign(o, { redacted: false }) as OrderWithRedaction);
+      const data = result.data.map(
+        (o) => Object.assign(o, { redacted: false }) as OrderWithRedaction,
+      );
       return {
         data,
         meta: result.meta,
@@ -90,8 +103,6 @@ export class ListOrdersUseCase {
       limits.maxOrdersPerMonth,
     );
 
-    let redactedCount = 0;
-
     const data = result.data.map((order) => {
       // If no cutoff, all orders are within limit
       if (!cutoffDate) {
@@ -101,7 +112,6 @@ export class ListOrdersUseCase {
       // Orders created after the cutoff (the Nth order) are redacted
       // Orders from before this month are never redacted
       if (order.createdAt >= monthStart && order.createdAt > cutoffDate) {
-        redactedCount++;
         return redactOrder(order);
       }
 

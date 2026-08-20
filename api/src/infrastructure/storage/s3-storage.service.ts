@@ -1,9 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
-import type { StoragePort, PresignedUrlRequest, PresignedUrlResponse } from '../../application/ports/storage.port.js';
+import type {
+  StoragePort,
+  PresignedUrlRequest,
+  PresignedUrlResponse,
+} from '../../application/ports/storage.port.js';
 
 const EXTENSION_MAP: Record<string, string> = {
   'image/webp': 'webp',
@@ -23,7 +31,9 @@ export class S3StorageService implements StoragePort {
     this.client = new S3Client({ region: config.get<string>('s3.region')! });
   }
 
-  async generatePresignedUploadUrl(req: PresignedUrlRequest): Promise<PresignedUrlResponse> {
+  async generatePresignedUploadUrl(
+    req: PresignedUrlRequest,
+  ): Promise<PresignedUrlResponse> {
     const ext = EXTENSION_MAP[req.contentType] ?? 'jpg';
     const key = `${req.restaurantId}/${req.type}/${randomUUID()}.${ext}`;
 
@@ -33,7 +43,9 @@ export class S3StorageService implements StoragePort {
       ContentType: req.contentType,
     });
 
-    const uploadUrl = await getSignedUrl(this.client, command, { expiresIn: 300 });
+    const uploadUrl = await getSignedUrl(this.client, command, {
+      expiresIn: 300,
+    });
 
     return {
       uploadUrl,

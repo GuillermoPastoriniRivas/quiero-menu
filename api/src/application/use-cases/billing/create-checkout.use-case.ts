@@ -1,6 +1,9 @@
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
 import { UserRepository } from '../../../domain/repositories/user.repository.js';
-import { PaymentProviderPort, CreateCheckoutResult } from '../../ports/payment-provider.port.js';
+import {
+  PaymentProviderPort,
+  CreateCheckoutResult,
+} from '../../ports/payment-provider.port.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
 import { SubscriptionStatus } from '../../../domain/enums/subscription-status.enum.js';
 import { Result, ok, err } from '../../common/result.js';
@@ -18,10 +21,20 @@ export class CreateCheckoutUseCase {
     private readonly paymentProvider: PaymentProviderPort,
   ) {}
 
-  async execute(input: CreateCheckoutInput): Promise<Result<CreateCheckoutResult, DomainError>> {
-    const existing = await this.subscriptionRepo.findByRestaurantId(input.restaurantId);
-    if (existing && existing.status === SubscriptionStatus.ACTIVE && existing.plan === PlanTier.PRO) {
-      return err(new DomainError('ALREADY_PRO', 'Already subscribed to Pro plan.'));
+  async execute(
+    input: CreateCheckoutInput,
+  ): Promise<Result<CreateCheckoutResult, DomainError>> {
+    const existing = await this.subscriptionRepo.findByRestaurantId(
+      input.restaurantId,
+    );
+    if (
+      existing &&
+      existing.status === SubscriptionStatus.ACTIVE &&
+      existing.plan === PlanTier.PRO
+    ) {
+      return err(
+        new DomainError('ALREADY_PRO', 'Already subscribed to Pro plan.'),
+      );
     }
 
     const user = await this.userRepo.findById(input.userId);
@@ -38,7 +51,9 @@ export class CreateCheckoutUseCase {
       });
       return ok(result);
     } catch (error) {
-      return err(new DomainError('CHECKOUT_CREATION_ERROR', (error as Error).message));
+      return err(
+        new DomainError('CHECKOUT_CREATION_ERROR', (error as Error).message),
+      );
     }
   }
 }

@@ -4,7 +4,10 @@ import { OperatingHours } from '../../../domain/entities/operating-hours.entity.
 export class UpdateOperatingHoursUseCase {
   constructor(private readonly hoursRepo: OperatingHoursRepository) {}
 
-  async execute(restaurantId: string, hours: Omit<OperatingHours, 'id' | 'restaurantId'>[]): Promise<OperatingHours[]> {
+  async execute(
+    restaurantId: string,
+    hours: Omit<OperatingHours, 'id' | 'restaurantId'>[],
+  ): Promise<OperatingHours[]> {
     return this.hoursRepo.upsertBulk(restaurantId, hours);
   }
 }

@@ -29,7 +29,12 @@ export class BulkImportMenuUseCase {
     restaurantId: string,
     data: MenuVisionOutput,
   ): Promise<Result<BulkImportResult, never>> {
-    const counts: BulkImportResult = { categories: 0, items: 0, variants: 0, options: 0 };
+    const counts: BulkImportResult = {
+      categories: 0,
+      items: 0,
+      variants: 0,
+      options: 0,
+    };
 
     // Update restaurant info
     const restUpdate: Record<string, string> = {};
@@ -37,7 +42,8 @@ export class BulkImportMenuUseCase {
     if (data.restaurant.phone) restUpdate.phone = data.restaurant.phone;
     if (data.restaurant.address) restUpdate.address = data.restaurant.address;
     if (data.restaurant.city) restUpdate.city = data.restaurant.city;
-    if (data.restaurant.currency) restUpdate.currency = data.restaurant.currency;
+    if (data.restaurant.currency)
+      restUpdate.currency = data.restaurant.currency;
     if (Object.keys(restUpdate).length > 0) {
       await this.restaurantRepo.update(restaurantId, restUpdate);
     }
@@ -56,7 +62,8 @@ export class BulkImportMenuUseCase {
     }
 
     // Get existing categories to determine display order offset
-    const existingCategories = await this.categoryRepo.findByRestaurantId(restaurantId);
+    const existingCategories =
+      await this.categoryRepo.findByRestaurantId(restaurantId);
     let categoryOrder = existingCategories.length;
 
     for (const cat of data.categories) {
@@ -71,11 +78,12 @@ export class BulkImportMenuUseCase {
 
       let itemOrder = 0;
       for (const item of cat.items) {
-        const itemType = item.itemType === 'variant'
-          ? MenuItemType.VARIANT
-          : item.itemType === 'combo'
-            ? MenuItemType.COMBO
-            : MenuItemType.SIMPLE;
+        const itemType =
+          item.itemType === 'variant'
+            ? MenuItemType.VARIANT
+            : item.itemType === 'combo'
+              ? MenuItemType.COMBO
+              : MenuItemType.SIMPLE;
 
         const menuItem = await this.itemRepo.create({
           restaurantId,

@@ -23,7 +23,9 @@ export class NotifyReceiptUploadedUseCase {
     const restaurant = await this.restaurantRepo.findById(order.restaurantId);
     if (!restaurant) return;
 
-    const memberships = await this.userRestaurantRepo.findByRestaurantId(restaurant.id);
+    const memberships = await this.userRestaurantRepo.findByRestaurantId(
+      restaurant.id,
+    );
     const ownerMembership = memberships.find((m) => m.role === UserRole.OWNER);
     if (!ownerMembership) return;
 
