@@ -4,7 +4,10 @@ import { VerificationTokenRepository } from '../../../domain/repositories/verifi
 import { RefreshTokenRepository } from '../../../domain/repositories/refresh-token.repository.js';
 import { PasswordHasherPort } from '../../ports/password-hasher.port.js';
 import { Result, ok, err } from '../../common/result.js';
-import { InvalidTokenError, TokenExpiredError } from '../../../domain/errors/domain-errors.js';
+import {
+  InvalidTokenError,
+  TokenExpiredError,
+} from '../../../domain/errors/domain-errors.js';
 
 export class ResetPasswordUseCase {
   constructor(
@@ -14,9 +17,15 @@ export class ResetPasswordUseCase {
     private readonly passwordHasher: PasswordHasherPort,
   ) {}
 
-  async execute(rawToken: string, newPassword: string): Promise<Result<void, InvalidTokenError | TokenExpiredError>> {
+  async execute(
+    rawToken: string,
+    newPassword: string,
+  ): Promise<Result<void, InvalidTokenError | TokenExpiredError>> {
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
-    const record = await this.tokenRepo.findByTokenHash(tokenHash, 'password_reset');
+    const record = await this.tokenRepo.findByTokenHash(
+      tokenHash,
+      'password_reset',
+    );
 
     if (!record) return err(new InvalidTokenError());
     if (record.isExpired) {

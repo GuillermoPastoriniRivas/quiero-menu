@@ -3,12 +3,18 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { OrderItemRepository } from '../../../../domain/repositories/order-item.repository.js';
 import { OrderItem } from '../../../../domain/entities/order-item.entity.js';
-import { OrderItemModel, OrderItemDocument } from '../schemas/order-item.schema.js';
+import {
+  OrderItemModel,
+  OrderItemDocument,
+} from '../schemas/order-item.schema.js';
 import { OrderItemMapper } from '../mappers/order-item.mapper.js';
 
 @Injectable()
 export class MongoOrderItemRepository implements OrderItemRepository {
-  constructor(@InjectModel(OrderItemModel.name) private readonly model: Model<OrderItemDocument>) {}
+  constructor(
+    @InjectModel(OrderItemModel.name)
+    private readonly model: Model<OrderItemDocument>,
+  ) {}
 
   async createBulk(items: Omit<OrderItem, 'id'>[]): Promise<OrderItem[]> {
     const docs = await this.model.insertMany(
@@ -23,7 +29,14 @@ export class MongoOrderItemRepository implements OrderItemRepository {
   }
 
   async findByOrderId(orderId: string): Promise<OrderItem[]> {
-    const docs = await this.model.find({ orderId: new Types.ObjectId(orderId) });
+    const docs = await this.model.find({
+      orderId: new Types.ObjectId(orderId),
+    });
     return docs.map(OrderItemMapper.toDomain);
+  }
+  async deleteManyByRestaurantId(restaurantId: string): Promise<void> {
+    await this.model.deleteMany({
+      restaurantId: new Types.ObjectId(restaurantId),
+    });
   }
 }

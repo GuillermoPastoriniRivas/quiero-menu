@@ -18,9 +18,12 @@ export class CancelSubscriptionUseCase {
   ) {}
 
   async execute(restaurantId: string): Promise<Result<void, DomainError>> {
-    const subscription = await this.subscriptionRepo.findByRestaurantId(restaurantId);
+    const subscription =
+      await this.subscriptionRepo.findByRestaurantId(restaurantId);
     if (!subscription) {
-      return err(new DomainError('NO_SUBSCRIPTION', 'No active subscription found.'));
+      return err(
+        new DomainError('NO_SUBSCRIPTION', 'No active subscription found.'),
+      );
     }
 
     if (subscription.plan === PlanTier.FREE) {
@@ -28,9 +31,14 @@ export class CancelSubscriptionUseCase {
     }
 
     // Cancel at the payment provider
-    if (subscription.externalSubscriptionId && subscription.paymentProvider !== PaymentProvider.NONE) {
+    if (
+      subscription.externalSubscriptionId &&
+      subscription.paymentProvider !== PaymentProvider.NONE
+    ) {
       try {
-        await this.paymentProvider.cancelSubscription(subscription.externalSubscriptionId);
+        await this.paymentProvider.cancelSubscription(
+          subscription.externalSubscriptionId,
+        );
       } catch {
         // Provider cancel failed, but proceed with local downgrade
       }
@@ -55,8 +63,11 @@ export class CancelSubscriptionUseCase {
       description: 'Subscription canceled — downgraded to free',
     });
 
-    // Clear custom domain
-    await this.restaurantRepo.update(restaurantId, { customDomain: null });
+    // Clear custom domain (the worker will de-provision TLS/vhost)
+    await this.restaurantRepo.update(restaurantId, {
+      customDomain: null,
+      customDomainStatus: null,
+    });
 
     return ok(undefined);
   }

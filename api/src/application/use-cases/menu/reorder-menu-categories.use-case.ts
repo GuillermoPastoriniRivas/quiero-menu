@@ -5,7 +5,10 @@ import { CrossRestaurantAccessError } from '../../../domain/errors/domain-errors
 export class ReorderMenuCategoriesUseCase {
   constructor(private readonly categoryRepo: MenuCategoryRepository) {}
 
-  async execute(restaurantId: string, items: { id: string; displayOrder: number }[]): Promise<Result<void, CrossRestaurantAccessError>> {
+  async execute(
+    restaurantId: string,
+    items: { id: string; displayOrder: number }[],
+  ): Promise<Result<void, CrossRestaurantAccessError>> {
     const categories = await this.categoryRepo.findByRestaurantId(restaurantId);
     const validIds = new Set(categories.map((c) => c.id));
     const allValid = items.every((item) => validIds.has(item.id));

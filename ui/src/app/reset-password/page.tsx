@@ -48,8 +48,8 @@ function ResetPasswordContent() {
     try {
       await api.post('/auth/reset-password', { token, password });
       setSuccess(true);
-    } catch (err: any) {
-      const msg = err.message || '';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
       if (msg.toLowerCase().includes('expired')) {
         setError('El enlace expiro. Solicita uno nuevo.');
       } else if (msg.toLowerCase().includes('invalid')) {

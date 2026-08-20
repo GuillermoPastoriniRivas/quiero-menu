@@ -1,6 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { RestaurantStatus } from '../../../../domain/enums/restaurant-status.enum.js';
+import {
+  StorefrontTheme,
+  CustomDomainStatus,
+} from '../../../../domain/entities/restaurant.entity.js';
 
 export type RestaurantDocument = HydratedDocument<RestaurantModel>;
 
@@ -42,14 +46,28 @@ export class RestaurantModel {
   @Prop({ default: 'COP' })
   currency: string;
 
-  @Prop({ required: true, enum: RestaurantStatus, default: RestaurantStatus.ACTIVE })
+  @Prop({
+    required: true,
+    enum: RestaurantStatus,
+    default: RestaurantStatus.ACTIVE,
+  })
   status: string;
+
+  @Prop({ type: String, enum: ['open', 'closed'], default: null })
+  openOverride: 'open' | 'closed' | null;
 
   @Prop({ type: String, default: null })
   customDomain: string | null;
 
   @Prop({ type: Object, default: null })
-  socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null;
+  customDomainStatus: CustomDomainStatus;
+
+  @Prop({ type: Object, default: null })
+  socialLinks: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+  } | null;
 
   @Prop({
     type: Object,
@@ -72,8 +90,23 @@ export class RestaurantModel {
     transferNotes?: string;
   };
 
+  @Prop({
+    type: Object,
+    default: { primaryColor: '#E8532C' },
+  })
+  theme: StorefrontTheme;
+
   createdAt: Date;
   updatedAt: Date;
 }
 
 export const RestaurantSchema = SchemaFactory.createForClass(RestaurantModel);
+
+// Un custom domain solo puede estar asignado a un tenant.
+RestaurantSchema.index(
+  { customDomain: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { customDomain: { $type: 'string' } },
+  },
+);

@@ -11,7 +11,9 @@ import { JwtTokenService } from './jwt-token.service.js';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'secret-change-me'),
-        signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN', '3d') as any },
+        signOptions: {
+          expiresIn: config.get<string>('JWT_EXPIRES_IN', '3d') as any,
+        },
       }),
     }),
   ],

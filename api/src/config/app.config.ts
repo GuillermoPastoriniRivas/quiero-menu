@@ -23,8 +23,16 @@ export default () => ({
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
   },
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3001',
+  internalToken: process.env.INTERNAL_API_TOKEN ?? '',
+  customDomain: {
+    ownDomains: (process.env.OWN_DOMAINS ?? 'quiero.menu,www.quiero.menu')
+      .split(',')
+      .map((d) => d.trim())
+      .filter(Boolean),
+  },
   openai: {
     apiKey: requireEnv('OPENAI_API_KEY'),
+    model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
   },
   s3: {
     bucket: process.env.S3_BUCKET ?? 'quiero-menu-images',

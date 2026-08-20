@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Sin conexion | quiero.menu</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f4f2ef;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 1.5rem;
+    }
+    .card {
+      max-width: 24rem;
+      width: 100%;
+      background: #fff;
+      border-radius: 1.5rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+      padding: 2rem;
+      text-align: center;
+    }
+    .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      color: #1c1917;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #57534e;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #10b981;
+      color: #fff;
+      border: 0;
+      border-radius: 1rem;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover { background: #0ea371; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📡</div>
+    <h1>Estas sin conexion</h1>
+    <p>No pudimos cargar esta pagina. Revisa tu conexion a internet y volve a intentarlo.</p>
+    <button onclick="location.reload()">Reintentar</button>
+  </div>
+</body>
+</html>

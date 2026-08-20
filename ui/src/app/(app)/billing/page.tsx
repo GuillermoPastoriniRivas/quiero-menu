@@ -9,6 +9,7 @@ import { PlanTier, Subscription } from '@/types';
 import { toast } from 'sonner';
 import { formatARS, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { CustomDomainCard } from '@/components/custom-domain/custom-domain-card';
 
 const PRO_PRICE = 15000;
 
@@ -199,6 +200,8 @@ export default function BillingPage() {
           )}
         </CardContent>
       </Card>
+
+      <CustomDomainCard isPro={isPro} />
 
       <Card>
         <CardHeader>

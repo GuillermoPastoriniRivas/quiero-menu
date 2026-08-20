@@ -9,7 +9,25 @@ import { EmailModule } from './email/email.module.js';
 import { PushModule } from './push/push.module.js';
 
 @Module({
-  imports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule, StorageModule, EmailModule, PushModule],
-  exports: [PersistenceModule, AuthInfraModule, WebSocketInfraModule, AiModule, PaymentModule, StorageModule, EmailModule, PushModule],
+  imports: [
+    PersistenceModule,
+    AuthInfraModule,
+    WebSocketInfraModule,
+    AiModule,
+    PaymentModule,
+    StorageModule,
+    EmailModule,
+    PushModule,
+  ],
+  exports: [
+    PersistenceModule,
+    AuthInfraModule,
+    WebSocketInfraModule,
+    AiModule,
+    PaymentModule,
+    StorageModule,
+    EmailModule,
+    PushModule,
+  ],
 })
 export class InfrastructureModule {}

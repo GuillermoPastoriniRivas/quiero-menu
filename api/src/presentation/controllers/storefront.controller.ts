@@ -1,26 +1,73 @@
-import { Controller, Get, Post, Patch, Param, Body, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Public } from '../decorators/public.decorator.js';
 import { ZodValidationPipe } from '../pipes/zod-validation.pipe.js';
-import { CreateStorefrontOrderRequestSchema, CreateStorefrontOrderRequestDto } from '../request-dtos/order.dto.js';
-import { PresignedUrlRequestSchema, PresignedUrlRequestDto } from '../request-dtos/upload.dto.js';
+import {
+  CreateStorefrontOrderRequestSchema,
+  CreateStorefrontOrderRequestDto,
+} from '../request-dtos/order.dto.js';
+import {
+  ValidateCouponRequestSchema,
+  ValidateCouponRequestDto,
+} from '../request-dtos/coupon.dto.js';
+import {
+  PresignedUrlRequestSchema,
+  PresignedUrlRequestDto,
+} from '../request-dtos/upload.dto.js';
 import type { GetRestaurantBySlugUseCase } from '../../application/use-cases/restaurant/get-restaurant-by-slug.use-case.js';
+import type { ResolveCustomDomainUseCase } from '../../application/use-cases/custom-domain/resolve-custom-domain.use-case.js';
 import type { CreateStorefrontOrderUseCase } from '../../application/use-cases/order/create-storefront-order.use-case.js';
 import type { GetOrderTrackingUseCase } from '../../application/use-cases/order/get-order-tracking.use-case.js';
+import type { ValidateCouponUseCase } from '../../application/use-cases/coupons/validate-coupon.use-case.js';
+import type { RecordStorefrontViewUseCase } from '../../application/use-cases/analytics/record-storefront-view.use-case.js';
 import type { GenerateUploadUrlUseCase } from '../../application/use-cases/upload/generate-upload-url.use-case.js';
 import type { NotifyReceiptUploadedUseCase } from '../../application/use-cases/order/notify-receipt-uploaded.use-case.js';
 import type { OrderRepository } from '../../domain/repositories/order.repository.js';
 import { DeliveryType } from '../../domain/enums/delivery-type.enum.js';
+import { RestaurantClosedError } from '../../domain/errors/domain-errors.js';
 
 @Controller('storefront')
 export class StorefrontController {
   constructor(
-    @Inject('GetRestaurantBySlugUseCase') private readonly getBySlug: GetRestaurantBySlugUseCase,
-    @Inject('CreateStorefrontOrderUseCase') private readonly createOrder: CreateStorefrontOrderUseCase,
-    @Inject('GetOrderTrackingUseCase') private readonly getOrderTracking: GetOrderTrackingUseCase,
-    @Inject('GenerateUploadUrlUseCase') private readonly generateUploadUrl: GenerateUploadUrlUseCase,
-    @Inject('NotifyReceiptUploadedUseCase') private readonly notifyReceipt: NotifyReceiptUploadedUseCase,
+    @Inject('GetRestaurantBySlugUseCase')
+    private readonly getBySlug: GetRestaurantBySlugUseCase,
+    @Inject('ResolveCustomDomainUseCase')
+    private readonly resolveCustomDomain: ResolveCustomDomainUseCase,
+    @Inject('CreateStorefrontOrderUseCase')
+    private readonly createOrder: CreateStorefrontOrderUseCase,
+    @Inject('GetOrderTrackingUseCase')
+    private readonly getOrderTracking: GetOrderTrackingUseCase,
+    @Inject('GenerateUploadUrlUseCase')
+    private readonly generateUploadUrl: GenerateUploadUrlUseCase,
+    @Inject('ValidateCouponUseCase')
+    private readonly validateCoupon: ValidateCouponUseCase,
+    @Inject('RecordStorefrontViewUseCase')
+    private readonly recordView: RecordStorefrontViewUseCase,
+    @Inject('NotifyReceiptUploadedUseCase')
+    private readonly notifyReceipt: NotifyReceiptUploadedUseCase,
     @Inject('OrderRepository') private readonly orderRepo: OrderRepository,
   ) {}
+
+  @Public()
+  @Get('resolve')
+  async resolveStorefrontByHost(@Query('host') host: string) {
+    if (!host) throw new BadRequestException('host is required');
+    const result = await this.resolveCustomDomain.execute(host);
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    return result.value;
+  }
 
   @Public()
   @Get(':slug')
@@ -34,7 +81,8 @@ export class StorefrontController {
   @Post(':slug/orders')
   async createStorefrontOrder(
     @Param('slug') slug: string,
-    @Body(new ZodValidationPipe(CreateStorefrontOrderRequestSchema)) body: CreateStorefrontOrderRequestDto,
+    @Body(new ZodValidationPipe(CreateStorefrontOrderRequestSchema))
+    body: CreateStorefrontOrderRequestDto,
   ) {
     const result = await this.createOrder.execute(slug, {
       ...body,
@@ -42,15 +90,48 @@ export class StorefrontController {
       customerAddress: body.customerAddress,
       deliveryZoneId: body.deliveryZoneId,
       receiptUrl: body.receiptUrl,
+      couponCode: body.couponCode,
     });
-    if (!result.ok) throw new BadRequestException(result.error.message);
+    if (!result.ok) {
+      if (result.error instanceof RestaurantClosedError) {
+        throw new HttpException(result.error.message, HttpStatus.LOCKED);
+      }
+      throw new BadRequestException(result.error.message);
+    }
     return result.value;
   }
 
   @Public()
   @Get(':slug/orders/by-code/:code')
-  async getOrderByCode(@Param('slug') slug: string, @Param('code') code: string) {
+  async getOrderByCode(
+    @Param('slug') slug: string,
+    @Param('code') code: string,
+  ) {
     const result = await this.getOrderTracking.execute(slug, code);
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    return result.value;
+  }
+
+  @Public()
+  @Post(':slug/coupon/validate')
+  async validateCouponForRestaurant(
+    @Param('slug') slug: string,
+    @Body(new ZodValidationPipe(ValidateCouponRequestSchema))
+    body: ValidateCouponRequestDto,
+  ) {
+    const result = await this.validateCoupon.execute(
+      slug,
+      body.code,
+      body.subtotal,
+    );
+    if (!result.ok) throw new BadRequestException(result.error.message);
+    return result.value;
+  }
+
+  @Public()
+  @Post(':slug/view')
+  async recordStorefrontView(@Param('slug') slug: string) {
+    const result = await this.recordView.execute(slug);
     if (!result.ok) throw new NotFoundException(result.error.message);
     return result.value;
   }
@@ -59,7 +140,8 @@ export class StorefrontController {
   @Post(':slug/receipt-upload')
   async getReceiptUploadUrl(
     @Param('slug') slug: string,
-    @Body(new ZodValidationPipe(PresignedUrlRequestSchema)) body: PresignedUrlRequestDto,
+    @Body(new ZodValidationPipe(PresignedUrlRequestSchema))
+    body: PresignedUrlRequestDto,
   ) {
     const restaurant = await this.getBySlug.execute(slug);
     if (!restaurant.ok) throw new NotFoundException(restaurant.error.message);

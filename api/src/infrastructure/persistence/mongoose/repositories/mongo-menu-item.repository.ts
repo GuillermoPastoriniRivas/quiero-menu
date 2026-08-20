@@ -3,12 +3,18 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { MenuItemRepository } from '../../../../domain/repositories/menu-item.repository.js';
 import { MenuItem } from '../../../../domain/entities/menu-item.entity.js';
-import { MenuItemModel, MenuItemDocument } from '../schemas/menu-item.schema.js';
+import {
+  MenuItemModel,
+  MenuItemDocument,
+} from '../schemas/menu-item.schema.js';
 import { MenuItemMapper } from '../mappers/menu-item.mapper.js';
 
 @Injectable()
 export class MongoMenuItemRepository implements MenuItemRepository {
-  constructor(@InjectModel(MenuItemModel.name) private readonly model: Model<MenuItemDocument>) {}
+  constructor(
+    @InjectModel(MenuItemModel.name)
+    private readonly model: Model<MenuItemDocument>,
+  ) {}
 
   async create(data: Omit<MenuItem, 'id'>): Promise<MenuItem> {
     const doc = await this.model.create({
@@ -20,12 +26,16 @@ export class MongoMenuItemRepository implements MenuItemRepository {
   }
 
   async findByRestaurantId(restaurantId: string): Promise<MenuItem[]> {
-    const docs = await this.model.find({ restaurantId: new Types.ObjectId(restaurantId) }).sort({ displayOrder: 1 });
+    const docs = await this.model
+      .find({ restaurantId: new Types.ObjectId(restaurantId) })
+      .sort({ displayOrder: 1 });
     return docs.map(MenuItemMapper.toDomain);
   }
 
   async findByCategoryId(categoryId: string): Promise<MenuItem[]> {
-    const docs = await this.model.find({ categoryId: new Types.ObjectId(categoryId) }).sort({ displayOrder: 1 });
+    const docs = await this.model
+      .find({ categoryId: new Types.ObjectId(categoryId) })
+      .sort({ displayOrder: 1 });
     return docs.map(MenuItemMapper.toDomain);
   }
 
@@ -34,10 +44,18 @@ export class MongoMenuItemRepository implements MenuItemRepository {
     return doc ? MenuItemMapper.toDomain(doc) : null;
   }
 
-  async update(id: string, data: Partial<Omit<MenuItem, 'id' | 'restaurantId'>>): Promise<MenuItem | null> {
+  async update(
+    id: string,
+    data: Partial<Omit<MenuItem, 'id' | 'restaurantId'>>,
+  ): Promise<MenuItem | null> {
     const update: Record<string, unknown> = { ...data };
-    if (data.categoryId) update.categoryId = new Types.ObjectId(data.categoryId);
-    const doc = await this.model.findByIdAndUpdate(id, { $set: update }, { returnDocument: 'after' });
+    if (data.categoryId)
+      update.categoryId = new Types.ObjectId(data.categoryId);
+    const doc = await this.model.findByIdAndUpdate(
+      id,
+      { $set: update },
+      { returnDocument: 'after' },
+    );
     return doc ? MenuItemMapper.toDomain(doc) : null;
   }
 
@@ -48,12 +66,20 @@ export class MongoMenuItemRepository implements MenuItemRepository {
 
   async reorder(items: { id: string; displayOrder: number }[]): Promise<void> {
     const ops = items.map((item) => ({
-      updateOne: { filter: { _id: new Types.ObjectId(item.id) }, update: { $set: { displayOrder: item.displayOrder } } },
+      updateOne: {
+        filter: { _id: new Types.ObjectId(item.id) },
+        update: { $set: { displayOrder: item.displayOrder } },
+      },
     }));
     await this.model.bulkWrite(ops);
   }
 
   async deleteByCategoryId(categoryId: string): Promise<void> {
     await this.model.deleteMany({ categoryId: new Types.ObjectId(categoryId) });
+  }
+  async deleteManyByRestaurantId(restaurantId: string): Promise<void> {
+    await this.model.deleteMany({
+      restaurantId: new Types.ObjectId(restaurantId),
+    });
   }
 }

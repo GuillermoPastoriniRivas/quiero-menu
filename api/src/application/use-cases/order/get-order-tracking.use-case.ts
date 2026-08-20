@@ -6,7 +6,10 @@ import { OrderStatus } from '../../../domain/enums/order-status.enum.js';
 import { DeliveryType } from '../../../domain/enums/delivery-type.enum.js';
 import { PaymentMethodsConfig } from '../../../domain/entities/restaurant.entity.js';
 import { Result, ok, err } from '../../common/result.js';
-import { RestaurantNotFoundError, OrderNotFoundError } from '../../../domain/errors/domain-errors.js';
+import {
+  RestaurantNotFoundError,
+  OrderNotFoundError,
+} from '../../../domain/errors/domain-errors.js';
 
 export interface OrderTrackingOutput {
   order: {
@@ -16,7 +19,9 @@ export interface OrderTrackingOutput {
     deliveryType: DeliveryType;
     subtotal: number;
     deliveryFee: number;
+    discount: number;
     total: number;
+    couponCode: string | null;
     paymentMethod: string;
     receiptUrl: string | null;
     notes: string;
@@ -43,7 +48,12 @@ export class GetOrderTrackingUseCase {
     private readonly restaurantRepo: RestaurantRepository,
   ) {}
 
-  async execute(slug: string, code: string): Promise<Result<OrderTrackingOutput, RestaurantNotFoundError | OrderNotFoundError>> {
+  async execute(
+    slug: string,
+    code: string,
+  ): Promise<
+    Result<OrderTrackingOutput, RestaurantNotFoundError | OrderNotFoundError>
+  > {
     const restaurant = await this.restaurantRepo.findBySlug(slug);
     if (!restaurant) return err(new RestaurantNotFoundError());
 
@@ -60,7 +70,9 @@ export class GetOrderTrackingUseCase {
         deliveryType: order.deliveryType,
         subtotal: order.subtotal,
         deliveryFee: order.deliveryFee,
+        discount: order.discount,
         total: order.total,
+        couponCode: order.couponCode,
         paymentMethod: order.paymentMethod,
         receiptUrl: order.receiptUrl,
         notes: order.notes,

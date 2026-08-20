@@ -1,9 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-export type KitchenAccessTokenDocument = HydratedDocument<KitchenAccessTokenModel>;
+export type KitchenAccessTokenDocument =
+  HydratedDocument<KitchenAccessTokenModel>;
 
-@Schema({ collection: 'kitchen_access_tokens', timestamps: { createdAt: true, updatedAt: false } })
+@Schema({
+  collection: 'kitchen_access_tokens',
+  timestamps: { createdAt: true, updatedAt: false },
+})
 export class KitchenAccessTokenModel {
   @Prop({ type: Types.ObjectId, required: true })
   restaurantId: Types.ObjectId;
@@ -23,5 +27,7 @@ export class KitchenAccessTokenModel {
   createdAt: Date;
 }
 
-export const KitchenAccessTokenSchema = SchemaFactory.createForClass(KitchenAccessTokenModel);
+export const KitchenAccessTokenSchema = SchemaFactory.createForClass(
+  KitchenAccessTokenModel,
+);
 KitchenAccessTokenSchema.index({ restaurantId: 1, revokedAt: 1 });

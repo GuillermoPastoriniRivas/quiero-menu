@@ -5,7 +5,10 @@ import { PlanTier } from '../../../../domain/enums/plan-tier.enum.js';
 
 export type BillingRecordDocument = HydratedDocument<BillingRecordModel>;
 
-@Schema({ collection: 'billing_records', timestamps: { createdAt: true, updatedAt: false } })
+@Schema({
+  collection: 'billing_records',
+  timestamps: { createdAt: true, updatedAt: false },
+})
 export class BillingRecordModel {
   @Prop({ type: Types.ObjectId, required: true, index: true })
   restaurantId: Types.ObjectId;
@@ -25,4 +28,5 @@ export class BillingRecordModel {
   createdAt: Date;
 }
 
-export const BillingRecordSchema = SchemaFactory.createForClass(BillingRecordModel);
+export const BillingRecordSchema =
+  SchemaFactory.createForClass(BillingRecordModel);

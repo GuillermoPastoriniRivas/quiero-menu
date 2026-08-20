@@ -19,9 +19,16 @@ export class RestaurantMapper {
       doc.timezone,
       doc.currency,
       doc.status as RestaurantStatus,
+      doc.openOverride ?? null,
       doc.customDomain,
+      doc.customDomainStatus ?? null,
       doc.socialLinks ?? null,
-      doc.paymentMethods ?? { cashEnabled: true, cardEnabled: true, transferEnabled: true },
+      doc.paymentMethods ?? {
+        cashEnabled: true,
+        cardEnabled: true,
+        transferEnabled: true,
+      },
+      doc.theme ?? { primaryColor: '#E8532C' },
       doc.createdAt,
       doc.updatedAt,
     );

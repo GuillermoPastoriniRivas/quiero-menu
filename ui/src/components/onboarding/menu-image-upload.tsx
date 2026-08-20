@@ -4,6 +4,9 @@ import { useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { MaterialIcon } from '@/components/ui/material-icon';
+import { OnboardingSteps } from '@/components/onboarding/onboarding-steps';
+import { cn } from '@/lib/utils';
 
 interface MenuImageUploadProps {
   images: File[];
@@ -45,19 +48,34 @@ export function MenuImageUpload({
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold">Configura tu menu con IA</h1>
-        <p className="text-muted-foreground">
-          Subi una o dos fotos de tu menu y la IA extraera los platos, precios y categorias automaticamente.
+    <div className="w-full space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-3">
+        <span className="inline-flex items-center gap-1.5 gradient-cta text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm shadow-primary/25">
+          <MaterialIcon name="auto_awesome" size="xs" />
+          CON IA
+        </span>
+        <h1
+          className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
+          Subi una foto de tu menu
+        </h1>
+        <p className="text-on-surface-variant max-w-md mx-auto">
+          La IA extrae platos, precios y categorias en segundos. Sin tipear nada.
         </p>
       </div>
 
+      <OnboardingSteps current={0} />
+
       {/* Drop zone */}
       <div
-        className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
-          dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
-        }`}
+        className={cn(
+          'relative rounded-3xl border-2 border-dashed transition-all cursor-pointer overflow-hidden',
+          dragOver
+            ? 'border-primary bg-primary/5 scale-[1.01] shadow-ambient'
+            : 'border-primary/30 bg-white hover:border-primary/60 hover:shadow-ambient',
+        )}
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();
@@ -70,6 +88,8 @@ export function MenuImageUpload({
           handleFiles(e.dataTransfer.files);
         }}
       >
+        <div className="absolute -top-16 -right-16 w-48 h-48 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <input
           ref={inputRef}
           type="file"
@@ -78,32 +98,37 @@ export function MenuImageUpload({
           className="hidden"
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
         />
-        <svg
-          className="mb-3 h-10 w-10 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-        <p className="text-sm font-medium">Arrastra tus fotos aqui o haz click</p>
-        <p className="text-xs text-muted-foreground mt-1">JPG, PNG o WebP (max 2 imagenes, 10MB c/u)</p>
+        <div className="relative flex flex-col items-center justify-center p-10 md:p-14 text-center">
+          <div className="w-16 h-16 gradient-cta rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 mb-4">
+            <MaterialIcon name="add_a_photo" size="lg" className="text-white" />
+          </div>
+          <p className="text-base font-bold text-on-surface">
+            Arrastra tus fotos o hace click
+          </p>
+          <p className="text-sm text-on-surface-variant mt-1">
+            JPG, PNG o WebP · max 2 imagenes · 10MB c/u
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-5 rounded-full px-5 pointer-events-none"
+          >
+            <MaterialIcon name="upload_file" size="sm" />
+            Elegir archivos
+          </Button>
+        </div>
       </div>
 
       {/* Image previews */}
       {images.length > 0 && (
-        <div className="flex gap-3">
+        <div className="flex gap-4 justify-center">
           {images.map((file, i) => (
             <div key={i} className="relative group">
               <img
                 src={URL.createObjectURL(file)}
                 alt={`Menu ${i + 1}`}
-                className="h-32 w-32 rounded-lg object-cover border"
+                className="h-28 w-28 rounded-2xl object-cover border border-outline-variant/40 shadow-md"
               />
               <button
                 type="button"
@@ -111,9 +136,9 @@ export function MenuImageUpload({
                   e.stopPropagation();
                   removeImage(i);
                 }}
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-white shadow-md border border-outline-variant/40 flex items-center justify-center text-on-surface-variant hover:text-destructive hover:border-destructive/40 transition-colors"
               >
-                X
+                <MaterialIcon name="close" size="xs" />
               </button>
             </div>
           ))}
@@ -122,28 +147,41 @@ export function MenuImageUpload({
 
       {/* Additional text */}
       <div className="space-y-2">
-        <Label>Texto adicional (opcional)</Label>
+        <Label className="text-xs font-bold text-on-surface-variant ml-1">
+          Texto adicional (opcional)
+        </Label>
         <Textarea
           value={additionalText}
           onChange={(e) => onTextChange(e.target.value)}
-          placeholder="Ej: Tambien vendemos desayunos los fines de semana, la moneda es pesos colombianos..."
+          placeholder="Ej: Tambien vendemos desayunos los fines de semana, la moneda es pesos argentinos..."
           rows={3}
+          className="rounded-2xl bg-white"
         />
       </div>
 
       {error && (
-        <p className="text-sm text-destructive text-center">{error}</p>
+        <div className="flex items-center gap-2 rounded-2xl bg-error-container/40 text-on-error-container px-4 py-3 text-sm">
+          <MaterialIcon name="error" size="sm" className="shrink-0" />
+          <span>{error}</span>
+        </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
         >
+          <MaterialIcon name="arrow_back" size="xs" />
           {fromMenu ? 'Volver al menu' : 'Configurar manualmente'}
         </button>
-        <Button onClick={onAnalyze} disabled={images.length === 0} size="lg">
+        <Button
+          onClick={onAnalyze}
+          disabled={images.length === 0}
+          size="lg"
+          className="w-full sm:w-auto rounded-2xl px-8"
+        >
+          <MaterialIcon name="auto_awesome" size="sm" />
           Analizar con IA
         </Button>
       </div>

@@ -22,7 +22,16 @@ export class SlugAlreadyExistsError extends DomainError {
 
 export class RestaurantPausedError extends DomainError {
   constructor() {
-    super('RESTAURANT_PAUSED', 'This restaurant is currently not accepting orders.');
+    super(
+      'RESTAURANT_PAUSED',
+      'This restaurant is currently not accepting orders.',
+    );
+  }
+}
+
+export class RestaurantClosedError extends DomainError {
+  constructor() {
+    super('RESTAURANT_CLOSED', 'El local está cerrado en este momento.');
   }
 }
 
@@ -58,7 +67,10 @@ export class OrderNotFoundError extends DomainError {
 
 export class InvalidOrderTransitionError extends DomainError {
   constructor(from: string, to: string) {
-    super('INVALID_ORDER_TRANSITION', `Cannot transition order from '${from}' to '${to}'.`);
+    super(
+      'INVALID_ORDER_TRANSITION',
+      `Cannot transition order from '${from}' to '${to}'.`,
+    );
   }
 }
 
@@ -82,19 +94,28 @@ export class UserNotFoundError extends DomainError {
 
 export class CrossRestaurantAccessError extends DomainError {
   constructor() {
-    super('CROSS_RESTAURANT_ACCESS', 'Cannot access resources from a different restaurant.');
+    super(
+      'CROSS_RESTAURANT_ACCESS',
+      'Cannot access resources from a different restaurant.',
+    );
   }
 }
 
 export class KitchenTokenInvalidError extends DomainError {
   constructor() {
-    super('KITCHEN_TOKEN_INVALID', 'Kitchen access token is invalid or expired.');
+    super(
+      'KITCHEN_TOKEN_INVALID',
+      'Kitchen access token is invalid or expired.',
+    );
   }
 }
 
 export class DeliveryTokenInvalidError extends DomainError {
   constructor() {
-    super('DELIVERY_TOKEN_INVALID', 'Delivery access token is invalid or expired.');
+    super(
+      'DELIVERY_TOKEN_INVALID',
+      'Delivery access token is invalid or expired.',
+    );
   }
 }
 
@@ -113,5 +134,59 @@ export class InvalidTokenError extends DomainError {
 export class TokenExpiredError extends DomainError {
   constructor() {
     super('TOKEN_EXPIRED', 'The token has expired.');
+  }
+}
+
+export class CouponNotFoundError extends DomainError {
+  constructor() {
+    super('COUPON_NOT_FOUND', 'Coupon not found.');
+  }
+}
+
+export class CouponInvalidError extends DomainError {
+  constructor(message: string) {
+    super('COUPON_INVALID', message);
+  }
+}
+
+export class CustomDomainInvalidError extends DomainError {
+  constructor(message: string) {
+    super('CUSTOM_DOMAIN_INVALID', message);
+  }
+}
+
+export class CustomDomainAlreadyInUseError extends DomainError {
+  constructor() {
+    super(
+      'CUSTOM_DOMAIN_ALREADY_IN_USE',
+      'Este dominio ya está asignado a otro local.',
+    );
+  }
+}
+
+export class CustomDomainRequiresProError extends DomainError {
+  constructor() {
+    super(
+      'CUSTOM_DOMAIN_REQUIRES_PRO',
+      'El dominio personalizado es una feature del plan Pro.',
+    );
+  }
+}
+
+export class CustomDomainNotActiveError extends DomainError {
+  constructor() {
+    super(
+      'CUSTOM_DOMAIN_NOT_ACTIVE',
+      'Este dominio aún no está activo para el storefront.',
+    );
+  }
+}
+
+export class CustomDomainNotConfiguredError extends DomainError {
+  constructor() {
+    super(
+      'CUSTOM_DOMAIN_NOT_CONFIGURED',
+      'Este local no tiene dominio personalizado configurado.',
+    );
   }
 }

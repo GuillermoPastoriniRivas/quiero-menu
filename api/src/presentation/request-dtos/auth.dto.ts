@@ -11,7 +11,14 @@ export const SignupRequestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   restaurantName: z.string().min(1),
-  restaurantSlug: z.string().min(2).max(60).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase alphanumeric with hyphens'),
+  restaurantSlug: z
+    .string()
+    .min(2)
+    .max(60)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      'Slug must be lowercase alphanumeric with hyphens',
+    ),
 });
 export type SignupRequestDto = z.infer<typeof SignupRequestSchema>;
 
@@ -28,10 +35,14 @@ export type VerifyEmailRequestDto = z.infer<typeof VerifyEmailRequestSchema>;
 export const ForgotPasswordRequestSchema = z.object({
   email: z.string().email(),
 });
-export type ForgotPasswordRequestDto = z.infer<typeof ForgotPasswordRequestSchema>;
+export type ForgotPasswordRequestDto = z.infer<
+  typeof ForgotPasswordRequestSchema
+>;
 
 export const ResetPasswordRequestSchema = z.object({
   token: z.string().min(1),
   password: z.string().min(6),
 });
-export type ResetPasswordRequestDto = z.infer<typeof ResetPasswordRequestSchema>;
+export type ResetPasswordRequestDto = z.infer<
+  typeof ResetPasswordRequestSchema
+>;

@@ -8,9 +8,16 @@ import {
   UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { CurrentUser, RequestUser } from '../decorators/current-user.decorator.js';
+import {
+  CurrentUser,
+  RequestUser,
+} from '../decorators/current-user.decorator.js';
+import { Public } from '../decorators/public.decorator.js';
 import { ZodValidationPipe } from '../pipes/zod-validation.pipe.js';
-import { ImportMenuRequestSchema, ImportMenuRequestDto } from '../request-dtos/onboarding.dto.js';
+import {
+  ImportMenuRequestSchema,
+  ImportMenuRequestDto,
+} from '../request-dtos/onboarding.dto.js';
 import type { AnalyzeMenuUseCase } from '../../application/use-cases/onboarding/analyze-menu.use-case.js';
 import type { BulkImportMenuUseCase } from '../../application/use-cases/onboarding/bulk-import-menu.use-case.js';
 
@@ -19,10 +26,13 @@ const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 @Controller('onboarding')
 export class OnboardingController {
   constructor(
-    @Inject('AnalyzeMenuUseCase') private readonly analyzeMenu: AnalyzeMenuUseCase,
-    @Inject('BulkImportMenuUseCase') private readonly bulkImport: BulkImportMenuUseCase,
+    @Inject('AnalyzeMenuUseCase')
+    private readonly analyzeMenu: AnalyzeMenuUseCase,
+    @Inject('BulkImportMenuUseCase')
+    private readonly bulkImport: BulkImportMenuUseCase,
   ) {}
 
+  @Public()
   @Post('analyze')
   @UseInterceptors(
     FilesInterceptor('images', 2, {
@@ -33,19 +43,18 @@ export class OnboardingController {
     }),
   )
   async analyze(
-    @CurrentUser() user: RequestUser,
     @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: { text?: string },
+    @Body() body: { text?: string; currency?: string },
   ) {
     if (!files || files.length === 0) {
       throw new BadRequestException('At least one menu image is required');
     }
 
     const result = await this.analyzeMenu.execute({
-      restaurantId: user.restaurantId,
       imageBuffers: files.map((f) => f.buffer),
       imageMimeTypes: files.map((f) => f.mimetype),
       additionalText: body.text || undefined,
+      currency: body.currency || undefined,
     });
 
     if (!result.ok) {
@@ -58,7 +67,8 @@ export class OnboardingController {
   @Post('import')
   async importMenu(
     @CurrentUser() user: RequestUser,
-    @Body(new ZodValidationPipe(ImportMenuRequestSchema)) body: ImportMenuRequestDto,
+    @Body(new ZodValidationPipe(ImportMenuRequestSchema))
+    body: ImportMenuRequestDto,
   ) {
     const result = await this.bulkImport.execute(user.restaurantId, body);
     if (!result.ok) {

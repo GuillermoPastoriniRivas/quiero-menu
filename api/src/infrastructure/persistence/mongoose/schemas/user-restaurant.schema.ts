@@ -16,5 +16,6 @@ export class UserRestaurantModel {
   role: string;
 }
 
-export const UserRestaurantSchema = SchemaFactory.createForClass(UserRestaurantModel);
+export const UserRestaurantSchema =
+  SchemaFactory.createForClass(UserRestaurantModel);
 UserRestaurantSchema.index({ userId: 1, restaurantId: 1 }, { unique: true });

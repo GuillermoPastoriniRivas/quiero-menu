@@ -23,13 +23,24 @@ import { PaymentWebhookController } from './controllers/payment-webhook.controll
 import { HealthController } from './controllers/health.controller.js';
 import { UploadController } from './controllers/upload.controller.js';
 import { PushController } from './controllers/push.controller.js';
+import { AccountController } from './controllers/account.controller.js';
+import { CouponController } from './controllers/coupon.controller.js';
+import { CustomerController } from './controllers/customers.controller.js';
+import { AnalyticsController } from './controllers/analytics.controller.js';
+import { CustomDomainController } from './controllers/custom-domain.controller.js';
+import { InternalCustomDomainController } from './controllers/internal-custom-domain.controller.js';
 
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
 import { SignupUseCase } from '../application/use-cases/auth/signup.use-case.js';
 import { RefreshTokenUseCase } from '../application/use-cases/auth/refresh-token.use-case.js';
+import { LogoutUseCase } from '../application/use-cases/auth/logout.use-case.js';
+import { AuditService } from './services/audit.service.js';
+import { GetAccountDataUseCase } from '../application/use-cases/account/get-account-data.use-case.js';
+import { DeleteAccountUseCase } from '../application/use-cases/account/delete-account.use-case.js';
 import { GetCurrentUserUseCase } from '../application/use-cases/auth/get-current-user.use-case.js';
 import { VerifyEmailUseCase } from '../application/use-cases/auth/verify-email.use-case.js';
+import { ResendVerificationUseCase } from '../application/use-cases/auth/resend-verification.use-case.js';
 import { ForgotPasswordUseCase } from '../application/use-cases/auth/forgot-password.use-case.js';
 import { ResetPasswordUseCase } from '../application/use-cases/auth/reset-password.use-case.js';
 
@@ -38,6 +49,8 @@ import { GetRestaurantUseCase } from '../application/use-cases/restaurant/get-re
 import { GetRestaurantBySlugUseCase } from '../application/use-cases/restaurant/get-restaurant-by-slug.use-case.js';
 import { UpdateRestaurantUseCase } from '../application/use-cases/restaurant/update-restaurant.use-case.js';
 import { UpdateOperatingHoursUseCase } from '../application/use-cases/restaurant/update-operating-hours.use-case.js';
+import { GetRestaurantOperatingHoursUseCase } from '../application/use-cases/restaurant/get-restaurant-operating-hours.use-case.js';
+import { UpdateOpenStatusUseCase } from '../application/use-cases/restaurant/update-open-status.use-case.js';
 
 // Use Cases — Menu
 import { CreateMenuCategoryUseCase } from '../application/use-cases/menu/create-menu-category.use-case.js';
@@ -97,31 +110,241 @@ import { GetBillingHistoryUseCase } from '../application/use-cases/billing/get-b
 // Use Cases — Upload
 import { GenerateUploadUrlUseCase } from '../application/use-cases/upload/generate-upload-url.use-case.js';
 
+// Use Cases — Coupons
+import { CreateCouponUseCase } from '../application/use-cases/coupons/create-coupon.use-case.js';
+import { ListCouponsUseCase } from '../application/use-cases/coupons/list-coupons.use-case.js';
+import { UpdateCouponUseCase } from '../application/use-cases/coupons/update-coupon.use-case.js';
+import { DeleteCouponUseCase } from '../application/use-cases/coupons/delete-coupon.use-case.js';
+import { ValidateCouponUseCase } from '../application/use-cases/coupons/validate-coupon.use-case.js';
+
+// Use Cases — Customers
+import { ListCustomersUseCase } from '../application/use-cases/customers/list-customers.use-case.js';
+import { ListCustomerOrdersUseCase } from '../application/use-cases/customers/list-customer-orders.use-case.js';
+
+// Use Cases — Analytics
+import { RecordStorefrontViewUseCase } from '../application/use-cases/analytics/record-storefront-view.use-case.js';
+import { GetAnalyticsOverviewUseCase } from '../application/use-cases/analytics/get-analytics-overview.use-case.js';
+
+// Use Cases — Custom Domain
+import { SetCustomDomainUseCase } from '../application/use-cases/custom-domain/set-custom-domain.use-case.js';
+import { GetCustomDomainUseCase } from '../application/use-cases/custom-domain/get-custom-domain.use-case.js';
+import { RemoveCustomDomainUseCase } from '../application/use-cases/custom-domain/remove-custom-domain.use-case.js';
+import { ResolveCustomDomainUseCase } from '../application/use-cases/custom-domain/resolve-custom-domain.use-case.js';
+import { ListPendingCustomDomainsUseCase } from '../application/use-cases/custom-domain/list-pending-custom-domains.use-case.js';
+import { ListActiveCustomDomainsUseCase } from '../application/use-cases/custom-domain/list-active-custom-domains.use-case.js';
+import { UpdateCustomDomainStatusUseCase } from '../application/use-cases/custom-domain/update-custom-domain-status.use-case.js';
+
 const useCaseProviders = [
   // Auth
   {
     provide: 'LoginUseCase',
-    useFactory: (userRepo: any, urRepo: any, rtRepo: any, restRepo: any, hasher: any, tokenProvider: any) =>
-      new LoginUseCase(userRepo, urRepo, rtRepo, restRepo, hasher, tokenProvider),
-    inject: ['UserRepository', 'UserRestaurantRepository', 'RefreshTokenRepository', 'RestaurantRepository', 'PasswordHasherPort', 'TokenProviderPort'],
+    useFactory: (
+      userRepo: any,
+      urRepo: any,
+      rtRepo: any,
+      restRepo: any,
+      hasher: any,
+      tokenProvider: any,
+    ) =>
+      new LoginUseCase(
+        userRepo,
+        urRepo,
+        rtRepo,
+        restRepo,
+        hasher,
+        tokenProvider,
+      ),
+    inject: [
+      'UserRepository',
+      'UserRestaurantRepository',
+      'RefreshTokenRepository',
+      'RestaurantRepository',
+      'PasswordHasherPort',
+      'TokenProviderPort',
+    ],
   },
   {
     provide: 'SignupUseCase',
-    useFactory: (userRepo: any, restRepo: any, urRepo: any, rtRepo: any, hasher: any, tokenProvider: any, subRepo: any, vtRepo: any, emailService: any, config: ConfigService) =>
-      new SignupUseCase(userRepo, restRepo, urRepo, rtRepo, hasher, tokenProvider, subRepo, vtRepo, emailService, config.get<string>('frontendUrl')!),
-    inject: ['UserRepository', 'RestaurantRepository', 'UserRestaurantRepository', 'RefreshTokenRepository', 'PasswordHasherPort', 'TokenProviderPort', 'SubscriptionRepository', 'VerificationTokenRepository', 'EmailServicePort', ConfigService],
+    useFactory: (
+      userRepo: any,
+      restRepo: any,
+      urRepo: any,
+      rtRepo: any,
+      hasher: any,
+      tokenProvider: any,
+      subRepo: any,
+      vtRepo: any,
+      emailService: any,
+      config: ConfigService,
+    ) =>
+      new SignupUseCase(
+        userRepo,
+        restRepo,
+        urRepo,
+        rtRepo,
+        hasher,
+        tokenProvider,
+        subRepo,
+        vtRepo,
+        emailService,
+        config.get<string>('frontendUrl')!,
+      ),
+    inject: [
+      'UserRepository',
+      'RestaurantRepository',
+      'UserRestaurantRepository',
+      'RefreshTokenRepository',
+      'PasswordHasherPort',
+      'TokenProviderPort',
+      'SubscriptionRepository',
+      'VerificationTokenRepository',
+      'EmailServicePort',
+      ConfigService,
+    ],
   },
   {
     provide: 'RefreshTokenUseCase',
     useFactory: (rtRepo: any, userRepo: any, urRepo: any, tokenProvider: any) =>
       new RefreshTokenUseCase(rtRepo, userRepo, urRepo, tokenProvider),
-    inject: ['RefreshTokenRepository', 'UserRepository', 'UserRestaurantRepository', 'TokenProviderPort'],
+    inject: [
+      'RefreshTokenRepository',
+      'UserRepository',
+      'UserRestaurantRepository',
+      'TokenProviderPort',
+    ],
+  },
+  {
+    provide: 'LogoutUseCase',
+    useFactory: (rtRepo: any) => new LogoutUseCase(rtRepo),
+    inject: ['RefreshTokenRepository'],
   },
   {
     provide: 'GetCurrentUserUseCase',
     useFactory: (userRepo: any, urRepo: any, restRepo: any) =>
       new GetCurrentUserUseCase(userRepo, urRepo, restRepo),
-    inject: ['UserRepository', 'UserRestaurantRepository', 'RestaurantRepository'],
+    inject: [
+      'UserRepository',
+      'UserRestaurantRepository',
+      'RestaurantRepository',
+    ],
+  },
+
+  {
+    provide: 'GetAccountDataUseCase',
+    useFactory: (
+      userRepo: any,
+      urRepo: any,
+      restRepo: any,
+      catRepo: any,
+      itemRepo: any,
+      variantRepo: any,
+      optionRepo: any,
+      orderRepo: any,
+      orderItemRepo: any,
+      ohRepo: any,
+      zoneRepo: any,
+      subRepo: any,
+      billingRepo: any,
+    ) =>
+      new GetAccountDataUseCase(
+        userRepo,
+        urRepo,
+        restRepo,
+        catRepo,
+        itemRepo,
+        variantRepo,
+        optionRepo,
+        orderRepo,
+        orderItemRepo,
+        ohRepo,
+        zoneRepo,
+        subRepo,
+        billingRepo,
+      ),
+    inject: [
+      'UserRepository',
+      'UserRestaurantRepository',
+      'RestaurantRepository',
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+      'MenuItemOptionRepository',
+      'OrderRepository',
+      'OrderItemRepository',
+      'OperatingHoursRepository',
+      'DeliveryZoneRepository',
+      'SubscriptionRepository',
+      'BillingRecordRepository',
+    ],
+  },
+  {
+    provide: 'DeleteAccountUseCase',
+    useFactory: (
+      userRepo: any,
+      urRepo: any,
+      restRepo: any,
+      catRepo: any,
+      itemRepo: any,
+      variantRepo: any,
+      optionRepo: any,
+      orderRepo: any,
+      orderItemRepo: any,
+      ohRepo: any,
+      zoneRepo: any,
+      kitchenRepo: any,
+      deliveryRepo: any,
+      subRepo: any,
+      billingRepo: any,
+      pushRepo: any,
+      rtRepo: any,
+      vtRepo: any,
+      hasher: any,
+      paymentProvider: any,
+    ) =>
+      new DeleteAccountUseCase(
+        userRepo,
+        urRepo,
+        restRepo,
+        catRepo,
+        itemRepo,
+        variantRepo,
+        optionRepo,
+        orderRepo,
+        orderItemRepo,
+        ohRepo,
+        zoneRepo,
+        kitchenRepo,
+        deliveryRepo,
+        subRepo,
+        billingRepo,
+        pushRepo,
+        rtRepo,
+        vtRepo,
+        hasher,
+        paymentProvider,
+      ),
+    inject: [
+      'UserRepository',
+      'UserRestaurantRepository',
+      'RestaurantRepository',
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+      'MenuItemOptionRepository',
+      'OrderRepository',
+      'OrderItemRepository',
+      'OperatingHoursRepository',
+      'DeliveryZoneRepository',
+      'KitchenAccessTokenRepository',
+      'DeliveryAccessTokenRepository',
+      'SubscriptionRepository',
+      'BillingRecordRepository',
+      'PushSubscriptionRepository',
+      'RefreshTokenRepository',
+      'VerificationTokenRepository',
+      'PasswordHasherPort',
+      'PaymentProviderPort',
+    ],
   },
 
   {
@@ -131,16 +354,57 @@ const useCaseProviders = [
     inject: ['UserRepository', 'VerificationTokenRepository'],
   },
   {
+    provide: 'ResendVerificationUseCase',
+    useFactory: (
+      userRepo: any,
+      vtRepo: any,
+      emailService: any,
+      config: ConfigService,
+    ) =>
+      new ResendVerificationUseCase(
+        userRepo,
+        vtRepo,
+        emailService,
+        config.get<string>('frontendUrl')!,
+      ),
+    inject: [
+      'UserRepository',
+      'VerificationTokenRepository',
+      'EmailServicePort',
+      ConfigService,
+    ],
+  },
+  {
     provide: 'ForgotPasswordUseCase',
-    useFactory: (userRepo: any, vtRepo: any, emailService: any, config: ConfigService) =>
-      new ForgotPasswordUseCase(userRepo, vtRepo, emailService, config.get<string>('frontendUrl')!),
-    inject: ['UserRepository', 'VerificationTokenRepository', 'EmailServicePort', ConfigService],
+    useFactory: (
+      userRepo: any,
+      vtRepo: any,
+      emailService: any,
+      config: ConfigService,
+    ) =>
+      new ForgotPasswordUseCase(
+        userRepo,
+        vtRepo,
+        emailService,
+        config.get<string>('frontendUrl')!,
+      ),
+    inject: [
+      'UserRepository',
+      'VerificationTokenRepository',
+      'EmailServicePort',
+      ConfigService,
+    ],
   },
   {
     provide: 'ResetPasswordUseCase',
     useFactory: (userRepo: any, vtRepo: any, rtRepo: any, hasher: any) =>
       new ResetPasswordUseCase(userRepo, vtRepo, rtRepo, hasher),
-    inject: ['UserRepository', 'VerificationTokenRepository', 'RefreshTokenRepository', 'PasswordHasherPort'],
+    inject: [
+      'UserRepository',
+      'VerificationTokenRepository',
+      'RefreshTokenRepository',
+      'PasswordHasherPort',
+    ],
   },
 
   // Restaurant
@@ -151,9 +415,36 @@ const useCaseProviders = [
   },
   {
     provide: 'GetRestaurantBySlugUseCase',
-    useFactory: (restRepo: any, catRepo: any, itemRepo: any, varRepo: any, optRepo: any, hoursRepo: any, zoneRepo: any, subRepo: any) =>
-      new GetRestaurantBySlugUseCase(restRepo, catRepo, itemRepo, varRepo, optRepo, hoursRepo, zoneRepo, subRepo),
-    inject: ['RestaurantRepository', 'MenuCategoryRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository', 'OperatingHoursRepository', 'DeliveryZoneRepository', 'SubscriptionRepository'],
+    useFactory: (
+      restRepo: any,
+      catRepo: any,
+      itemRepo: any,
+      varRepo: any,
+      optRepo: any,
+      hoursRepo: any,
+      zoneRepo: any,
+      subRepo: any,
+    ) =>
+      new GetRestaurantBySlugUseCase(
+        restRepo,
+        catRepo,
+        itemRepo,
+        varRepo,
+        optRepo,
+        hoursRepo,
+        zoneRepo,
+        subRepo,
+      ),
+    inject: [
+      'RestaurantRepository',
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+      'MenuItemOptionRepository',
+      'OperatingHoursRepository',
+      'DeliveryZoneRepository',
+      'SubscriptionRepository',
+    ],
   },
   {
     provide: 'UpdateRestaurantUseCase',
@@ -164,6 +455,22 @@ const useCaseProviders = [
     provide: 'UpdateOperatingHoursUseCase',
     useFactory: (hoursRepo: any) => new UpdateOperatingHoursUseCase(hoursRepo),
     inject: ['OperatingHoursRepository'],
+  },
+  {
+    provide: 'GetRestaurantOperatingHoursUseCase',
+    useFactory: (restRepo: any, hoursRepo: any) =>
+      new GetRestaurantOperatingHoursUseCase(restRepo, hoursRepo),
+    inject: ['RestaurantRepository', 'OperatingHoursRepository'],
+  },
+  {
+    provide: 'UpdateOpenStatusUseCase',
+    useFactory: (restRepo: any, hoursRepo: any, gateway: any) =>
+      new UpdateOpenStatusUseCase(restRepo, hoursRepo, gateway),
+    inject: [
+      'RestaurantRepository',
+      'OperatingHoursRepository',
+      'RealtimeGatewayPort',
+    ],
   },
 
   // Menu — Categories
@@ -181,7 +488,12 @@ const useCaseProviders = [
     provide: 'DeleteMenuCategoryUseCase',
     useFactory: (catRepo: any, itemRepo: any, varRepo: any, optRepo: any) =>
       new DeleteMenuCategoryUseCase(catRepo, itemRepo, varRepo, optRepo),
-    inject: ['MenuCategoryRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository'],
+    inject: [
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+      'MenuItemOptionRepository',
+    ],
   },
   {
     provide: 'ListMenuCategoriesUseCase',
@@ -197,7 +509,8 @@ const useCaseProviders = [
   // Menu — Items
   {
     provide: 'CreateMenuItemUseCase',
-    useFactory: (itemRepo: any, catRepo: any) => new CreateMenuItemUseCase(itemRepo, catRepo),
+    useFactory: (itemRepo: any, catRepo: any) =>
+      new CreateMenuItemUseCase(itemRepo, catRepo),
     inject: ['MenuItemRepository', 'MenuCategoryRepository'],
   },
   {
@@ -209,11 +522,16 @@ const useCaseProviders = [
     provide: 'DeleteMenuItemUseCase',
     useFactory: (itemRepo: any, varRepo: any, optRepo: any) =>
       new DeleteMenuItemUseCase(itemRepo, varRepo, optRepo),
-    inject: ['MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository'],
+    inject: [
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+      'MenuItemOptionRepository',
+    ],
   },
   {
     provide: 'ToggleMenuItemAvailabilityUseCase',
-    useFactory: (itemRepo: any) => new ToggleMenuItemAvailabilityUseCase(itemRepo),
+    useFactory: (itemRepo: any) =>
+      new ToggleMenuItemAvailabilityUseCase(itemRepo),
     inject: ['MenuItemRepository'],
   },
   {
@@ -225,43 +543,85 @@ const useCaseProviders = [
   // Menu — Variants
   {
     provide: 'CreateMenuItemVariantUseCase',
-    useFactory: (varRepo: any, itemRepo: any) => new CreateMenuItemVariantUseCase(varRepo, itemRepo),
+    useFactory: (varRepo: any, itemRepo: any) =>
+      new CreateMenuItemVariantUseCase(varRepo, itemRepo),
     inject: ['MenuItemVariantRepository', 'MenuItemRepository'],
   },
   {
     provide: 'UpdateMenuItemVariantUseCase',
-    useFactory: (varRepo: any, itemRepo: any) => new UpdateMenuItemVariantUseCase(varRepo, itemRepo),
+    useFactory: (varRepo: any, itemRepo: any) =>
+      new UpdateMenuItemVariantUseCase(varRepo, itemRepo),
     inject: ['MenuItemVariantRepository', 'MenuItemRepository'],
   },
   {
     provide: 'DeleteMenuItemVariantUseCase',
-    useFactory: (varRepo: any, itemRepo: any) => new DeleteMenuItemVariantUseCase(varRepo, itemRepo),
+    useFactory: (varRepo: any, itemRepo: any) =>
+      new DeleteMenuItemVariantUseCase(varRepo, itemRepo),
     inject: ['MenuItemVariantRepository', 'MenuItemRepository'],
   },
 
   // Menu — Options
   {
     provide: 'CreateMenuItemOptionUseCase',
-    useFactory: (optRepo: any, itemRepo: any) => new CreateMenuItemOptionUseCase(optRepo, itemRepo),
+    useFactory: (optRepo: any, itemRepo: any) =>
+      new CreateMenuItemOptionUseCase(optRepo, itemRepo),
     inject: ['MenuItemOptionRepository', 'MenuItemRepository'],
   },
   {
     provide: 'UpdateMenuItemOptionUseCase',
-    useFactory: (optRepo: any, itemRepo: any) => new UpdateMenuItemOptionUseCase(optRepo, itemRepo),
+    useFactory: (optRepo: any, itemRepo: any) =>
+      new UpdateMenuItemOptionUseCase(optRepo, itemRepo),
     inject: ['MenuItemOptionRepository', 'MenuItemRepository'],
   },
   {
     provide: 'DeleteMenuItemOptionUseCase',
-    useFactory: (optRepo: any, itemRepo: any) => new DeleteMenuItemOptionUseCase(optRepo, itemRepo),
+    useFactory: (optRepo: any, itemRepo: any) =>
+      new DeleteMenuItemOptionUseCase(optRepo, itemRepo),
     inject: ['MenuItemOptionRepository', 'MenuItemRepository'],
   },
 
   // Order
   {
     provide: 'CreateStorefrontOrderUseCase',
-    useFactory: (orderRepo: any, orderItemRepo: any, restRepo: any, itemRepo: any, varRepo: any, optRepo: any, zoneRepo: any, gateway: any, pushService: any) =>
-      new CreateStorefrontOrderUseCase(orderRepo, orderItemRepo, restRepo, itemRepo, varRepo, optRepo, zoneRepo, gateway, pushService),
-    inject: ['OrderRepository', 'OrderItemRepository', 'RestaurantRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository', 'DeliveryZoneRepository', 'RealtimeGatewayPort', 'PushServicePort'],
+    useFactory: (
+      orderRepo: any,
+      orderItemRepo: any,
+      restRepo: any,
+      hoursRepo: any,
+      itemRepo: any,
+      varRepo: any,
+      optRepo: any,
+      zoneRepo: any,
+      couponRepo: any,
+      gateway: any,
+      pushService: any,
+    ) =>
+      new CreateStorefrontOrderUseCase(
+        orderRepo,
+        orderItemRepo,
+        restRepo,
+        hoursRepo,
+        itemRepo,
+        varRepo,
+        optRepo,
+        zoneRepo,
+        couponRepo,
+        gateway,
+        pushService,
+      ),
+    inject: [
+      'OrderRepository',
+      'OrderItemRepository',
+      'RestaurantRepository',
+      'OperatingHoursRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+      'MenuItemOptionRepository',
+      'DeliveryZoneRepository',
+      'CouponRepository',
+      'RealtimeGatewayPort',
+      'PushServicePort',
+    ],
   },
   {
     provide: 'GetOrderTrackingUseCase',
@@ -271,24 +631,52 @@ const useCaseProviders = [
   },
   {
     provide: 'ListOrdersUseCase',
-    useFactory: (orderRepo: any, subRepo: any) => new ListOrdersUseCase(orderRepo, subRepo),
+    useFactory: (orderRepo: any, subRepo: any) =>
+      new ListOrdersUseCase(orderRepo, subRepo),
     inject: ['OrderRepository', 'SubscriptionRepository'],
   },
   {
     provide: 'GetOrderUseCase',
-    useFactory: (orderRepo: any, orderItemRepo: any, subRepo: any) => new GetOrderUseCase(orderRepo, orderItemRepo, subRepo),
-    inject: ['OrderRepository', 'OrderItemRepository', 'SubscriptionRepository'],
+    useFactory: (orderRepo: any, orderItemRepo: any, subRepo: any) =>
+      new GetOrderUseCase(orderRepo, orderItemRepo, subRepo),
+    inject: [
+      'OrderRepository',
+      'OrderItemRepository',
+      'SubscriptionRepository',
+    ],
   },
   {
     provide: 'UpdateOrderStatusUseCase',
-    useFactory: (orderRepo: any, gateway: any, pushService: any) => new UpdateOrderStatusUseCase(orderRepo, gateway, pushService),
+    useFactory: (orderRepo: any, gateway: any, pushService: any) =>
+      new UpdateOrderStatusUseCase(orderRepo, gateway, pushService),
     inject: ['OrderRepository', 'RealtimeGatewayPort', 'PushServicePort'],
   },
   {
     provide: 'NotifyReceiptUploadedUseCase',
-    useFactory: (orderRepo: any, restRepo: any, urRepo: any, userRepo: any, emailService: any, config: ConfigService) =>
-      new NotifyReceiptUploadedUseCase(orderRepo, restRepo, urRepo, userRepo, emailService, config.get<string>('frontendUrl')!),
-    inject: ['OrderRepository', 'RestaurantRepository', 'UserRestaurantRepository', 'UserRepository', 'EmailServicePort', ConfigService],
+    useFactory: (
+      orderRepo: any,
+      restRepo: any,
+      urRepo: any,
+      userRepo: any,
+      emailService: any,
+      config: ConfigService,
+    ) =>
+      new NotifyReceiptUploadedUseCase(
+        orderRepo,
+        restRepo,
+        urRepo,
+        userRepo,
+        emailService,
+        config.get<string>('frontendUrl')!,
+      ),
+    inject: [
+      'OrderRepository',
+      'RestaurantRepository',
+      'UserRestaurantRepository',
+      'UserRepository',
+      'EmailServicePort',
+      ConfigService,
+    ],
   },
 
   // Delivery Zone
@@ -316,15 +704,35 @@ const useCaseProviders = [
   // Onboarding
   {
     provide: 'AnalyzeMenuUseCase',
-    useFactory: (vision: any, restRepo: any) =>
-      new AnalyzeMenuUseCase(vision, restRepo),
-    inject: ['MenuVisionPort', 'RestaurantRepository'],
+    useFactory: (vision: any) => new AnalyzeMenuUseCase(vision),
+    inject: ['MenuVisionPort'],
   },
   {
     provide: 'BulkImportMenuUseCase',
-    useFactory: (restRepo: any, hoursRepo: any, catRepo: any, itemRepo: any, varRepo: any, optRepo: any) =>
-      new BulkImportMenuUseCase(restRepo, hoursRepo, catRepo, itemRepo, varRepo, optRepo),
-    inject: ['RestaurantRepository', 'OperatingHoursRepository', 'MenuCategoryRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository'],
+    useFactory: (
+      restRepo: any,
+      hoursRepo: any,
+      catRepo: any,
+      itemRepo: any,
+      varRepo: any,
+      optRepo: any,
+    ) =>
+      new BulkImportMenuUseCase(
+        restRepo,
+        hoursRepo,
+        catRepo,
+        itemRepo,
+        varRepo,
+        optRepo,
+      ),
+    inject: [
+      'RestaurantRepository',
+      'OperatingHoursRepository',
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+      'MenuItemOptionRepository',
+    ],
   },
 
   // Billing
@@ -344,18 +752,36 @@ const useCaseProviders = [
     provide: 'HandlePaymentWebhookUseCase',
     useFactory: (subRepo: any, billingRepo: any, restRepo: any) =>
       new HandlePaymentWebhookUseCase(subRepo, billingRepo, restRepo),
-    inject: ['SubscriptionRepository', 'BillingRecordRepository', 'RestaurantRepository'],
+    inject: [
+      'SubscriptionRepository',
+      'BillingRecordRepository',
+      'RestaurantRepository',
+    ],
   },
   {
     provide: 'CancelSubscriptionUseCase',
-    useFactory: (subRepo: any, billingRepo: any, restRepo: any, paymentProvider: any) =>
-      new CancelSubscriptionUseCase(subRepo, billingRepo, restRepo, paymentProvider),
-    inject: ['SubscriptionRepository', 'BillingRecordRepository', 'RestaurantRepository', 'PaymentProviderPort'],
+    useFactory: (
+      subRepo: any,
+      billingRepo: any,
+      restRepo: any,
+      paymentProvider: any,
+    ) =>
+      new CancelSubscriptionUseCase(
+        subRepo,
+        billingRepo,
+        restRepo,
+        paymentProvider,
+      ),
+    inject: [
+      'SubscriptionRepository',
+      'BillingRecordRepository',
+      'RestaurantRepository',
+      'PaymentProviderPort',
+    ],
   },
   {
     provide: 'GetBillingHistoryUseCase',
-    useFactory: (billingRepo: any) =>
-      new GetBillingHistoryUseCase(billingRepo),
+    useFactory: (billingRepo: any) => new GetBillingHistoryUseCase(billingRepo),
     inject: ['BillingRecordRepository'],
   },
 
@@ -364,6 +790,108 @@ const useCaseProviders = [
     provide: 'GenerateUploadUrlUseCase',
     useFactory: (storage: any) => new GenerateUploadUrlUseCase(storage),
     inject: ['StoragePort'],
+  },
+
+  // Coupons
+  {
+    provide: 'CreateCouponUseCase',
+    useFactory: (couponRepo: any) => new CreateCouponUseCase(couponRepo),
+    inject: ['CouponRepository'],
+  },
+  {
+    provide: 'ListCouponsUseCase',
+    useFactory: (couponRepo: any) => new ListCouponsUseCase(couponRepo),
+    inject: ['CouponRepository'],
+  },
+  {
+    provide: 'UpdateCouponUseCase',
+    useFactory: (couponRepo: any) => new UpdateCouponUseCase(couponRepo),
+    inject: ['CouponRepository'],
+  },
+  {
+    provide: 'DeleteCouponUseCase',
+    useFactory: (couponRepo: any) => new DeleteCouponUseCase(couponRepo),
+    inject: ['CouponRepository'],
+  },
+  {
+    provide: 'ValidateCouponUseCase',
+    useFactory: (restRepo: any, couponRepo: any) =>
+      new ValidateCouponUseCase(restRepo, couponRepo),
+    inject: ['RestaurantRepository', 'CouponRepository'],
+  },
+
+  // Customers
+  {
+    provide: 'ListCustomersUseCase',
+    useFactory: (orderRepo: any) => new ListCustomersUseCase(orderRepo),
+    inject: ['OrderRepository'],
+  },
+  {
+    provide: 'ListCustomerOrdersUseCase',
+    useFactory: (orderRepo: any) => new ListCustomerOrdersUseCase(orderRepo),
+    inject: ['OrderRepository'],
+  },
+
+  // Analytics
+  {
+    provide: 'RecordStorefrontViewUseCase',
+    useFactory: (restRepo: any, viewRepo: any) =>
+      new RecordStorefrontViewUseCase(restRepo, viewRepo),
+    inject: ['RestaurantRepository', 'StorefrontViewRepository'],
+  },
+  {
+    provide: 'GetAnalyticsOverviewUseCase',
+    useFactory: (analyticsRepo: any, viewRepo: any, restRepo: any) =>
+      new GetAnalyticsOverviewUseCase(analyticsRepo, viewRepo, restRepo),
+    inject: [
+      'AnalyticsRepository',
+      'StorefrontViewRepository',
+      'RestaurantRepository',
+    ],
+  },
+
+  // Custom Domain
+  {
+    provide: 'SetCustomDomainUseCase',
+    useFactory: (restRepo: any, subRepo: any, config: ConfigService) =>
+      new SetCustomDomainUseCase(
+        restRepo,
+        subRepo,
+        config.get<string[]>('customDomain.ownDomains') ?? [],
+      ),
+    inject: ['RestaurantRepository', 'SubscriptionRepository', ConfigService],
+  },
+  {
+    provide: 'GetCustomDomainUseCase',
+    useFactory: (restRepo: any) => new GetCustomDomainUseCase(restRepo),
+    inject: ['RestaurantRepository'],
+  },
+  {
+    provide: 'RemoveCustomDomainUseCase',
+    useFactory: (restRepo: any) => new RemoveCustomDomainUseCase(restRepo),
+    inject: ['RestaurantRepository'],
+  },
+  {
+    provide: 'ResolveCustomDomainUseCase',
+    useFactory: (restRepo: any) => new ResolveCustomDomainUseCase(restRepo),
+    inject: ['RestaurantRepository'],
+  },
+  {
+    provide: 'ListPendingCustomDomainsUseCase',
+    useFactory: (restRepo: any) =>
+      new ListPendingCustomDomainsUseCase(restRepo),
+    inject: ['RestaurantRepository'],
+  },
+  {
+    provide: 'ListActiveCustomDomainsUseCase',
+    useFactory: (restRepo: any) => new ListActiveCustomDomainsUseCase(restRepo),
+    inject: ['RestaurantRepository'],
+  },
+  {
+    provide: 'UpdateCustomDomainStatusUseCase',
+    useFactory: (restRepo: any) =>
+      new UpdateCustomDomainStatusUseCase(restRepo),
+    inject: ['RestaurantRepository'],
   },
 
   // Kitchen
@@ -428,9 +956,16 @@ const useCaseProviders = [
     PaymentWebhookController,
     UploadController,
     PushController,
+    AccountController,
+    CouponController,
+    CustomerController,
+    AnalyticsController,
+    CustomDomainController,
+    InternalCustomDomainController,
   ],
   providers: [
     ...useCaseProviders,
+    AuditService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },

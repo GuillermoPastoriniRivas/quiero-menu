@@ -1,24 +1,84 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { RestaurantModel, RestaurantSchema } from './mongoose/schemas/restaurant.schema.js';
-import { OperatingHoursModel, OperatingHoursSchema } from './mongoose/schemas/operating-hours.schema.js';
-import { DeliveryZoneModel, DeliveryZoneSchema } from './mongoose/schemas/delivery-zone.schema.js';
-import { MenuCategoryModel, MenuCategorySchema } from './mongoose/schemas/menu-category.schema.js';
-import { MenuItemModel, MenuItemSchema } from './mongoose/schemas/menu-item.schema.js';
-import { MenuItemVariantModel, MenuItemVariantSchema } from './mongoose/schemas/menu-item-variant.schema.js';
-import { MenuItemOptionModel, MenuItemOptionSchema } from './mongoose/schemas/menu-item-option.schema.js';
+import {
+  RestaurantModel,
+  RestaurantSchema,
+} from './mongoose/schemas/restaurant.schema.js';
+import {
+  OperatingHoursModel,
+  OperatingHoursSchema,
+} from './mongoose/schemas/operating-hours.schema.js';
+import {
+  DeliveryZoneModel,
+  DeliveryZoneSchema,
+} from './mongoose/schemas/delivery-zone.schema.js';
+import {
+  MenuCategoryModel,
+  MenuCategorySchema,
+} from './mongoose/schemas/menu-category.schema.js';
+import {
+  MenuItemModel,
+  MenuItemSchema,
+} from './mongoose/schemas/menu-item.schema.js';
+import {
+  MenuItemVariantModel,
+  MenuItemVariantSchema,
+} from './mongoose/schemas/menu-item-variant.schema.js';
+import {
+  MenuItemOptionModel,
+  MenuItemOptionSchema,
+} from './mongoose/schemas/menu-item-option.schema.js';
 import { OrderModel, OrderSchema } from './mongoose/schemas/order.schema.js';
-import { OrderItemModel, OrderItemSchema } from './mongoose/schemas/order-item.schema.js';
-import { OrderCounterModel, OrderCounterSchema } from './mongoose/schemas/order-counter.schema.js';
+import {
+  OrderItemModel,
+  OrderItemSchema,
+} from './mongoose/schemas/order-item.schema.js';
+import {
+  OrderCounterModel,
+  OrderCounterSchema,
+} from './mongoose/schemas/order-counter.schema.js';
 import { UserModel, UserSchema } from './mongoose/schemas/user.schema.js';
-import { UserRestaurantModel, UserRestaurantSchema } from './mongoose/schemas/user-restaurant.schema.js';
-import { RefreshTokenModel, RefreshTokenSchema } from './mongoose/schemas/refresh-token.schema.js';
-import { KitchenAccessTokenModel, KitchenAccessTokenSchema } from './mongoose/schemas/kitchen-access-token.schema.js';
-import { DeliveryAccessTokenModel, DeliveryAccessTokenSchema } from './mongoose/schemas/delivery-access-token.schema.js';
-import { SubscriptionModel, SubscriptionSchema } from './mongoose/schemas/subscription.schema.js';
-import { BillingRecordModel, BillingRecordSchema } from './mongoose/schemas/billing-record.schema.js';
-import { VerificationTokenModel, VerificationTokenSchema } from './mongoose/schemas/verification-token.schema.js';
-import { PushSubscriptionModel, PushSubscriptionSchema } from './mongoose/schemas/push-subscription.schema.js';
+import {
+  UserRestaurantModel,
+  UserRestaurantSchema,
+} from './mongoose/schemas/user-restaurant.schema.js';
+import {
+  RefreshTokenModel,
+  RefreshTokenSchema,
+} from './mongoose/schemas/refresh-token.schema.js';
+import {
+  KitchenAccessTokenModel,
+  KitchenAccessTokenSchema,
+} from './mongoose/schemas/kitchen-access-token.schema.js';
+import {
+  DeliveryAccessTokenModel,
+  DeliveryAccessTokenSchema,
+} from './mongoose/schemas/delivery-access-token.schema.js';
+import {
+  SubscriptionModel,
+  SubscriptionSchema,
+} from './mongoose/schemas/subscription.schema.js';
+import {
+  BillingRecordModel,
+  BillingRecordSchema,
+} from './mongoose/schemas/billing-record.schema.js';
+import {
+  VerificationTokenModel,
+  VerificationTokenSchema,
+} from './mongoose/schemas/verification-token.schema.js';
+import {
+  PushSubscriptionModel,
+  PushSubscriptionSchema,
+} from './mongoose/schemas/push-subscription.schema.js';
+import {
+  AuditLogModel,
+  AuditLogSchema,
+} from './mongoose/schemas/audit-log.schema.js';
+import { CouponModel, CouponSchema } from './mongoose/schemas/coupon.schema.js';
+import {
+  StorefrontViewModel,
+  StorefrontViewSchema,
+} from './mongoose/schemas/storefront-view.schema.js';
 
 import { MongoRestaurantRepository } from './mongoose/repositories/mongo-restaurant.repository.js';
 import { MongoOperatingHoursRepository } from './mongoose/repositories/mongo-operating-hours.repository.js';
@@ -38,6 +98,10 @@ import { MongoSubscriptionRepository } from './mongoose/repositories/mongo-subsc
 import { MongoBillingRecordRepository } from './mongoose/repositories/mongo-billing-record.repository.js';
 import { MongoVerificationTokenRepository } from './mongoose/repositories/mongo-verification-token.repository.js';
 import { MongoPushSubscriptionRepository } from './mongoose/repositories/mongo-push-subscription.repository.js';
+import { MongoAuditLogRepository } from './mongoose/repositories/mongo-audit-log.repository.js';
+import { MongoCouponRepository } from './mongoose/repositories/mongo-coupon.repository.js';
+import { MongoStorefrontViewRepository } from './mongoose/repositories/mongo-storefront-view.repository.js';
+import { MongoAnalyticsRepository } from './mongoose/repositories/mongo-analytics.repository.js';
 
 const schemas = MongooseModule.forFeature([
   { name: RestaurantModel.name, schema: RestaurantSchema },
@@ -59,27 +123,64 @@ const schemas = MongooseModule.forFeature([
   { name: BillingRecordModel.name, schema: BillingRecordSchema },
   { name: VerificationTokenModel.name, schema: VerificationTokenSchema },
   { name: PushSubscriptionModel.name, schema: PushSubscriptionSchema },
+  { name: AuditLogModel.name, schema: AuditLogSchema },
+  { name: CouponModel.name, schema: CouponSchema },
+  { name: StorefrontViewModel.name, schema: StorefrontViewSchema },
 ]);
 
 const repositories = [
   { provide: 'RestaurantRepository', useClass: MongoRestaurantRepository },
-  { provide: 'OperatingHoursRepository', useClass: MongoOperatingHoursRepository },
+  {
+    provide: 'OperatingHoursRepository',
+    useClass: MongoOperatingHoursRepository,
+  },
   { provide: 'DeliveryZoneRepository', useClass: MongoDeliveryZoneRepository },
   { provide: 'MenuCategoryRepository', useClass: MongoMenuCategoryRepository },
   { provide: 'MenuItemRepository', useClass: MongoMenuItemRepository },
-  { provide: 'MenuItemVariantRepository', useClass: MongoMenuItemVariantRepository },
-  { provide: 'MenuItemOptionRepository', useClass: MongoMenuItemOptionRepository },
+  {
+    provide: 'MenuItemVariantRepository',
+    useClass: MongoMenuItemVariantRepository,
+  },
+  {
+    provide: 'MenuItemOptionRepository',
+    useClass: MongoMenuItemOptionRepository,
+  },
   { provide: 'OrderRepository', useClass: MongoOrderRepository },
   { provide: 'OrderItemRepository', useClass: MongoOrderItemRepository },
   { provide: 'UserRepository', useClass: MongoUserRepository },
-  { provide: 'UserRestaurantRepository', useClass: MongoUserRestaurantRepository },
+  {
+    provide: 'UserRestaurantRepository',
+    useClass: MongoUserRestaurantRepository,
+  },
   { provide: 'RefreshTokenRepository', useClass: MongoRefreshTokenRepository },
-  { provide: 'KitchenAccessTokenRepository', useClass: MongoKitchenAccessTokenRepository },
-  { provide: 'DeliveryAccessTokenRepository', useClass: MongoDeliveryAccessTokenRepository },
+  {
+    provide: 'KitchenAccessTokenRepository',
+    useClass: MongoKitchenAccessTokenRepository,
+  },
+  {
+    provide: 'DeliveryAccessTokenRepository',
+    useClass: MongoDeliveryAccessTokenRepository,
+  },
   { provide: 'SubscriptionRepository', useClass: MongoSubscriptionRepository },
-  { provide: 'BillingRecordRepository', useClass: MongoBillingRecordRepository },
-  { provide: 'VerificationTokenRepository', useClass: MongoVerificationTokenRepository },
-  { provide: 'PushSubscriptionRepository', useClass: MongoPushSubscriptionRepository },
+  {
+    provide: 'BillingRecordRepository',
+    useClass: MongoBillingRecordRepository,
+  },
+  {
+    provide: 'VerificationTokenRepository',
+    useClass: MongoVerificationTokenRepository,
+  },
+  {
+    provide: 'PushSubscriptionRepository',
+    useClass: MongoPushSubscriptionRepository,
+  },
+  { provide: 'AuditLogRepository', useClass: MongoAuditLogRepository },
+  { provide: 'CouponRepository', useClass: MongoCouponRepository },
+  {
+    provide: 'StorefrontViewRepository',
+    useClass: MongoStorefrontViewRepository,
+  },
+  { provide: 'AnalyticsRepository', useClass: MongoAnalyticsRepository },
 ];
 
 @Module({

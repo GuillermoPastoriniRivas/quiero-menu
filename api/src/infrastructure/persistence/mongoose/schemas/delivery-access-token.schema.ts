@@ -1,9 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-export type DeliveryAccessTokenDocument = HydratedDocument<DeliveryAccessTokenModel>;
+export type DeliveryAccessTokenDocument =
+  HydratedDocument<DeliveryAccessTokenModel>;
 
-@Schema({ collection: 'delivery_access_tokens', timestamps: { createdAt: true, updatedAt: false } })
+@Schema({
+  collection: 'delivery_access_tokens',
+  timestamps: { createdAt: true, updatedAt: false },
+})
 export class DeliveryAccessTokenModel {
   @Prop({ type: Types.ObjectId, required: true })
   restaurantId: Types.ObjectId;
@@ -23,5 +27,7 @@ export class DeliveryAccessTokenModel {
   createdAt: Date;
 }
 
-export const DeliveryAccessTokenSchema = SchemaFactory.createForClass(DeliveryAccessTokenModel);
+export const DeliveryAccessTokenSchema = SchemaFactory.createForClass(
+  DeliveryAccessTokenModel,
+);
 DeliveryAccessTokenSchema.index({ restaurantId: 1, revokedAt: 1 });

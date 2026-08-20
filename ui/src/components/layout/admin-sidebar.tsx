@@ -1,20 +1,25 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth.store';
-import { useRestaurantStore } from '@/stores/restaurant.store';
-import { Logo } from '@/components/ui/logo';
-import { MaterialIcon } from '@/components/ui/material-icon';
-import { cn } from '@/lib/utils';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/stores/auth.store";
+import { useRestaurantStore } from "@/stores/restaurant.store";
+import { Logo } from "@/components/ui/logo";
+import { MaterialIcon } from "@/components/ui/material-icon";
+import { OpenStatusBadge } from "@/components/layout/open-status-badge";
+import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Analytics', icon: 'bar_chart' },
-  { href: '/orders', label: 'Pedidos', icon: 'receipt_long' },
-  { href: '/menu', label: 'Menu', icon: 'restaurant_menu' },
-  { href: '/publicar', label: 'Publicar', icon: 'share' },
-  { href: '/billing', label: 'Plan y facturacion', icon: 'workspace_premium' },
-  { href: '/settings', label: 'Configuracion', icon: 'settings' },
+  { href: "/dashboard", label: "Inicio", icon: "bar_chart" },
+  { href: "/orders", label: "Pedidos", icon: "receipt_long" },
+  { href: "/menu", label: "Menú", icon: "restaurant_menu" },
+  { href: "/analytics", label: "Análisis", icon: "insights" },
+  { href: "/customers", label: "Clientes", icon: "group" },
+  { href: "/coupons", label: "Cupones", icon: "confirmation_number" },
+  { href: "/publicar", label: "Publicar", icon: "share" },
+  { href: "/apariencia", label: "Apariencia", icon: "palette" },
+  { href: "/billing", label: "Plan y facturación", icon: "workspace_premium" },
+  { href: "/settings", label: "Configuración", icon: "settings" },
 ];
 
 export function AdminSidebar() {
@@ -22,7 +27,7 @@ export function AdminSidebar() {
   const { user, logout } = useAuthStore();
   const { restaurant } = useRestaurantStore();
 
-  const displayName = restaurant?.name || user?.name || 'Mi Restaurante';
+  const displayName = restaurant?.name || user?.name || "Mi Restaurante";
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
@@ -41,10 +46,10 @@ export function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 active:translate-x-0.5',
+                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 active:translate-x-0.5",
                 isActive
-                  ? 'bg-surface-container-low text-primary'
-                  : 'text-on-surface hover:bg-surface-container-low'
+                  ? "bg-surface-container-low text-primary"
+                  : "text-on-surface hover:bg-surface-container-low",
               )}
             >
               <MaterialIcon name={item.icon} size="md" fill={isActive} />
@@ -55,7 +60,8 @@ export function AdminSidebar() {
       </nav>
 
       {/* User card at bottom */}
-      <div className="mt-auto p-4">
+      <div className="mt-auto p-4 space-y-3">
+        <OpenStatusBadge />
         <div className="bg-surface-container-low rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full gradient-cta flex items-center justify-center text-white font-bold text-sm">
@@ -63,7 +69,9 @@ export function AdminSidebar() {
             </div>
             <div className="overflow-hidden flex-1">
               <p className="text-sm font-bold truncate">{displayName}</p>
-              <p className="text-xs text-on-surface-variant truncate">{user?.email}</p>
+              <p className="text-xs text-on-surface-variant truncate">
+                {user?.email}
+              </p>
             </div>
           </div>
           <button

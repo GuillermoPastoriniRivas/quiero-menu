@@ -78,13 +78,23 @@ const JSON_SCHEMA = {
               type: 'array',
               items: {
                 type: 'object',
-                required: ['name', 'description', 'basePrice', 'itemType', 'variants', 'options'],
+                required: [
+                  'name',
+                  'description',
+                  'basePrice',
+                  'itemType',
+                  'variants',
+                  'options',
+                ],
                 additionalProperties: false,
                 properties: {
                   name: { type: 'string' },
                   description: { type: 'string' },
                   basePrice: { type: 'number' },
-                  itemType: { type: 'string', enum: ['simple', 'variant', 'combo'] },
+                  itemType: {
+                    type: 'string',
+                    enum: ['simple', 'variant', 'combo'],
+                  },
                   variants: {
                     type: ['array', 'null'],
                     items: {
@@ -123,9 +133,11 @@ const JSON_SCHEMA = {
 @Injectable()
 export class OpenAiMenuVisionService implements MenuVisionPort {
   private readonly apiKey: string;
+  private readonly model: string;
 
   constructor(private readonly config: ConfigService) {
     this.apiKey = this.config.get<string>('openai.apiKey')!;
+    this.model = this.config.get<string>('openai.model') ?? 'gpt-4o-mini';
   }
 
   async analyzeMenu(input: MenuVisionInput): Promise<MenuVisionOutput> {
@@ -153,7 +165,7 @@ export class OpenAiMenuVisionService implements MenuVisionPort {
         Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: this.model,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userContent },

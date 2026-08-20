@@ -32,3 +32,19 @@ variable "domain" {
   type        = string
   default     = "quiero.menu"
 }
+
+variable "alerts_email" {
+  description = "Email address that receives CloudWatch alarm notifications"
+  type        = string
+}
+
+variable "inbound_mail_recipients" {
+  description = "Mailboxes that receive inbound email via SES (MX). Each one must confirm the SNS subscription once."
+  type        = list(string)
+  default     = ["contact@quiero.menu"]
+}
+
+variable "inbound_mail_forward_to" {
+  description = "Real mailbox that receives inbound mail forwarded via SNS"
+  type        = string
+}

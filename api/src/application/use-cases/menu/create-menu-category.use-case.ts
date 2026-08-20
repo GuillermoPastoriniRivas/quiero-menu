@@ -5,7 +5,9 @@ import { Result, ok } from '../../common/result.js';
 export class CreateMenuCategoryUseCase {
   constructor(private readonly categoryRepo: MenuCategoryRepository) {}
 
-  async execute(data: Omit<MenuCategory, 'id'>): Promise<Result<MenuCategory, never>> {
+  async execute(
+    data: Omit<MenuCategory, 'id'>,
+  ): Promise<Result<MenuCategory, never>> {
     const created = await this.categoryRepo.create(data);
     return ok(created);
   }

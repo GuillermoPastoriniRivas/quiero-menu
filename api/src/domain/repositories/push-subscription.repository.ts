@@ -15,4 +15,6 @@ export interface PushSubscriptionRepository {
   deleteByEndpoint(endpoint: string): Promise<boolean>;
   findByRestaurantId(restaurantId: string): Promise<PushSubscription[]>;
   findByOrderCode(orderCode: string): Promise<PushSubscription[]>;
+  deleteManyByRestaurantId(restaurantId: string): Promise<void>;
+  deleteManyByUserId(userId: string): Promise<void>;
 }

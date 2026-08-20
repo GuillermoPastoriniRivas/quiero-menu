@@ -1,11 +1,18 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+  Inject,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import type { KitchenAccessTokenRepository } from '../../domain/repositories/kitchen-access-token.repository.js';
 
 @Injectable()
 export class KitchenAuthGuard implements CanActivate {
   constructor(
-    @Inject('KitchenAccessTokenRepository') private readonly tokenRepo: KitchenAccessTokenRepository,
+    @Inject('KitchenAccessTokenRepository')
+    private readonly tokenRepo: KitchenAccessTokenRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

@@ -3,7 +3,10 @@ import { MenuItemRepository } from '../../../domain/repositories/menu-item.repos
 import { MenuItemVariantRepository } from '../../../domain/repositories/menu-item-variant.repository.js';
 import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item-option.repository.js';
 import { Result, ok, err } from '../../common/result.js';
-import { MenuCategoryNotFoundError, CrossRestaurantAccessError } from '../../../domain/errors/domain-errors.js';
+import {
+  MenuCategoryNotFoundError,
+  CrossRestaurantAccessError,
+} from '../../../domain/errors/domain-errors.js';
 
 export class DeleteMenuCategoryUseCase {
   constructor(
@@ -13,10 +16,16 @@ export class DeleteMenuCategoryUseCase {
     private readonly optionRepo: MenuItemOptionRepository,
   ) {}
 
-  async execute(id: string, restaurantId: string): Promise<Result<void, MenuCategoryNotFoundError | CrossRestaurantAccessError>> {
+  async execute(
+    id: string,
+    restaurantId: string,
+  ): Promise<
+    Result<void, MenuCategoryNotFoundError | CrossRestaurantAccessError>
+  > {
     const category = await this.categoryRepo.findById(id);
     if (!category) return err(new MenuCategoryNotFoundError());
-    if (category.restaurantId !== restaurantId) return err(new CrossRestaurantAccessError());
+    if (category.restaurantId !== restaurantId)
+      return err(new CrossRestaurantAccessError());
 
     const items = await this.itemRepo.findByCategoryId(id);
     for (const item of items) {

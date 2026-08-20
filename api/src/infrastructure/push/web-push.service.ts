@@ -1,7 +1,10 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import webpush from 'web-push';
-import { PushServicePort, PushPayload } from '../../application/ports/push-service.port.js';
+import {
+  PushServicePort,
+  PushPayload,
+} from '../../application/ports/push-service.port.js';
 import { PushSubscriptionRepository } from '../../domain/repositories/push-subscription.repository.js';
 import { PushSubscription } from '../../domain/entities/push-subscription.entity.js';
 
@@ -16,7 +19,8 @@ export class WebPushService implements PushServicePort {
   private readonly publicKey: string;
 
   constructor(
-    @Inject('PushSubscriptionRepository') private readonly subRepo: PushSubscriptionRepository,
+    @Inject('PushSubscriptionRepository')
+    private readonly subRepo: PushSubscriptionRepository,
     config: ConfigService,
   ) {
     this.publicKey = config.get<string>('vapid.publicKey')!;
@@ -29,7 +33,11 @@ export class WebPushService implements PushServicePort {
     return this.publicKey;
   }
 
-  async subscribeStaff(userId: string, restaurantId: string, subscription: RawSubscription): Promise<void> {
+  async subscribeStaff(
+    userId: string,
+    restaurantId: string,
+    subscription: RawSubscription,
+  ): Promise<void> {
     await this.subRepo.deleteByEndpoint(subscription.endpoint);
     await this.subRepo.create({
       endpoint: subscription.endpoint,
@@ -41,7 +49,11 @@ export class WebPushService implements PushServicePort {
     });
   }
 
-  async subscribeOrder(orderCode: string, slug: string, subscription: RawSubscription): Promise<void> {
+  async subscribeOrder(
+    orderCode: string,
+    slug: string,
+    subscription: RawSubscription,
+  ): Promise<void> {
     await this.subRepo.deleteByEndpoint(subscription.endpoint);
     await this.subRepo.create({
       endpoint: subscription.endpoint,
@@ -57,30 +69,51 @@ export class WebPushService implements PushServicePort {
     await this.subRepo.deleteByEndpoint(endpoint);
   }
 
-  async sendToRestaurant(restaurantId: string, payload: PushPayload): Promise<void> {
+  async sendToRestaurant(
+    restaurantId: string,
+    payload: PushPayload,
+  ): Promise<void> {
     const subs = await this.subRepo.findByRestaurantId(restaurantId);
     await this.sendToMany(subs, payload);
   }
 
   async sendToOrder(orderCode: string, payload: PushPayload): Promise<void> {
     const subs = await this.subRepo.findByOrderCode(orderCode);
-    await Promise.all(subs.map((sub) => this.sendOne(sub, {
-      ...payload,
-      url: payload.url ?? `/tracking/${orderCode}?slug=${sub.orderSlug ?? ''}`,
-    })));
+    await Promise.all(
+      subs.map((sub) =>
+        this.sendOne(sub, {
+          ...payload,
+          url:
+            payload.url ?? `/tracking/${orderCode}?slug=${sub.orderSlug ?? ''}`,
+        }),
+      ),
+    );
   }
 
-  private async sendToMany(subs: PushSubscription[], payload: PushPayload): Promise<void> {
+  private async sendToMany(
+    subs: PushSubscription[],
+    payload: PushPayload,
+  ): Promise<void> {
     await Promise.all(subs.map((sub) => this.sendOne(sub, payload)));
   }
 
-  private async sendOne(sub: PushSubscription, payload: PushPayload): Promise<void> {
-    const body = JSON.stringify({ ...payload, icon: '/icon-192.png', badge: '/icon-192.png' });
+  private async sendOne(
+    sub: PushSubscription,
+    payload: PushPayload,
+  ): Promise<void> {
+    const body = JSON.stringify({
+      ...payload,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+    });
     try {
-      await webpush.sendNotification({
-        endpoint: sub.endpoint,
-        keys: sub.keys,
-      }, body);
+      await webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: sub.keys,
+        },
+        body,
+      );
     } catch (err: any) {
       // 404/410: la suscripción ya no es válida (el cliente la desregistró o el
       // push service la purgó). La limpiamos para no acumular endpoints muertos.
@@ -89,7 +122,9 @@ export class WebPushService implements PushServicePort {
         this.logger.warn(`Removing stale push subscription ${sub.endpoint}`);
         await this.subRepo.deleteByEndpoint(sub.endpoint);
       } else {
-        this.logger.error(`Push send failed for ${sub.endpoint}: ${err?.message ?? err}`);
+        this.logger.error(
+          `Push send failed for ${sub.endpoint}: ${err?.message ?? err}`,
+        );
       }
     }
   }

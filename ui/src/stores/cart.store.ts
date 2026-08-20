@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { DeliveryType } from '@/types';
+import type { DeliveryType, CouponValidation } from '@/types';
 
 export interface CartItem {
   menuItemId: string;
@@ -27,6 +27,8 @@ interface CartState {
   paymentMethod: string;
   receiptUrl: string | null;
   notes: string;
+  couponCode: string | null;
+  appliedCoupon: CouponValidation | null;
 
   addItem: (item: CartItem) => void;
   removeItem: (index: number) => void;
@@ -37,6 +39,7 @@ interface CartState {
   setPaymentMethod: (method: string) => void;
   setReceiptUrl: (url: string | null) => void;
   setNotes: (notes: string) => void;
+  setCoupon: (code: string | null, applied: CouponValidation | null) => void;
   clear: () => void;
   subtotal: () => number;
 }
@@ -53,6 +56,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   paymentMethod: 'efectivo',
   receiptUrl: null,
   notes: '',
+  couponCode: null,
+  appliedCoupon: null,
 
   addItem: (item) => set((s) => ({ items: [...s.items, item] })),
   removeItem: (index) => set((s) => ({ items: s.items.filter((_, i) => i !== index) })),
@@ -66,6 +71,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   setPaymentMethod: (method) => set({ paymentMethod: method }),
   setReceiptUrl: (url) => set({ receiptUrl: url }),
   setNotes: (notes) => set({ notes }),
+  setCoupon: (code, applied) => set({ couponCode: code, appliedCoupon: applied }),
   clear: () =>
     set({
       items: [],
@@ -79,6 +85,8 @@ export const useCartStore = create<CartState>((set, get) => ({
       paymentMethod: 'efectivo',
       receiptUrl: null,
       notes: '',
+      couponCode: null,
+      appliedCoupon: null,
     }),
   subtotal: () => get().items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
 }));

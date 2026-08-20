@@ -13,6 +13,8 @@ provider "aws" {
   region = var.aws_region
 }
 
+data "aws_caller_identity" "current" {}
+
 # --- Latest Ubuntu 24.04 AMI ---
 data "aws_ami" "ubuntu" {
   most_recent = true

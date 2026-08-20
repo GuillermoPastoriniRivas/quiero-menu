@@ -20,11 +20,16 @@ export class LoginUseCase {
     private readonly tokenProvider: TokenProviderPort,
   ) {}
 
-  async execute(input: LoginInput): Promise<Result<LoginOutput, InvalidCredentialsError>> {
+  async execute(
+    input: LoginInput,
+  ): Promise<Result<LoginOutput, InvalidCredentialsError>> {
     const user = await this.userRepo.findByEmail(input.email);
     if (!user) return err(new InvalidCredentialsError());
 
-    const valid = await this.passwordHasher.verify(input.password, user.passwordHash);
+    const valid = await this.passwordHasher.verify(
+      input.password,
+      user.passwordHash,
+    );
     if (!valid) return err(new InvalidCredentialsError());
 
     const userRestaurants = await this.userRestaurantRepo.findByUserId(user.id);
@@ -33,13 +38,21 @@ export class LoginUseCase {
     const primary = userRestaurants[0];
     const restaurant = await this.restaurantRepo.findById(primary.restaurantId);
 
-    const payload = { sub: user.id, restaurantId: primary.restaurantId, role: primary.role };
+    const payload = {
+      sub: user.id,
+      restaurantId: primary.restaurantId,
+      role: primary.role,
+    };
     const accessToken = this.tokenProvider.signAccess(payload);
     const refreshToken = this.tokenProvider.signRefresh(payload);
 
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await this.refreshTokenRepo.create({ userId: user.id, tokenHash, expiresAt });
+    await this.refreshTokenRepo.create({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    });
 
     return ok({
       accessToken,

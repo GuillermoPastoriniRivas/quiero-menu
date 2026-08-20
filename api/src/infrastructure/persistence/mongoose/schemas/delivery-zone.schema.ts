@@ -21,5 +21,6 @@ export class DeliveryZoneModel {
   isActive: boolean;
 }
 
-export const DeliveryZoneSchema = SchemaFactory.createForClass(DeliveryZoneModel);
+export const DeliveryZoneSchema =
+  SchemaFactory.createForClass(DeliveryZoneModel);
 DeliveryZoneSchema.index({ restaurantId: 1 });

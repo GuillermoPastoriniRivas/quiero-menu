@@ -14,7 +14,11 @@ export class SubscriptionModel {
   @Prop({ required: true, enum: PlanTier, default: PlanTier.FREE })
   plan: string;
 
-  @Prop({ required: true, enum: SubscriptionStatus, default: SubscriptionStatus.ACTIVE })
+  @Prop({
+    required: true,
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.ACTIVE,
+  })
   status: string;
 
   @Prop({ type: Date, required: true })
@@ -26,7 +30,11 @@ export class SubscriptionModel {
   @Prop({ type: Date, default: null })
   canceledAt: Date | null;
 
-  @Prop({ required: true, enum: PaymentProvider, default: PaymentProvider.NONE })
+  @Prop({
+    required: true,
+    enum: PaymentProvider,
+    default: PaymentProvider.NONE,
+  })
   paymentProvider: string;
 
   @Prop({ type: String, default: null })
@@ -39,4 +47,5 @@ export class SubscriptionModel {
   updatedAt: Date;
 }
 
-export const SubscriptionSchema = SchemaFactory.createForClass(SubscriptionModel);
+export const SubscriptionSchema =
+  SchemaFactory.createForClass(SubscriptionModel);

@@ -21,5 +21,6 @@ export class OperatingHoursModel {
   isClosed: boolean;
 }
 
-export const OperatingHoursSchema = SchemaFactory.createForClass(OperatingHoursModel);
+export const OperatingHoursSchema =
+  SchemaFactory.createForClass(OperatingHoursModel);
 OperatingHoursSchema.index({ restaurantId: 1, dayOfWeek: 1 }, { unique: true });

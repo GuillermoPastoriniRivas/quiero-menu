@@ -13,6 +13,8 @@ export interface PresignedUrlResponse {
 }
 
 export interface StoragePort {
-  generatePresignedUploadUrl(request: PresignedUrlRequest): Promise<PresignedUrlResponse>;
+  generatePresignedUploadUrl(
+    request: PresignedUrlRequest,
+  ): Promise<PresignedUrlResponse>;
   deleteObject(key: string): Promise<void>;
 }

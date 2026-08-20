@@ -208,9 +208,10 @@ export class HandlePaymentWebhookUseCase {
       description: `Subscription ended — downgraded to free`,
     });
 
-    // Clear custom domain on downgrade
+    // Clear custom domain on downgrade (the worker de-provisions TLS/vhost)
     await this.restaurantRepo.update(subscription.restaurantId, {
       customDomain: null,
+      customDomainStatus: null,
     });
   }
 }

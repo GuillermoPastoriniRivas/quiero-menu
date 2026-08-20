@@ -5,7 +5,9 @@ import { KitchenTokenInvalidError } from '../../../domain/errors/domain-errors.j
 export class ValidateKitchenTokenUseCase {
   constructor(private readonly tokenRepo: KitchenAccessTokenRepository) {}
 
-  async execute(token: string): Promise<Result<{ restaurantId: string }, KitchenTokenInvalidError>> {
+  async execute(
+    token: string,
+  ): Promise<Result<{ restaurantId: string }, KitchenTokenInvalidError>> {
     const stored = await this.tokenRepo.findByToken(token);
     if (!stored) return err(new KitchenTokenInvalidError());
     if (stored.revokedAt) return err(new KitchenTokenInvalidError());

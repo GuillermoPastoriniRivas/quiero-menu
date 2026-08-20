@@ -1,4 +1,8 @@
-import type { StoragePort, PresignedUrlResponse, ImageType } from '../../ports/storage.port.js';
+import type {
+  StoragePort,
+  PresignedUrlResponse,
+  ImageType,
+} from '../../ports/storage.port.js';
 import { Result, ok, err } from '../../common/result.js';
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -13,7 +17,11 @@ export class GenerateUploadUrlUseCase {
     contentType: string;
   }): Promise<Result<PresignedUrlResponse, Error>> {
     if (!ALLOWED_CONTENT_TYPES.includes(data.contentType)) {
-      return err(new Error('Invalid content type. Allowed: image/jpeg, image/png, image/webp'));
+      return err(
+        new Error(
+          'Invalid content type. Allowed: image/jpeg, image/png, image/webp',
+        ),
+      );
     }
 
     if (!ALLOWED_IMAGE_TYPES.includes(data.type)) {

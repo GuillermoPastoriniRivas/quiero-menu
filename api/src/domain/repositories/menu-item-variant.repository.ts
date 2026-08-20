@@ -5,7 +5,11 @@ export interface MenuItemVariantRepository {
   findByItemId(itemId: string): Promise<MenuItemVariant[]>;
   findByItemIds(itemIds: string[]): Promise<MenuItemVariant[]>;
   findById(id: string): Promise<MenuItemVariant | null>;
-  update(id: string, data: Partial<Omit<MenuItemVariant, 'id' | 'itemId'>>): Promise<MenuItemVariant | null>;
+  update(
+    id: string,
+    data: Partial<Omit<MenuItemVariant, 'id' | 'itemId'>>,
+  ): Promise<MenuItemVariant | null>;
   delete(id: string): Promise<boolean>;
   deleteByItemId(itemId: string): Promise<void>;
+  deleteManyByRestaurantId(restaurantId: string): Promise<void>;
 }

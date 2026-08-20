@@ -3,12 +3,18 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UserRestaurantRepository } from '../../../../domain/repositories/user-restaurant.repository.js';
 import { UserRestaurant } from '../../../../domain/entities/user-restaurant.entity.js';
-import { UserRestaurantModel, UserRestaurantDocument } from '../schemas/user-restaurant.schema.js';
+import {
+  UserRestaurantModel,
+  UserRestaurantDocument,
+} from '../schemas/user-restaurant.schema.js';
 import { UserRestaurantMapper } from '../mappers/user-restaurant.mapper.js';
 
 @Injectable()
 export class MongoUserRestaurantRepository implements UserRestaurantRepository {
-  constructor(@InjectModel(UserRestaurantModel.name) private readonly model: Model<UserRestaurantDocument>) {}
+  constructor(
+    @InjectModel(UserRestaurantModel.name)
+    private readonly model: Model<UserRestaurantDocument>,
+  ) {}
 
   async create(data: Omit<UserRestaurant, 'id'>): Promise<UserRestaurant> {
     const doc = await this.model.create({
@@ -25,11 +31,16 @@ export class MongoUserRestaurantRepository implements UserRestaurantRepository {
   }
 
   async findByRestaurantId(restaurantId: string): Promise<UserRestaurant[]> {
-    const docs = await this.model.find({ restaurantId: new Types.ObjectId(restaurantId) });
+    const docs = await this.model.find({
+      restaurantId: new Types.ObjectId(restaurantId),
+    });
     return docs.map(UserRestaurantMapper.toDomain);
   }
 
-  async findByUserIdAndRestaurantId(userId: string, restaurantId: string): Promise<UserRestaurant | null> {
+  async findByUserIdAndRestaurantId(
+    userId: string,
+    restaurantId: string,
+  ): Promise<UserRestaurant | null> {
     const doc = await this.model.findOne({
       userId: new Types.ObjectId(userId),
       restaurantId: new Types.ObjectId(restaurantId),

@@ -3,7 +3,10 @@ import { SubscriptionRepository } from '../../../domain/repositories/subscriptio
 import { OrderRepository } from '../../../domain/repositories/order.repository.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
 import { SubscriptionStatus } from '../../../domain/enums/subscription-status.enum.js';
-import { PLAN_LIMITS, PlanLimits } from '../../../domain/constants/plan-limits.js';
+import {
+  PLAN_LIMITS,
+  PlanLimits,
+} from '../../../domain/constants/plan-limits.js';
 
 export interface SubscriptionInfo {
   subscription: Subscription | null;
@@ -19,11 +22,13 @@ export class GetSubscriptionUseCase {
   ) {}
 
   async execute(restaurantId: string): Promise<SubscriptionInfo> {
-    const subscription = await this.subscriptionRepo.findByRestaurantId(restaurantId);
+    const subscription =
+      await this.subscriptionRepo.findByRestaurantId(restaurantId);
 
-    const plan = subscription?.status === SubscriptionStatus.ACTIVE
-      ? subscription.plan
-      : PlanTier.FREE;
+    const plan =
+      subscription?.status === SubscriptionStatus.ACTIVE
+        ? subscription.plan
+        : PlanTier.FREE;
 
     const limits = PLAN_LIMITS[plan];
 
@@ -31,7 +36,10 @@ export class GetSubscriptionUseCase {
     monthStart.setUTCDate(1);
     monthStart.setUTCHours(0, 0, 0, 0);
 
-    const ordersThisMonth = await this.orderRepo.countByRestaurantIdSince(restaurantId, monthStart);
+    const ordersThisMonth = await this.orderRepo.countByRestaurantIdSince(
+      restaurantId,
+      monthStart,
+    );
 
     return { subscription, plan, limits, usage: { ordersThisMonth } };
   }

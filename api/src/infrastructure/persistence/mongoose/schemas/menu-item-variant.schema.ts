@@ -21,5 +21,6 @@ export class MenuItemVariantModel {
   displayOrder: number;
 }
 
-export const MenuItemVariantSchema = SchemaFactory.createForClass(MenuItemVariantModel);
+export const MenuItemVariantSchema =
+  SchemaFactory.createForClass(MenuItemVariantModel);
 MenuItemVariantSchema.index({ itemId: 1 });

@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-import type { EmailServicePort, EmailMessage } from '../../application/ports/email-service.port.js';
+import type {
+  EmailServicePort,
+  EmailMessage,
+} from '../../application/ports/email-service.port.js';
 
 @Injectable()
 export class SesEmailService implements EmailServicePort {
@@ -24,12 +27,31 @@ export class SesEmailService implements EmailServicePort {
       },
     });
 
-    try {
-      await this.client.send(command);
-      this.logger.log(`Email sent to ${message.to}: ${message.subject}`);
-    } catch (error) {
-      this.logger.error(`Failed to send email to ${message.to}`, error);
-      throw error;
+    const attempts = 3;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        await this.client.send(command);
+        this.logger.log(`Email sent to ${message.to}: ${message.subject}`);
+        return;
+      } catch (error) {
+        const isTransient =
+          error instanceof Error &&
+          (error.name === 'ThrottlingException' ||
+            error.name === 'ServiceUnavailableException' ||
+            error.name === 'InternalFailure' ||
+            error.name === 'RequestTimeout' ||
+            error.name === 'TimeoutError' ||
+            error.name === 'NetworkingError');
+        if (!isTransient || attempt === attempts) {
+          this.logger.error(`Failed to send email to ${message.to}`, error);
+          throw error;
+        }
+        const delayMs = Math.pow(2, attempt) * 500;
+        this.logger.warn(
+          `Retrying email to ${message.to} in ${delayMs}ms (attempt ${attempt}/${attempts})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
     }
   }
 }

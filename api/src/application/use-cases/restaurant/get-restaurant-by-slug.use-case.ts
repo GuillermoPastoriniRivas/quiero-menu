@@ -6,6 +6,7 @@ import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
 import { DeliveryZoneRepository } from '../../../domain/repositories/delivery-zone.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
+import { OperatingHoursPolicy } from '../../../domain/services/operating-hours-policy.js';
 import { Restaurant } from '../../../domain/entities/restaurant.entity.js';
 import { MenuCategory } from '../../../domain/entities/menu-category.entity.js';
 import { MenuItem } from '../../../domain/entities/menu-item.entity.js';
@@ -21,10 +22,17 @@ import { PLAN_LIMITS } from '../../../domain/constants/plan-limits.js';
 
 export interface StorefrontData {
   restaurant: Restaurant;
-  categories: (MenuCategory & { items: (MenuItem & { variants: MenuItemVariant[]; options: MenuItemOption[] })[] })[];
+  categories: (MenuCategory & {
+    items: (MenuItem & {
+      variants: MenuItemVariant[];
+      options: MenuItemOption[];
+    })[];
+  })[];
   operatingHours: OperatingHours[];
   deliveryZones: DeliveryZone[];
   showPoweredByFooter: boolean;
+  isOpen: boolean;
+  todayHours: OperatingHours | null;
 }
 
 export class GetRestaurantBySlugUseCase {
@@ -37,18 +45,22 @@ export class GetRestaurantBySlugUseCase {
     private readonly hoursRepo: OperatingHoursRepository,
     private readonly zoneRepo: DeliveryZoneRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
+    private readonly hoursPolicy: OperatingHoursPolicy = new OperatingHoursPolicy(),
   ) {}
 
-  async execute(slug: string): Promise<Result<StorefrontData, RestaurantNotFoundError>> {
+  async execute(
+    slug: string,
+  ): Promise<Result<StorefrontData, RestaurantNotFoundError>> {
     const restaurant = await this.restaurantRepo.findBySlug(slug);
     if (!restaurant) return err(new RestaurantNotFoundError());
 
-    const [rawCategories, allItems, operatingHours, deliveryZones] = await Promise.all([
-      this.categoryRepo.findByRestaurantId(restaurant.id),
-      this.itemRepo.findByRestaurantId(restaurant.id),
-      this.hoursRepo.findByRestaurantId(restaurant.id),
-      this.zoneRepo.findByRestaurantId(restaurant.id),
-    ]);
+    const [rawCategories, allItems, operatingHours, deliveryZones] =
+      await Promise.all([
+        this.categoryRepo.findByRestaurantId(restaurant.id),
+        this.itemRepo.findByRestaurantId(restaurant.id),
+        this.hoursRepo.findByRestaurantId(restaurant.id),
+        this.zoneRepo.findByRestaurantId(restaurant.id),
+      ]);
 
     const visibleCategories = rawCategories
       .filter((c) => c.isVisible)
@@ -64,12 +76,13 @@ export class GetRestaurantBySlugUseCase {
 
     const visibleItemIds = allItems.filter((i) => i.isVisible).map((i) => i.id);
 
-    const [allVariants, allOptions] = visibleItemIds.length > 0
-      ? await Promise.all([
-          this.variantRepo.findByItemIds(visibleItemIds),
-          this.optionRepo.findByItemIds(visibleItemIds),
-        ])
-      : [[], []];
+    const [allVariants, allOptions] =
+      visibleItemIds.length > 0
+        ? await Promise.all([
+            this.variantRepo.findByItemIds(visibleItemIds),
+            this.optionRepo.findByItemIds(visibleItemIds),
+          ])
+        : [[], []];
 
     const variantsByItem = new Map<string, MenuItemVariant[]>();
     for (const v of allVariants) {
@@ -97,12 +110,29 @@ export class GetRestaurantBySlugUseCase {
       return { ...cat, items };
     });
 
-    const subscription = await this.subscriptionRepo.findByRestaurantId(restaurant.id);
-    const plan = subscription?.status === SubscriptionStatus.ACTIVE
-      ? subscription.plan
-      : PlanTier.FREE;
+    const subscription = await this.subscriptionRepo.findByRestaurantId(
+      restaurant.id,
+    );
+    const plan =
+      subscription?.status === SubscriptionStatus.ACTIVE
+        ? subscription.plan
+        : PlanTier.FREE;
     const showPoweredByFooter = PLAN_LIMITS[plan].showPoweredByFooter;
 
-    return ok({ restaurant, categories, operatingHours, deliveryZones, showPoweredByFooter });
+    const openStatus = this.hoursPolicy.isOpen(
+      restaurant,
+      operatingHours,
+      new Date(),
+    );
+
+    return ok({
+      restaurant,
+      categories,
+      operatingHours,
+      deliveryZones,
+      showPoweredByFooter,
+      isOpen: openStatus.isOpen,
+      todayHours: openStatus.todayHours,
+    });
   }
 }

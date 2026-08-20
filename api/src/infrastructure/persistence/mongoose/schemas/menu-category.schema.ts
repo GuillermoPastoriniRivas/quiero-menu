@@ -21,5 +21,6 @@ export class MenuCategoryModel {
   isVisible: boolean;
 }
 
-export const MenuCategorySchema = SchemaFactory.createForClass(MenuCategoryModel);
+export const MenuCategorySchema =
+  SchemaFactory.createForClass(MenuCategoryModel);
 MenuCategorySchema.index({ restaurantId: 1, displayOrder: 1 });
