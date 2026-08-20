@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import type { Order, OrderItem } from '@/types';
 import { OrderStatus } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
 import { browserPathParam } from '@/lib/static-route-param';
@@ -73,6 +72,29 @@ export default function DeliveryBoardPage() {
     }
   }, [orderItems]);
 
+  const alertNewOrders = useCallback((newOrders: Order[]) => {
+    const newReadyOrders = newOrders.filter(
+      (o) => o.status === OrderStatus.READY && !knownOrderIds.current.has(o.id),
+    );
+    knownOrderIds.current = new Set(newOrders.map((o) => o.id));
+
+    if (newReadyOrders.length === 0) return;
+
+    if (soundEnabled && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    }
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const count = newReadyOrders.length;
+      new Notification(count === 1 ? 'Pedido listo para recoger!' : `${count} pedidos listos!`, {
+        body: newReadyOrders.map((o) => `#${o.code} - ${o.customerName}`).join('\n'),
+        icon: '/icon.svg',
+        tag: 'new-delivery',
+      });
+    }
+  }, [soundEnabled]);
+
   const fetchOrders = useCallback(async () => {
     if (!code) return;
     try {
@@ -93,7 +115,7 @@ export default function DeliveryBoardPage() {
     } finally {
       setLoading(false);
     }
-  }, [code, fetchOrderItems]);
+  }, [code, fetchOrderItems, alertNewOrders]);
 
   // Initialize audio and request notification permission
   useEffect(() => {
@@ -119,35 +141,12 @@ export default function DeliveryBoardPage() {
     };
   }, []);
 
-  const alertNewOrders = useCallback((newOrders: Order[]) => {
-    const newReadyOrders = newOrders.filter(
-      (o) => o.status === OrderStatus.READY && !knownOrderIds.current.has(o.id),
-    );
-    knownOrderIds.current = new Set(newOrders.map((o) => o.id));
-
-    if (newReadyOrders.length === 0) return;
-
-    if (soundEnabled && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
-    }
-
-    if ('Notification' in window && Notification.permission === 'granted') {
-      const count = newReadyOrders.length;
-      new Notification(count === 1 ? 'Pedido listo para recoger!' : `${count} pedidos listos!`, {
-        body: newReadyOrders.map((o) => `#${o.code} - ${o.customerName}`).join('\n'),
-        icon: '/icon.svg',
-        tag: 'new-delivery',
-      });
-    }
-  }, [soundEnabled]);
-
   useEffect(() => {
     if (!code) return;
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
-  }, [code]);
+  }, [code, fetchOrders]);
 
   if (loading) {
     return (

@@ -78,52 +78,6 @@ export default function KitchenBoardPage() {
     }
   }, [orderItems]);
 
-  const fetchOrders = useCallback(async () => {
-    if (!code) return;
-    try {
-      const res = await fetch(`${API_URL}/kitchen/orders`, {
-        headers: { 'X-Kitchen-Token': code },
-      });
-      if (!res.ok) {
-        setInvalid(true);
-        return;
-      }
-      const data = await res.json();
-      const active = data.data.filter((o: Order) => [OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY].includes(o.status));
-      alertNewOrders(active);
-      setOrders(active);
-      fetchOrderItems(active.map((o: Order) => o.id), code);
-    } catch {
-      setInvalid(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [code, fetchOrderItems]);
-
-  // Initialize audio and request notification permission
-  useEffect(() => {
-    audioRef.current = new Audio('/notification.wav');
-    audioRef.current.preload = 'auto';
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  // Enable sound on first user interaction (browser autoplay policy)
-  useEffect(() => {
-    const enable = () => {
-      setSoundEnabled(true);
-      window.removeEventListener('click', enable);
-      window.removeEventListener('touchstart', enable);
-    };
-    window.addEventListener('click', enable);
-    window.addEventListener('touchstart', enable);
-    return () => {
-      window.removeEventListener('click', enable);
-      window.removeEventListener('touchstart', enable);
-    };
-  }, []);
-
   const alertNewOrders = useCallback((newOrders: Order[]) => {
     const newNewOrders = newOrders.filter(
       (o) => o.status === OrderStatus.NEW && !knownOrderIds.current.has(o.id),
@@ -150,12 +104,58 @@ export default function KitchenBoardPage() {
     }
   }, [soundEnabled]);
 
+  const fetchOrders = useCallback(async () => {
+    if (!code) return;
+    try {
+      const res = await fetch(`${API_URL}/kitchen/orders`, {
+        headers: { 'X-Kitchen-Token': code },
+      });
+      if (!res.ok) {
+        setInvalid(true);
+        return;
+      }
+      const data = await res.json();
+      const active = data.data.filter((o: Order) => [OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY].includes(o.status));
+      alertNewOrders(active);
+      setOrders(active);
+      fetchOrderItems(active.map((o: Order) => o.id), code);
+    } catch {
+      setInvalid(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [code, fetchOrderItems, alertNewOrders]);
+
+  // Initialize audio and request notification permission
+  useEffect(() => {
+    audioRef.current = new Audio('/notification.wav');
+    audioRef.current.preload = 'auto';
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Enable sound on first user interaction (browser autoplay policy)
+  useEffect(() => {
+    const enable = () => {
+      setSoundEnabled(true);
+      window.removeEventListener('click', enable);
+      window.removeEventListener('touchstart', enable);
+    };
+    window.addEventListener('click', enable);
+    window.addEventListener('touchstart', enable);
+    return () => {
+      window.removeEventListener('click', enable);
+      window.removeEventListener('touchstart', enable);
+    };
+  }, []);
+
   useEffect(() => {
     if (!code) return;
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
-  }, [code]);
+  }, [code, fetchOrders]);
 
   if (loading) {
     return (

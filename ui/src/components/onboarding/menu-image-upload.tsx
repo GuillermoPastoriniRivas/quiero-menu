@@ -125,6 +125,7 @@ export function MenuImageUpload({
         <div className="flex gap-4 justify-center">
           {images.map((file, i) => (
             <div key={i} className="relative group">
+              {/* eslint-disable-next-line @next/next/no-img-element -- preview con blob: URL local; next/image no soporta blob */}
               <img
                 src={URL.createObjectURL(file)}
                 alt={`Menu ${i + 1}`}

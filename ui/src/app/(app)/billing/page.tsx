@@ -76,13 +76,15 @@ function subscriptionStatus(sub: Subscription | null): {
 
 export default function BillingPage() {
   const billing = useBillingStore();
+  const fetchBilling = useBillingStore((s) => s.fetch);
+  const fetchHistory = useBillingStore((s) => s.fetchHistory);
   const [upgrading, setUpgrading] = useState(false);
   const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
-    billing.fetch();
-    billing.fetchHistory();
-  }, []);
+    fetchBilling();
+    fetchHistory();
+  }, [fetchBilling, fetchHistory]);
 
   const plan = billing.info?.plan ?? PlanTier.FREE;
   const sub = billing.info?.subscription ?? null;
@@ -97,8 +99,8 @@ export default function BillingPage() {
     try {
       const url = await billing.checkout();
       window.location.href = url;
-    } catch (err: any) {
-      toast.error(err.message || 'Error al crear el checkout');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al crear el checkout');
     } finally {
       setUpgrading(false);
     }
@@ -111,8 +113,8 @@ export default function BillingPage() {
       await billing.cancel();
       await billing.fetch();
       toast.success('Suscripción cancelada');
-    } catch (err: any) {
-      toast.error(err.message || 'Error al cancelar la suscripción');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al cancelar la suscripción');
     } finally {
       setCanceling(false);
     }

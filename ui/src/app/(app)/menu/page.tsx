@@ -104,7 +104,11 @@ export default function MenuPage() {
   const toggleCat = (id: string) => {
     setExpandedCats((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -112,7 +116,11 @@ export default function MenuPage() {
   const toggleItem = (id: string) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -499,6 +507,7 @@ export default function MenuPage() {
                             <MaterialIcon name="inventory_2" size="sm" className="text-muted-foreground" />
                           )}
                           {item.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={item.imageUrl} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
                           ) : (
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted shrink-0">

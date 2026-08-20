@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/lib/api';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated, hydrate, logout } = useAuthStore();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     api.setOnUnauthorized(() => {
@@ -16,13 +15,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/login');
     });
     hydrate();
-  }, []);
+  }, [hydrate, logout, router]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading) {
     return (

@@ -28,7 +28,7 @@ interface MenuState {
   deleteOption: (id: string) => Promise<void>;
 }
 
-export const useMenuStore = create<MenuState>((set, get) => ({
+export const useMenuStore = create<MenuState>((set) => ({
   categories: [],
   items: [],
   isLoading: false,

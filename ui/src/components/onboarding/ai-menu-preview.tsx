@@ -36,7 +36,11 @@ export function AiMenuPreview({
 
   const toggleCat = (i: number) => {
     const next = new Set(expandedCats);
-    next.has(i) ? next.delete(i) : next.add(i);
+    if (next.has(i)) {
+      next.delete(i);
+    } else {
+      next.add(i);
+    }
     setExpandedCats(next);
   };
 

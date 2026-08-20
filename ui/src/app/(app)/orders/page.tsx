@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useOrderStore } from '@/stores/order.store';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { OrderStatus, PlanTier } from '@/types';
 import type { OrderItem, OrderWithRedaction } from '@/types';
-import { formatCurrency, formatDate, formatRelativeTime } from '@/lib/format';
+import { formatCurrency, formatRelativeTime } from '@/lib/format';
 import { toast } from 'sonner';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -22,7 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
   [OrderStatus.CANCELLED]: 'Cancelado',
 };
 
-const STATUS_BADGE_VARIANT: Record<string, string> = {
+const STATUS_BADGE_VARIANT: Record<string, NonNullable<React.ComponentProps<typeof Badge>['variant']>> = {
   [OrderStatus.NEW]: 'nuevo',
   [OrderStatus.PREPARING]: 'preparando',
   [OrderStatus.READY]: 'listo',
@@ -44,41 +44,44 @@ export default function OrdersPage() {
   const [tab, setTab] = useState('all');
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
 
-  const fetchAllItems = useCallback(async (orderList: OrderWithRedaction[]) => {
-    const toFetch = orderList.filter((o) => !('redacted' in o && o.redacted) && !orderItems[o.id]);
-    if (toFetch.length === 0) return;
-    const results = await Promise.allSettled(
-      toFetch.map(async (o) => {
-        const data = await getOrder(o.id);
-        return { id: o.id, items: data.items };
-      }),
-    );
-    const newItems: Record<string, OrderItem[]> = {};
-    for (const r of results) {
-      if (r.status === 'fulfilled') newItems[r.value.id] = r.value.items;
-    }
-    if (Object.keys(newItems).length > 0) {
-      setOrderItems((prev) => ({ ...prev, ...newItems }));
-    }
-  }, [orderItems, getOrder]);
-
   useEffect(() => {
     fetchOrders();
     fetchRestaurant();
     connectRealtime();
     return () => disconnectRealtime();
-  }, []);
+  }, [fetchOrders, fetchRestaurant, connectRealtime, disconnectRealtime]);
 
   useEffect(() => {
-    if (orders.length > 0) fetchAllItems(orders);
-  }, [orders]);
+    if (orders.length === 0) return;
+    let cancelled = false;
+    Promise.allSettled(
+      orders
+        .filter((o) => !('redacted' in o && o.redacted) && !orderItems[o.id])
+        .map(async (o) => {
+          const data = await getOrder(o.id);
+          return { id: o.id, items: data.items };
+        }),
+    ).then((results) => {
+      if (cancelled) return;
+      const newItems: Record<string, OrderItem[]> = {};
+      for (const r of results) {
+        if (r.status === 'fulfilled') newItems[r.value.id] = r.value.items;
+      }
+      if (Object.keys(newItems).length > 0) {
+        setOrderItems((prev) => ({ ...prev, ...newItems }));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [orders, orderItems, getOrder]);
 
   const handleStatusChange = async (id: string, status: OrderStatus) => {
     try {
       await updateStatus(id, status);
       toast.success(`Pedido actualizado a ${STATUS_LABELS[status]}`);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al actualizar pedido');
     }
   };
 
@@ -86,12 +89,12 @@ export default function OrdersPage() {
     try {
       const tokens = await api.get<{ token: string }[]>(`/${type}/tokens`);
       if (tokens.length === 0) {
-        toast.error(`No hay accesos de ${type === 'kitchen' ? 'cocina' : 'delivery'} creados. Creá uno en Configuracion.`);
+        toast.error(`No hay accesos de ${type === 'kitchen' ? 'cocina' : 'delivery'} creados. Creá uno en Accesos (menu de usuario).`);
         return;
       }
       window.open(`${window.location.origin}/${type}/${tokens[0].token}`, '_blank');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al abrir el tablero');
     }
   };
 
@@ -200,7 +203,7 @@ export default function OrdersPage() {
                         Tracking
                       </a>
                     )}
-                    <Badge variant={STATUS_BADGE_VARIANT[order.status] as any}>
+                    <Badge variant={STATUS_BADGE_VARIANT[order.status]}>
                       {STATUS_LABELS[order.status]}
                     </Badge>
                   </div>

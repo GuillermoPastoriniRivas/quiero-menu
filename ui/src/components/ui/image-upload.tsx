@@ -87,6 +87,7 @@ export function ImageUpload({
 
       {displayUrl ? (
         <div className={cn('relative overflow-hidden rounded-xl border border-border', aspectClass)}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- preview con blob: URL local; next/image no soporta blob */}
           <img
             src={displayUrl}
             alt=""

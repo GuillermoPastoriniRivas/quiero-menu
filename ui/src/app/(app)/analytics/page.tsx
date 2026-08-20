@@ -31,7 +31,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetchRestaurant();
-  }, []);
+  }, [fetchRestaurant]);
 
   useEffect(() => {
     let cancelled = false;

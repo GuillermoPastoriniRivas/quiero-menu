@@ -163,23 +163,28 @@ export function StorefrontView({
     cardEnabled: true,
     transferEnabled: true,
   };
-  const availablePaymentMethods = [
-    ...(pm.cashEnabled ? [{ value: "efectivo", label: "Efectivo" }] : []),
-    ...(pm.cardEnabled ? [{ value: "tarjeta", label: "Tarjeta" }] : []),
-    ...(pm.transferEnabled
-      ? [{ value: "transferencia", label: "Transferencia" }]
-      : []),
-  ];
+  const availablePaymentMethods = useMemo(
+    () => [
+      ...(pm.cashEnabled ? [{ value: "efectivo", label: "Efectivo" }] : []),
+      ...(pm.cardEnabled ? [{ value: "tarjeta", label: "Tarjeta" }] : []),
+      ...(pm.transferEnabled
+        ? [{ value: "transferencia", label: "Transferencia" }]
+        : []),
+    ],
+    [pm.cashEnabled, pm.cardEnabled, pm.transferEnabled],
+  );
 
   // Ensure selected payment method is valid
+  const cartPaymentMethod = useCartStore((s) => s.paymentMethod);
+  const cartSetPaymentMethod = useCartStore((s) => s.setPaymentMethod);
   useEffect(() => {
     if (
       availablePaymentMethods.length > 0 &&
-      !availablePaymentMethods.some((m) => m.value === cart.paymentMethod)
+      !availablePaymentMethods.some((m) => m.value === cartPaymentMethod)
     ) {
-      cart.setPaymentMethod(availablePaymentMethods[0].value);
+      cartSetPaymentMethod(availablePaymentMethods[0].value);
     }
-  }, [pm.cashEnabled, pm.cardEnabled, pm.transferEnabled]);
+  }, [availablePaymentMethods, cartPaymentMethod, cartSetPaymentMethod]);
 
   const requestLocation = () => {
     if (!navigator.geolocation) {
@@ -503,6 +508,7 @@ export function StorefrontView({
         <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 min-w-0">
             {restaurant.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 className="h-7 w-7 rounded-lg object-cover"
                 src={restaurant.logoUrl}
@@ -531,6 +537,7 @@ export function StorefrontView({
       {/* ── Hero Section ── */}
       {restaurant.bannerUrl ? (
         <section className="relative h-64 w-full overflow-hidden sm:h-80 lg:h-96">
+          {/* eslint-disable-next-line @next/next/no-img-element -- imagen remota de usuario */}
           <img
             className="w-full h-full object-cover"
             src={restaurant.bannerUrl}
@@ -701,6 +708,7 @@ export function StorefrontView({
                   instagramUrl) && (
                   <div className="rounded-2xl border border-outline-variant/10 bg-white p-5 space-y-4">
                     {restaurant.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         className="h-14 w-14 rounded-xl object-cover"
                         src={restaurant.logoUrl}
@@ -869,6 +877,7 @@ export function StorefrontView({
                         </div>
                         <div className="w-28 h-28 shrink-0">
                           {item.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               className="w-full h-full object-cover rounded-xl"
                               src={item.imageUrl}
@@ -947,6 +956,7 @@ export function StorefrontView({
               </div>
 
               {selectedItem.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={selectedItem.imageUrl}
                   alt={selectedItem.name}
