@@ -6,6 +6,7 @@ const PRECACHE = 'quiero-menu-precache';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/offline.html',
   '/login',
   '/login.html',
   '/signup',
@@ -76,8 +77,8 @@ self.addEventListener('fetch', (event) => {
           }
           return resp;
         }).catch(() => {
-          // Offline: fallback to the generic __dynamic__ page for dynamic routes
-          return caches.match('/__dynamic__.html');
+          // Offline: fallback to the offline page
+          return caches.match('/offline.html');
         });
       })
     );

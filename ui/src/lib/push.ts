@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+import { getApiBase } from './storefront-context';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -12,7 +12,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 function getVapidPublicKey(): Promise<string> {
-  return fetch(`${API_URL}/push/vapid-public-key`)
+  return fetch(`${getApiBase()}/push/vapid-public-key`)
     .then((res) => res.json())
     .then((data) => data.publicKey);
 }
@@ -49,7 +49,7 @@ export async function subscribeStaffPush(token: string): Promise<boolean> {
   const sub = await getOrCreateSubscription();
   if (!sub) return false;
 
-  const res = await fetch(`${API_URL}/push/subscribe-staff`, {
+  const res = await fetch(`${getApiBase()}/push/subscribe-staff`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ subscription: sub.toJSON() }),
@@ -62,7 +62,7 @@ export async function subscribeOrderPush(slug: string, orderCode: string): Promi
   const sub = await getOrCreateSubscription();
   if (!sub) return false;
 
-  const res = await fetch(`${API_URL}/push/subscribe-order`, {
+  const res = await fetch(`${getApiBase()}/push/subscribe-order`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderCode, slug, subscription: sub.toJSON() }),
@@ -74,7 +74,7 @@ export async function unsubscribePush(): Promise<void> {
   const sub = await getActivePushSubscription();
   if (!sub) return;
 
-  await fetch(`${API_URL}/push/subscribe`, {
+  await fetch(`${getApiBase()}/push/subscribe`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ endpoint: sub.endpoint }),

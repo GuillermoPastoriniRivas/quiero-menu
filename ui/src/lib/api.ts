@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_URL =
+  (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api') + '/v1';
 
 export class ApiError extends Error {
   constructor(
@@ -45,6 +46,10 @@ class ApiClient {
     return this.accessToken;
   }
 
+  getRefreshToken() {
+    return this.refreshToken;
+  }
+
   setOnUnauthorized(cb: () => void) {
     this.onUnauthorized = cb;
   }
@@ -82,6 +87,16 @@ class ApiClient {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({ message: res.statusText }));
+      if (res.status >= 500) {
+        try {
+          const Sentry = await import('@sentry/nextjs');
+          Sentry.captureException(
+            new Error(`API ${method} ${path} -> ${res.status}: ${data.message}`),
+          );
+        } catch {
+          // Sentry no inicializado: ignorar.
+        }
+      }
       throw new ApiError(res.status, data.message || res.statusText);
     }
 
@@ -120,6 +135,10 @@ class ApiClient {
 
   get<T>(path: string) {
     return this.request<T>('GET', path);
+  }
+
+  put<T>(path: string, body?: unknown) {
+    return this.request<T>('PUT', path, body);
   }
 
   post<T>(path: string, body?: unknown) {

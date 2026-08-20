@@ -11,7 +11,8 @@ import { MaterialIcon } from '@/components/ui/material-icon';
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
 import { browserPathParam } from '@/lib/static-route-param';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_URL =
+  (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api') + '/v1';
 
 const STATUS_LABELS: Record<string, string> = {
   [OrderStatus.READY]: 'Listo para recoger',

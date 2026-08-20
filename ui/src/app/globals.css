@@ -282,6 +282,35 @@
     font-family: var(--font-heading);
     letter-spacing: -0.02em;
   }
+  /* Formato central de scrollbars: fino y con el color de marca en desktop,
+     oculto en mobile (el scroll por tacto sigue funcionando). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--primary) 35%, transparent);
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--primary) 60%, transparent);
+  }
+  @media (max-width: 767px) {
+    * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    *::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 @layer utilities {
@@ -299,7 +328,11 @@
     -webkit-backdrop-filter: blur(20px);
   }
   .gradient-cta {
-    background: linear-gradient(135deg, #E8532C 0%, #d1431d 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      color-mix(in srgb, var(--primary) 72%, #000) 100%
+    );
   }
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
@@ -313,4 +346,9 @@
 @keyframes pulse-urgent {
   0%, 100% { box-shadow: 0 0 0 0 rgba(232, 83, 44, 0.4); }
   50% { box-shadow: 0 0 0 8px rgba(232, 83, 44, 0); }
+}
+
+@keyframes progress-slide {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(320%); }
 }

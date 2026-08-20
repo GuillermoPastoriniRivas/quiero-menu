@@ -1,14 +1,13 @@
 import { io, Socket } from 'socket.io-client';
 import { api } from './api';
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
+import { getSocketUrl } from './storefront-context';
 
 let socket: Socket | null = null;
 let roomSocket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io(SOCKET_URL, {
+    socket = io(getSocketUrl(), {
       autoConnect: false,
       auth: { token: api.getAccessToken() },
     });
@@ -29,7 +28,7 @@ export function disconnectSocket() {
 
 export function getRoomSocket(room: string): Socket {
   if (!roomSocket) {
-    roomSocket = io(SOCKET_URL, {
+    roomSocket = io(getSocketUrl(), {
       autoConnect: false,
       query: { room },
     });

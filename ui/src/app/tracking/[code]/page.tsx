@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, usePathname } from 'next/navigation';
 import type { TrackingResponse } from '@/types';
-import { OrderStatus } from '@/types';
+import { OrderStatus, DeliveryType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
@@ -11,8 +11,7 @@ import { formatCurrency, formatRelativeTime } from '@/lib/format';
 import { browserPathParam } from '@/lib/static-route-param';
 import { getRoomSocket } from '@/lib/socket';
 import { subscribeOrderPush, isPushSupported, isPushSubscribed } from '@/lib/push';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+import { getApiBase } from '@/lib/storefront-context';
 
 const STATUS_STEPS = [
   OrderStatus.NEW,
@@ -59,7 +58,7 @@ export default function TrackingPage() {
   const fetchTracking = useCallback(async () => {
     if (!code || !slug) return;
     try {
-      const res = await fetch(`${API_URL}/storefront/${encodeURIComponent(slug)}/orders/by-code/${encodeURIComponent(code)}`);
+      const res = await fetch(`${getApiBase()}/storefront/${encodeURIComponent(slug)}/orders/by-code/${encodeURIComponent(code)}`);
       if (!res.ok) {
         setInvalid(true);
         return;
@@ -119,7 +118,7 @@ export default function TrackingPage() {
     if (!data) return;
     setUploadingReceipt(true);
     try {
-      const res = await fetch(`${API_URL}/storefront/${slug}/receipt-upload`, {
+      const res = await fetch(`${getApiBase()}/storefront/${slug}/receipt-upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'receipt', contentType: file.type }),
@@ -132,7 +131,7 @@ export default function TrackingPage() {
         body: file,
       });
       if (!uploadRes.ok) throw new Error('Error al subir comprobante');
-      await fetch(`${API_URL}/storefront/${slug}/orders/${data.order.id}/receipt`, {
+      await fetch(`${getApiBase()}/storefront/${slug}/orders/${data.order.id}/receipt`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ receiptUrl: publicUrl }),
@@ -331,7 +330,16 @@ export default function TrackingPage() {
           ))}
           <div className="bg-surface-container-low rounded-xl p-4 space-y-2">
             <div className="flex justify-between text-sm"><span>Subtotal</span><span>{formatCurrency(order.subtotal, restaurant.currency)}</span></div>
+            {order.discount > 0 && (
+              <div className="flex justify-between text-sm text-green-700">
+                <span>Descuento{order.couponCode ? ` (${order.couponCode})` : ''}</span>
+                <span>-{formatCurrency(order.discount, restaurant.currency)}</span>
+              </div>
+            )}
             {order.deliveryFee > 0 && <div className="flex justify-between text-sm"><span>Envío</span><span>{formatCurrency(order.deliveryFee, restaurant.currency)}</span></div>}
+            {order.deliveryType === DeliveryType.DELIVERY && order.deliveryFee === 0 && order.couponCode && (
+              <div className="flex justify-between text-sm text-green-700"><span>Envío</span><span>Gratis</span></div>
+            )}
             <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{formatCurrency(order.total, restaurant.currency)}</span></div>
             <div className="flex justify-between text-xs text-on-surface-variant">
               <span>Pago</span>

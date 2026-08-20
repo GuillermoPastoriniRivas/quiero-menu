@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter, Poppins } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { RegisterSW } from "@/components/register-sw";
+import { SentryInit } from "@/components/sentry-init";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -63,6 +64,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <RegisterSW />
+        <SentryInit />
         <Toaster />
       </body>
     </html>

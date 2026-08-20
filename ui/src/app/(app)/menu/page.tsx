@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useMenuStore } from '@/stores/menu.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/lib/api';
@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { MoneyInput } from '@/components/ui/money-input';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/format';
 import type { MenuCategory, MenuItem, MenuItemVariant, MenuItemOption, StorefrontData } from '@/types';
@@ -29,18 +30,28 @@ type RichCategory = MenuCategory & {
   items: RichItem[];
 };
 
+/* ---------- dialog states ---------- */
+type CatDialog = { mode: 'create' } | { mode: 'edit'; cat: RichCategory } | null;
+type ItemDialog = { mode: 'create'; catId: string } | { mode: 'edit'; item: RichItem } | null;
+type VariantDialog = { mode: 'create'; itemId: string } | { mode: 'edit'; variant: MenuItemVariant } | null;
+type OptionDialog = { mode: 'create'; itemId: string } | { mode: 'edit'; option: MenuItemOption } | null;
+
 /* ====================================================== */
 export default function MenuPage() {
   const user = useAuthStore((s) => s.user);
   const {
     createCategory,
+    updateCategory,
     deleteCategory,
     createItem,
+    updateItem,
     deleteItem,
     toggleAvailability,
     createVariant,
+    updateVariant,
     deleteVariant,
     createOption,
+    updateOption,
     deleteOption,
   } = useMenuStore();
 
@@ -51,26 +62,25 @@ export default function MenuPage() {
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  /* --- new category --- */
-  const [newCatName, setNewCatName] = useState('');
+  /* --- dialog state --- */
+  const [catDialog, setCatDialog] = useState<CatDialog>(null);
+  const [catForm, setCatForm] = useState({ name: '', description: '' });
 
-  /* --- new item dialog --- */
-  const [newItemCatId, setNewItemCatId] = useState<string | null>(null);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemPrice, setNewItemPrice] = useState('');
-  const [newItemDesc, setNewItemDesc] = useState('');
-  const [newItemImageUrl, setNewItemImageUrl] = useState('');
+  const [itemDialog, setItemDialog] = useState<ItemDialog>(null);
+  const [itemForm, setItemForm] = useState({ name: '', price: '', description: '', imageUrl: '' });
 
-  /* --- new variant dialog --- */
-  const [newVariantItemId, setNewVariantItemId] = useState<string | null>(null);
-  const [newVariantName, setNewVariantName] = useState('');
-  const [newVariantPrice, setNewVariantPrice] = useState('');
+  const [variantDialog, setVariantDialog] = useState<VariantDialog>(null);
+  const [variantForm, setVariantForm] = useState({ name: '', price: '' });
 
-  /* --- new option dialog --- */
-  const [newOptionItemId, setNewOptionItemId] = useState<string | null>(null);
-  const [newOptionName, setNewOptionName] = useState('');
-  const [newOptionGroup, setNewOptionGroup] = useState('');
-  const [newOptionDelta, setNewOptionDelta] = useState('');
+  const [optionDialog, setOptionDialog] = useState<OptionDialog>(null);
+  const [optionForm, setOptionForm] = useState({ name: '', group: '', delta: '' });
+
+  /* --- inline price editing --- */
+  const [priceEdit, setPriceEdit] = useState<
+    { kind: 'item'; id: string } | { kind: 'variant'; id: string } | { kind: 'option'; id: string } | null
+  >(null);
+  const [priceDraft, setPriceDraft] = useState('');
+  const cancelBlurRef = useRef(false);
 
   /* ---------- load full menu via storefront ---------- */
   const loadMenu = useCallback(async () => {
@@ -107,17 +117,161 @@ export default function MenuPage() {
     });
   };
 
+  /* ---------- inline price editing ---------- */
+  const openPriceEdit = (
+    target: { kind: 'item'; id: string } | { kind: 'variant'; id: string } | { kind: 'option'; id: string },
+    current: string,
+  ) => {
+    setPriceEdit(target);
+    setPriceDraft(current);
+  };
+
+  const applyPriceLocally = (
+    target: { kind: 'item' | 'variant' | 'option'; id: string },
+    resolved: number | null,
+  ) => {
+    setRichCategories((cats) =>
+      cats.map((cat) => ({
+        ...cat,
+        items: cat.items.map((item) => {
+          if (target.kind === 'item' && item.id === target.id) {
+            return { ...item, basePrice: resolved ?? 0 };
+          }
+          if (target.kind === 'variant') {
+            return {
+              ...item,
+              variants: item.variants.map((v) =>
+                v.id === target.id ? { ...v, priceOverride: resolved } : v,
+              ),
+            };
+          }
+          if (target.kind === 'option') {
+            return {
+              ...item,
+              options: item.options.map((o) =>
+                o.id === target.id ? { ...o, priceDelta: resolved ?? 0 } : o,
+              ),
+            };
+          }
+          return item;
+        }),
+      })),
+    );
+  };
+
+  const commitPriceEdit = async () => {
+    if (!priceEdit) return;
+    const target = priceEdit;
+    const value = Number(priceDraft || '0');
+    const resolved = target.kind === 'variant' ? (priceDraft ? value : null) : value;
+    try {
+      if (target.kind === 'item') {
+        await updateItem(target.id, { basePrice: value });
+      } else if (target.kind === 'variant') {
+        await updateVariant(target.id, { priceOverride: resolved });
+      } else {
+        await updateOption(target.id, { priceDelta: value });
+      }
+      setPriceEdit(null);
+      setPriceDraft('');
+      applyPriceLocally(target, resolved);
+    } catch {
+      toast.error('Error al actualizar precio');
+    }
+  };
+
+  const handlePriceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      cancelBlurRef.current = true;
+      e.currentTarget.blur();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      e.currentTarget.blur();
+    }
+  };
+
+  const handlePriceBlur = () => {
+    if (cancelBlurRef.current) {
+      cancelBlurRef.current = false;
+      setPriceEdit(null);
+      setPriceDraft('');
+      return;
+    }
+    commitPriceEdit();
+  };
+
+  /* ---------- dialog openers ---------- */
+  const openCatCreate = () => {
+    setCatDialog({ mode: 'create' });
+    setCatForm({ name: '', description: '' });
+  };
+  const openCatEdit = (cat: RichCategory) => {
+    setCatDialog({ mode: 'edit', cat });
+    setCatForm({ name: cat.name, description: cat.description || '' });
+  };
+
+  const openItemCreate = (catId: string) => {
+    setItemDialog({ mode: 'create', catId });
+    setItemForm({ name: '', price: '', description: '', imageUrl: '' });
+  };
+  const openItemEdit = (item: RichItem) => {
+    setItemDialog({ mode: 'edit', item });
+    setItemForm({
+      name: item.name,
+      price: String(item.basePrice),
+      description: item.description || '',
+      imageUrl: item.imageUrl || '',
+    });
+  };
+
+  const openVariantCreate = (itemId: string) => {
+    setVariantDialog({ mode: 'create', itemId });
+    setVariantForm({ name: '', price: '' });
+  };
+  const openVariantEdit = (variant: MenuItemVariant) => {
+    setVariantDialog({ mode: 'edit', variant });
+    setVariantForm({
+      name: variant.name,
+      price: variant.priceOverride != null ? String(variant.priceOverride) : '',
+    });
+  };
+
+  const openOptionCreate = (itemId: string) => {
+    setOptionDialog({ mode: 'create', itemId });
+    setOptionForm({ name: '', group: '', delta: '' });
+  };
+  const openOptionEdit = (option: MenuItemOption) => {
+    setOptionDialog({ mode: 'edit', option });
+    setOptionForm({
+      name: option.name,
+      group: option.optionGroup,
+      delta: option.priceDelta ? String(option.priceDelta) : '',
+    });
+  };
+
   /* ---------- category actions ---------- */
-  const handleCreateCategory = async () => {
-    const name = newCatName.trim();
+  const handleSaveCategory = async () => {
+    if (!catDialog) return;
+    const name = catForm.name.trim();
     if (!name) return;
     try {
-      await createCategory({ name });
-      setNewCatName('');
-      toast.success('Categoria creada');
+      if (catDialog.mode === 'edit') {
+        await updateCategory(catDialog.cat.id, {
+          name,
+          description: catForm.description.trim(),
+        });
+        toast.success('Categoria actualizada');
+      } else {
+        await createCategory({
+          name,
+          description: catForm.description.trim() || undefined,
+        });
+        toast.success('Categoria creada');
+      }
+      setCatDialog(null);
       await loadMenu();
     } catch {
-      toast.error('Error al crear categoria');
+      toast.error(catDialog.mode === 'edit' ? 'Error al actualizar categoria' : 'Error al crear categoria');
     }
   };
 
@@ -133,25 +287,30 @@ export default function MenuPage() {
   };
 
   /* ---------- item actions ---------- */
-  const handleCreateItem = async () => {
-    if (!newItemCatId || !newItemName.trim() || !newItemPrice) return;
+  const handleSaveItem = async () => {
+    if (!itemDialog || !itemForm.name.trim() || !itemForm.price) return;
     try {
-      await createItem({
-        categoryId: newItemCatId,
-        name: newItemName.trim(),
-        basePrice: Number(newItemPrice),
-        description: newItemDesc.trim() || undefined,
-        imageUrl: newItemImageUrl || undefined,
-      });
-      setNewItemName('');
-      setNewItemPrice('');
-      setNewItemDesc('');
-      setNewItemImageUrl('');
-      setNewItemCatId(null);
-      toast.success('Producto creado');
+      const payload = {
+        name: itemForm.name.trim(),
+        basePrice: Number(itemForm.price),
+        description: itemForm.description.trim(),
+        imageUrl: itemForm.imageUrl,
+      };
+      if (itemDialog.mode === 'edit') {
+        await updateItem(itemDialog.item.id, payload);
+        toast.success('Producto actualizado');
+      } else {
+        await createItem({
+          categoryId: itemDialog.catId,
+          ...payload,
+          imageUrl: itemForm.imageUrl || undefined,
+        });
+        toast.success('Producto creado');
+      }
+      setItemDialog(null);
       await loadMenu();
     } catch {
-      toast.error('Error al crear producto');
+      toast.error(itemDialog.mode === 'edit' ? 'Error al actualizar producto' : 'Error al crear producto');
     }
   };
 
@@ -166,30 +325,46 @@ export default function MenuPage() {
     }
   };
 
-  const handleToggleAvailability = async (id: string) => {
+  const applyAvailabilityLocally = (id: string, available: boolean) => {
+    setRichCategories((cats) =>
+      cats.map((cat) => ({
+        ...cat,
+        items: cat.items.map((item) =>
+          item.id === id ? { ...item, isAvailable: available } : item,
+        ),
+      })),
+    );
+  };
+
+  const handleToggleAvailability = async (id: string, next: boolean) => {
     try {
       await toggleAvailability(id);
-      await loadMenu();
+      applyAvailabilityLocally(id, next);
     } catch {
       toast.error('Error al cambiar disponibilidad');
+      applyAvailabilityLocally(id, !next);
     }
   };
 
   /* ---------- variant actions ---------- */
-  const handleCreateVariant = async () => {
-    if (!newVariantItemId || !newVariantName.trim()) return;
+  const handleSaveVariant = async () => {
+    if (!variantDialog || !variantForm.name.trim()) return;
     try {
-      await createVariant(newVariantItemId, {
-        name: newVariantName.trim(),
-        priceOverride: newVariantPrice ? Number(newVariantPrice) : undefined,
-      });
-      setNewVariantName('');
-      setNewVariantPrice('');
-      setNewVariantItemId(null);
-      toast.success('Variante creada');
+      const payload = {
+        name: variantForm.name.trim(),
+        priceOverride: variantForm.price ? Number(variantForm.price) : null,
+      };
+      if (variantDialog.mode === 'edit') {
+        await updateVariant(variantDialog.variant.id, payload);
+        toast.success('Variante actualizada');
+      } else {
+        await createVariant(variantDialog.itemId, payload);
+        toast.success('Variante creada');
+      }
+      setVariantDialog(null);
       await loadMenu();
     } catch {
-      toast.error('Error al crear variante');
+      toast.error(variantDialog.mode === 'edit' ? 'Error al actualizar variante' : 'Error al crear variante');
     }
   };
 
@@ -205,22 +380,25 @@ export default function MenuPage() {
   };
 
   /* ---------- option actions ---------- */
-  const handleCreateOption = async () => {
-    if (!newOptionItemId || !newOptionName.trim() || !newOptionGroup.trim()) return;
+  const handleSaveOption = async () => {
+    if (!optionDialog || !optionForm.name.trim() || !optionForm.group.trim()) return;
     try {
-      await createOption(newOptionItemId, {
-        name: newOptionName.trim(),
-        optionGroup: newOptionGroup.trim(),
-        priceDelta: newOptionDelta ? Number(newOptionDelta) : 0,
-      });
-      setNewOptionName('');
-      setNewOptionGroup('');
-      setNewOptionDelta('');
-      setNewOptionItemId(null);
-      toast.success('Opcion creada');
+      const payload = {
+        name: optionForm.name.trim(),
+        optionGroup: optionForm.group.trim(),
+        priceDelta: optionForm.delta ? Number(optionForm.delta) : 0,
+      };
+      if (optionDialog.mode === 'edit') {
+        await updateOption(optionDialog.option.id, payload);
+        toast.success('Opcion actualizada');
+      } else {
+        await createOption(optionDialog.itemId, payload);
+        toast.success('Opcion creada');
+      }
+      setOptionDialog(null);
       await loadMenu();
     } catch {
-      toast.error('Error al crear opcion');
+      toast.error(optionDialog.mode === 'edit' ? 'Error al actualizar opcion' : 'Error al crear opcion');
     }
   };
 
@@ -260,19 +438,18 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* ---- add category ---- */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Input
-          placeholder="Nueva categoria..."
-          value={newCatName}
-          onChange={(e) => setNewCatName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
-        />
-        <Button onClick={handleCreateCategory}>
-          <MaterialIcon name="add" size="sm" className="mr-2" />
-          Agregar
-        </Button>
-      </div>
+      {/* ---- add category (looks like a category) ---- */}
+      <button
+        type="button"
+        onClick={openCatCreate}
+        className="flex w-full items-center gap-3 rounded-xl border-2 border-dashed border-border bg-muted/30 px-4 py-3 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted"
+      >
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+          <MaterialIcon name="category" size="sm" />
+        </span>
+        <span className="font-medium">Agregar categoria</span>
+        <MaterialIcon name="add_circle" className="ml-auto text-foreground/60" />
+      </button>
 
       {/* ---- categories ---- */}
       {richCategories.map((cat) => {
@@ -289,19 +466,8 @@ export default function MenuPage() {
                 <Badge variant="outline" className="ml-2 shrink-0">{cat.items.length} productos</Badge>
               </div>
               <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setNewItemCatId(cat.id);
-                    setNewItemName('');
-                    setNewItemPrice('');
-                    setNewItemDesc('');
-                    setNewItemImageUrl('');
-                  }}
-                >
-                  <MaterialIcon name="add" size="xs" className="mr-1" />
-                  Producto
+                <Button size="sm" variant="ghost" onClick={() => openCatEdit(cat)}>
+                  <MaterialIcon name="edit" size="sm" />
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(cat.id)}>
                   <MaterialIcon name="delete" size="sm" className="text-destructive" />
@@ -323,19 +489,19 @@ export default function MenuPage() {
                     <div key={item.id} className="border rounded-lg">
                       {/* item header */}
                       <div
-                        className="flex items-center justify-between px-4 py-3 cursor-pointer select-none gap-3"
+                        className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 py-3 cursor-pointer select-none sm:gap-3"
                         onClick={() => toggleItem(item.id)}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           {hasExtras ? (
                             itemOpen ? <MaterialIcon name="expand_more" size="sm" className="text-muted-foreground" /> : <MaterialIcon name="chevron_right" size="sm" className="text-muted-foreground" />
                           ) : (
                             <MaterialIcon name="inventory_2" size="sm" className="text-muted-foreground" />
                           )}
                           {item.imageUrl ? (
-                            <img src={item.imageUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                            <img src={item.imageUrl} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
                           ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted shrink-0">
                               <MaterialIcon name="restaurant" size="sm" className="text-muted-foreground" />
                             </div>
                           )}
@@ -347,13 +513,35 @@ export default function MenuPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-sm font-semibold whitespace-nowrap">{formatCurrency(item.basePrice)}</span>
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          {priceEdit?.kind === 'item' && priceEdit.id === item.id ? (
+                            <MoneyInput
+                              autoFocus
+                              value={priceDraft}
+                              onChange={setPriceDraft}
+                              onKeyDown={handlePriceKeyDown}
+                              onBlur={handlePriceBlur}
+                              className="w-24"
+                              aria-label={`Precio de ${item.name}`}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openPriceEdit({ kind: 'item', id: item.id }, String(item.basePrice))}
+                              className="whitespace-nowrap rounded px-1.5 py-0.5 text-sm font-semibold transition-colors hover:bg-muted"
+                              title="Editar precio"
+                            >
+                              {formatCurrency(item.basePrice)}
+                            </button>
+                          )}
                           {!item.isAvailable && <Badge variant="secondary">No disponible</Badge>}
                           <Switch
                             checked={item.isAvailable}
-                            onCheckedChange={() => handleToggleAvailability(item.id)}
+                            onCheckedChange={(checked) => handleToggleAvailability(item.id, checked)}
                           />
+                          <Button size="sm" variant="ghost" onClick={() => openItemEdit(item)}>
+                            <MaterialIcon name="edit" size="xs" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item.id)}>
                             <MaterialIcon name="delete" size="xs" className="text-destructive" />
                           </Button>
@@ -367,24 +555,10 @@ export default function MenuPage() {
 
                           {/* --- variants section --- */}
                           <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <MaterialIcon name="layers" size="sm" className="text-muted-foreground" />
-                                <span className="text-sm font-medium">Variantes</span>
-                                <Badge variant="outline" className="text-xs">{item.variants.length}</Badge>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setNewVariantItemId(item.id);
-                                  setNewVariantName('');
-                                  setNewVariantPrice('');
-                                }}
-                              >
-                                <MaterialIcon name="add" size="xs" className="mr-1" />
-                                Variante
-                              </Button>
+                            <div className="flex items-center gap-2">
+                              <MaterialIcon name="layers" size="sm" className="text-muted-foreground" />
+                              <span className="text-sm font-medium">Variantes</span>
+                              <Badge variant="outline" className="text-xs">{item.variants.length}</Badge>
                             </div>
 
                             {item.variants.length === 0 && (
@@ -393,44 +567,70 @@ export default function MenuPage() {
 
                             {item.variants.map((v) => (
                               <div key={v.id} className="flex items-center justify-between pl-6 py-1.5 border-l-2 border-muted ml-2">
-                                <div className="pl-2">
+                                <div className="pl-2 flex items-center gap-1">
                                   <span className="text-sm">{v.name}</span>
-                                  {v.priceOverride != null && (
-                                    <span className="text-xs text-muted-foreground ml-2">
-                                      {formatCurrency(v.priceOverride)}
-                                    </span>
+                                  {priceEdit?.kind === 'variant' && priceEdit.id === v.id ? (
+                                    <MoneyInput
+                                      autoFocus
+                                      value={priceDraft}
+                                      onChange={setPriceDraft}
+                                      onKeyDown={handlePriceKeyDown}
+                                      onBlur={handlePriceBlur}
+                                      className="h-7 w-24 text-xs"
+                                      aria-label={`Precio de ${v.name}`}
+                                    />
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        openPriceEdit(
+                                          { kind: 'variant', id: v.id },
+                                          v.priceOverride != null ? String(v.priceOverride) : '',
+                                        )
+                                      }
+                                      className="rounded px-1 py-0.5 transition-colors hover:bg-muted"
+                                      title="Editar precio"
+                                    >
+                                      {v.priceOverride != null ? (
+                                        <span className="text-xs text-muted-foreground">
+                                          {formatCurrency(v.priceOverride)}
+                                        </span>
+                                      ) : (
+                                        <MaterialIcon name="payments" size="xs" className="text-muted-foreground/60" />
+                                      )}
+                                    </button>
                                   )}
                                 </div>
-                                <Button size="sm" variant="ghost" onClick={() => handleDeleteVariant(v.id)}>
-                                  <MaterialIcon name="delete" size="xs" className="text-destructive" />
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost" onClick={() => openVariantEdit(v)}>
+                                    <MaterialIcon name="edit" size="xs" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => handleDeleteVariant(v.id)}>
+                                    <MaterialIcon name="delete" size="xs" className="text-destructive" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
+
+                            {/* add variant (looks like a variant row) */}
+                            <button
+                              type="button"
+                              onClick={() => openVariantCreate(item.id)}
+                              className="ml-2 flex w-full items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/30 px-2 py-1.5 pl-6 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted"
+                            >
+                              <MaterialIcon name="add" size="xs" />
+                              <span className="text-sm">Agregar variante</span>
+                            </button>
                           </div>
 
                           <Separator />
 
                           {/* --- options section --- */}
                           <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <MaterialIcon name="tune" size="sm" className="text-muted-foreground" />
-                                <span className="text-sm font-medium">Opciones</span>
-                                <Badge variant="outline" className="text-xs">{item.options.length}</Badge>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setNewOptionItemId(item.id);
-                                  setNewOptionName('');
-                                  setNewOptionGroup('');
-                                  setNewOptionDelta('');
-                                }}
-                              >
-                                <MaterialIcon name="add" size="xs" className="mr-1" />
-                                Opcion
-                              </Button>
+                            <div className="flex items-center gap-2">
+                              <MaterialIcon name="tune" size="sm" className="text-muted-foreground" />
+                              <span className="text-sm font-medium">Opciones</span>
+                              <Badge variant="outline" className="text-xs">{item.options.length}</Badge>
                             </div>
 
                             {item.options.length === 0 && (
@@ -450,25 +650,71 @@ export default function MenuPage() {
                                   <div key={opt.id} className="flex items-center justify-between pl-2 py-1">
                                     <div className="flex items-center gap-2">
                                       <span className="text-sm">{opt.name}</span>
-                                      {opt.priceDelta > 0 && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          +{formatCurrency(opt.priceDelta)}
-                                        </Badge>
-                                      )}
+                                      {opt.priceDelta > 0 &&
+                                        (priceEdit?.kind === 'option' && priceEdit.id === opt.id ? (
+                                          <MoneyInput
+                                            autoFocus
+                                            value={priceDraft}
+                                            onChange={setPriceDraft}
+                                            onKeyDown={handlePriceKeyDown}
+                                            onBlur={handlePriceBlur}
+                                            className="h-7 w-20 text-xs"
+                                            aria-label={`Precio adicional de ${opt.name}`}
+                                          />
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => openPriceEdit({ kind: 'option', id: opt.id }, String(opt.priceDelta))}
+                                            className="rounded px-0.5 py-0.5 transition-colors hover:bg-muted"
+                                            title="Editar precio"
+                                          >
+                                            <Badge variant="secondary" className="text-xs">
+                                              +{formatCurrency(opt.priceDelta)}
+                                            </Badge>
+                                          </button>
+                                        ))}
                                     </div>
-                                    <Button size="sm" variant="ghost" onClick={() => handleDeleteOption(opt.id)}>
-                                      <MaterialIcon name="delete" size="xs" className="text-destructive" />
-                                    </Button>
+                                    <div className="flex gap-1">
+                                      <Button size="sm" variant="ghost" onClick={() => openOptionEdit(opt)}>
+                                        <MaterialIcon name="edit" size="xs" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" onClick={() => handleDeleteOption(opt.id)}>
+                                        <MaterialIcon name="delete" size="xs" className="text-destructive" />
+                                      </Button>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
                             ))}
+
+                            {/* add option (looks like an option row) */}
+                            <button
+                              type="button"
+                              onClick={() => openOptionCreate(item.id)}
+                              className="ml-2 flex w-full items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/30 px-2 py-1.5 pl-6 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted"
+                            >
+                              <MaterialIcon name="add" size="xs" />
+                              <span className="text-sm">Agregar opcion</span>
+                            </button>
                           </div>
                         </div>
                       )}
                     </div>
                   );
                 })}
+
+                {/* add product (looks like a product row) */}
+                <button
+                  type="button"
+                  onClick={() => openItemCreate(cat.id)}
+                  className="flex w-full items-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 px-4 py-3 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                    <MaterialIcon name="restaurant" size="sm" />
+                  </span>
+                  <span className="text-sm font-medium">Agregar producto</span>
+                  <MaterialIcon name="add_circle" className="ml-auto text-foreground/60" />
+                </button>
               </CardContent>
             )}
           </Card>
@@ -483,23 +729,55 @@ export default function MenuPage() {
 
       {/* ============== DIALOGS ============== */}
 
-      {/* --- new item dialog --- */}
-      <Dialog open={newItemCatId !== null} onOpenChange={(open) => !open && setNewItemCatId(null)}>
+      {/* --- category dialog --- */}
+      <Dialog open={catDialog !== null} onOpenChange={(open) => !open && setCatDialog(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Agregar producto
-              {newItemCatId && (
+              {catDialog?.mode === 'edit' ? 'Editar categoria' : 'Agregar categoria'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Nombre</Label>
+              <Input
+                value={catForm.name}
+                onChange={(e) => setCatForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Bebidas"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Descripcion (opcional)</Label>
+              <Input
+                value={catForm.description}
+                onChange={(e) => setCatForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Ej: Bebidas frias y calientes"
+              />
+            </div>
+            <Button className="w-full" onClick={handleSaveCategory}>
+              {catDialog?.mode === 'edit' ? 'Guardar cambios' : 'Crear categoria'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- item dialog --- */}
+      <Dialog open={itemDialog !== null} onOpenChange={(open) => !open && setItemDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {itemDialog?.mode === 'edit' ? 'Editar producto' : 'Agregar producto'}
+              {itemDialog?.mode === 'create' && (
                 <span className="font-normal text-muted-foreground text-sm ml-2">
-                  en {richCategories.find((c) => c.id === newItemCatId)?.name}
+                  en {richCategories.find((c) => c.id === itemDialog.catId)?.name}
                 </span>
               )}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <ImageUpload
-              value={newItemImageUrl}
-              onChange={setNewItemImageUrl}
+              value={itemForm.imageUrl}
+              onChange={(url) => setItemForm((f) => ({ ...f, imageUrl: url }))}
               type="menu"
               label="Foto del producto"
               aspectRatio="square"
@@ -507,100 +785,104 @@ export default function MenuPage() {
             <div className="space-y-1">
               <Label>Nombre</Label>
               <Input
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
+                value={itemForm.name}
+                onChange={(e) => setItemForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="Hamburguesa clasica"
               />
             </div>
             <div className="space-y-1">
               <Label>Precio base</Label>
-              <Input
-                type="number"
-                value={newItemPrice}
-                onChange={(e) => setNewItemPrice(e.target.value)}
+              <MoneyInput
+                value={itemForm.price}
+                onChange={(v) => setItemForm((f) => ({ ...f, price: v }))}
                 placeholder="15000"
+                className="w-full"
               />
             </div>
             <div className="space-y-1">
               <Label>Descripcion (opcional)</Label>
               <Input
-                value={newItemDesc}
-                onChange={(e) => setNewItemDesc(e.target.value)}
+                value={itemForm.description}
+                onChange={(e) => setItemForm((f) => ({ ...f, description: e.target.value }))}
                 placeholder="Carne 150g, queso, lechuga..."
               />
             </div>
-            <Button className="w-full" onClick={handleCreateItem}>
-              Crear producto
+            <Button className="w-full" onClick={handleSaveItem}>
+              {itemDialog?.mode === 'edit' ? 'Guardar cambios' : 'Crear producto'}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* --- new variant dialog --- */}
-      <Dialog open={newVariantItemId !== null} onOpenChange={(open) => !open && setNewVariantItemId(null)}>
+      {/* --- variant dialog --- */}
+      <Dialog open={variantDialog !== null} onOpenChange={(open) => !open && setVariantDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Agregar variante</DialogTitle>
+            <DialogTitle>
+              {variantDialog?.mode === 'edit' ? 'Editar variante' : 'Agregar variante'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Nombre</Label>
               <Input
-                value={newVariantName}
-                onChange={(e) => setNewVariantName(e.target.value)}
+                value={variantForm.name}
+                onChange={(e) => setVariantForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="Grande"
               />
             </div>
             <div className="space-y-1">
               <Label>Precio (sobreescribe el base, opcional)</Label>
-              <Input
-                type="number"
-                value={newVariantPrice}
-                onChange={(e) => setNewVariantPrice(e.target.value)}
+              <MoneyInput
+                value={variantForm.price}
+                onChange={(v) => setVariantForm((f) => ({ ...f, price: v }))}
                 placeholder="20000"
+                className="w-full"
               />
             </div>
-            <Button className="w-full" onClick={handleCreateVariant}>
-              Crear variante
+            <Button className="w-full" onClick={handleSaveVariant}>
+              {variantDialog?.mode === 'edit' ? 'Guardar cambios' : 'Crear variante'}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* --- new option dialog --- */}
-      <Dialog open={newOptionItemId !== null} onOpenChange={(open) => !open && setNewOptionItemId(null)}>
+      {/* --- option dialog --- */}
+      <Dialog open={optionDialog !== null} onOpenChange={(open) => !open && setOptionDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Agregar opcion</DialogTitle>
+            <DialogTitle>
+              {optionDialog?.mode === 'edit' ? 'Editar opcion' : 'Agregar opcion'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Grupo</Label>
               <Input
-                value={newOptionGroup}
-                onChange={(e) => setNewOptionGroup(e.target.value)}
+                value={optionForm.group}
+                onChange={(e) => setOptionForm((f) => ({ ...f, group: e.target.value }))}
                 placeholder="Extras, Salsas, Toppings..."
               />
             </div>
             <div className="space-y-1">
               <Label>Nombre</Label>
               <Input
-                value={newOptionName}
-                onChange={(e) => setNewOptionName(e.target.value)}
+                value={optionForm.name}
+                onChange={(e) => setOptionForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="Queso extra"
               />
             </div>
             <div className="space-y-1">
               <Label>Precio adicional (0 si no aplica)</Label>
-              <Input
-                type="number"
-                value={newOptionDelta}
-                onChange={(e) => setNewOptionDelta(e.target.value)}
+              <MoneyInput
+                value={optionForm.delta}
+                onChange={(v) => setOptionForm((f) => ({ ...f, delta: v }))}
                 placeholder="3000"
+                className="w-full"
               />
             </div>
-            <Button className="w-full" onClick={handleCreateOption}>
-              Crear opcion
+            <Button className="w-full" onClick={handleSaveOption}>
+              {optionDialog?.mode === 'edit' ? 'Guardar cambios' : 'Crear opcion'}
             </Button>
           </div>
         </DialogContent>

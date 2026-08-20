@@ -1,34 +1,40 @@
 // Enums
 export enum RestaurantStatus {
-  ACTIVE = 'active',
-  PAUSED = 'paused',
-  SUSPENDED = 'suspended',
+  ACTIVE = "active",
+  PAUSED = "paused",
+  SUSPENDED = "suspended",
 }
 
 export enum MenuItemType {
-  SIMPLE = 'simple',
-  VARIANT = 'variant',
-  COMBO = 'combo',
+  SIMPLE = "simple",
+  VARIANT = "variant",
+  COMBO = "combo",
 }
 
 export enum OrderStatus {
-  NEW = 'new',
-  PREPARING = 'preparing',
-  READY = 'ready',
-  DELIVERING = 'delivering',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled',
+  NEW = "new",
+  PREPARING = "preparing",
+  READY = "ready",
+  DELIVERING = "delivering",
+  DELIVERED = "delivered",
+  CANCELLED = "cancelled",
 }
 
 export enum DeliveryType {
-  PICKUP = 'pickup',
-  DELIVERY = 'delivery',
+  PICKUP = "pickup",
+  DELIVERY = "delivery",
+}
+
+export enum CouponType {
+  PERCENTAGE = "percentage",
+  FIXED = "fixed",
+  FREE_DELIVERY = "free_delivery",
 }
 
 export enum UserRole {
-  OWNER = 'owner',
-  MANAGER = 'manager',
-  KITCHEN = 'kitchen',
+  OWNER = "owner",
+  MANAGER = "manager",
+  KITCHEN = "kitchen",
 }
 
 // Entities
@@ -60,11 +66,35 @@ export interface Restaurant {
   timezone: string;
   currency: string;
   status: RestaurantStatus;
+  openOverride: "open" | "closed" | null;
   customDomain: string | null;
-  socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null;
+  socialLinks: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+  } | null;
   paymentMethods: PaymentMethodsConfig;
+  theme: { primaryColor: string };
   createdAt: string;
   updatedAt: string;
+}
+
+export type CustomDomainState =
+  | "pending"
+  | "provisioning"
+  | "active"
+  | "failed";
+
+export interface CustomDomainStatus {
+  state: CustomDomainState;
+  requestedAt?: string;
+  verifiedAt?: string;
+  failedReason?: string;
+}
+
+export interface CustomDomainInfo {
+  domain: string | null;
+  status: CustomDomainStatus | null;
 }
 
 export interface OperatingHours {
@@ -141,7 +171,9 @@ export interface Order {
   deliveryZoneId: string | null;
   deliveryFee: number;
   subtotal: number;
+  discount: number;
   total: number;
+  couponCode: string | null;
   paymentMethod: string;
   receiptUrl: string | null;
   notes: string;
@@ -191,7 +223,7 @@ export interface MenuVisionItem {
   name: string;
   description: string;
   basePrice: number;
-  itemType: 'simple' | 'variant' | 'combo';
+  itemType: "simple" | "variant" | "combo";
   variants?: { name: string; priceOverride: number | null }[];
   options?: { name: string; priceDelta: number; optionGroup: string }[];
 }
@@ -228,8 +260,8 @@ export interface BulkImportResult {
 
 // Billing
 export enum PlanTier {
-  FREE = 'free',
-  PRO = 'pro',
+  FREE = "free",
+  PRO = "pro",
 }
 
 export interface Subscription {
@@ -318,6 +350,16 @@ export interface StorefrontData {
   operatingHours: OperatingHours[];
   deliveryZones: DeliveryZone[];
   showPoweredByFooter: boolean;
+  isOpen: boolean;
+  todayHours: OperatingHours | null;
+}
+
+export interface RestaurantOperatingHoursData {
+  hours: OperatingHours[];
+  isOpen: boolean;
+  todayHours: OperatingHours | null;
+  localTime: string;
+  closesAtLabel: string | null;
 }
 
 export interface StorefrontOrderResponse {
@@ -333,7 +375,9 @@ export interface TrackingOrder {
   deliveryType: DeliveryType;
   subtotal: number;
   deliveryFee: number;
+  discount: number;
   total: number;
+  couponCode: string | null;
   paymentMethod: string;
   receiptUrl: string | null;
   notes: string;
@@ -354,4 +398,62 @@ export interface TrackingResponse {
     paymentMethods: PaymentMethodsConfig;
     phone: string;
   };
+}
+
+// Coupons
+export interface Coupon {
+  id: string;
+  restaurantId: string;
+  code: string;
+  type: CouponType;
+  value: number;
+  minSubtotal: number;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface CouponValidation {
+  code: string;
+  type: CouponType;
+  value: number;
+  minSubtotal: number;
+  subtotal: number;
+  discount: number;
+  freeDelivery: boolean;
+}
+
+// Customers
+export interface CustomerSummary {
+  phone: string;
+  name: string;
+  address: string | null;
+  orderCount: number;
+  totalSpent: number;
+  lastOrderAt: string;
+  lastOrderCode: string;
+}
+
+// Analytics
+export interface AnalyticsOverview {
+  range: number;
+  summary: {
+    revenue: number;
+    orders: number;
+    avgTicket: number;
+    cancelled: number;
+    cancelledRate: number;
+    views: number;
+    conversionRate: number;
+  };
+  deltas: { revenue: number; orders: number };
+  daily: { date: string; revenue: number; orders: number }[];
+  topItems: {
+    menuItemId: string;
+    name: string;
+    quantity: number;
+    revenue: number;
+  }[];
+  byHour: { hour: number; orders: number; revenue: number }[];
+  status: { status: string; count: number }[];
 }

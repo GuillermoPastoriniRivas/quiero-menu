@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Logo } from '@/components/ui/logo';
+import { CookielessAnalytics } from '@/components/analytics/cookieless-analytics';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <div className="bg-surface text-on-surface">
+      <CookielessAnalytics />
       {/* TopAppBar */}
       <nav className="fixed top-0 w-full z-50 bg-white/90 bg-glass border-b border-outline-variant/30">
         <div className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
@@ -27,7 +29,7 @@ export default function LandingPage() {
               Iniciar sesion
             </Link>
             <Link
-              href="/signup"
+              href="/onboarding"
               className="gradient-cta text-white px-6 py-2.5 rounded-lg font-bold hover:opacity-90 transition-all"
             >
               Empezar gratis
@@ -49,7 +51,7 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/signup"
+                  href="/onboarding"
                   className="gradient-cta text-white px-8 py-4 rounded-lg font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform text-center"
                 >
                   Crear mi menu gratis
@@ -62,7 +64,7 @@ export default function LandingPage() {
                 </a>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative" id="demo">
               <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-primary/5 rounded-full blur-3xl" />
               {/* Smartphone Mockup */}
               <div className="relative mx-auto w-[280px] md:w-[320px] aspect-[9/19.5] bg-black rounded-[3rem] border-[8px] border-stone-800 shadow-2xl overflow-hidden">
@@ -534,7 +536,7 @@ export default function LandingPage() {
                 <MaterialIcon name="info" size="xs" />
                 Incluye la marca "Powered by quiero.menu"
               </p>
-              <Link href="/signup" className="mt-6 text-center border border-primary text-primary font-bold py-3 rounded-xl hover:bg-primary/5 transition-colors">
+              <Link href="/onboarding" className="mt-6 text-center border border-primary text-primary font-bold py-3 rounded-xl hover:bg-primary/5 transition-colors">
                 Empezar gratis
               </Link>
             </div>
@@ -570,7 +572,7 @@ export default function LandingPage() {
               <p className="text-xs text-on-surface-variant mt-4">
                 Con 4 pedidos de $15.000 sin comision lo pagas entero.
               </p>
-              <Link href="/signup" className="mt-6 text-center gradient-cta text-white font-bold py-3 rounded-xl hover:opacity-90 transition-opacity">
+              <Link href="/onboarding" className="mt-6 text-center gradient-cta text-white font-bold py-3 rounded-xl hover:opacity-90 transition-opacity">
                 Subir a Pro
               </Link>
             </div>
@@ -676,7 +678,7 @@ export default function LandingPage() {
               <h2 className="text-4xl md:text-5xl font-extrabold mb-6">Empeza a vender directo, sin intermediarios</h2>
               <p className="text-xl text-inverse-on-surface/70 mb-10 max-w-2xl mx-auto">Crea tu menu digital en 5 minutos. Gratis hasta 50 pedidos al mes.</p>
               <Link
-                href="/signup"
+                href="/onboarding"
                 className="inline-block gradient-cta text-white px-10 py-5 rounded-xl font-bold text-xl hover:scale-105 transition-transform"
               >
                 Crear mi menu gratis
@@ -702,6 +704,7 @@ export default function LandingPage() {
             <Link className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/dashboard">Panel</Link>
             <Link className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/terms">Terminos</Link>
             <Link className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/privacy">Privacidad</Link>
+            <Link className="text-sm text-on-surface-variant hover:text-primary transition-colors" href="/status">Estado</Link>
           </div>
         </div>
       </footer>

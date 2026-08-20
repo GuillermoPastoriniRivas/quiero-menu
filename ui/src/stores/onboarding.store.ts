@@ -6,6 +6,28 @@ import type { MenuVisionOutput, BulkImportResult } from '@/types';
 
 type Step = 'upload' | 'analyzing' | 'preview' | 'importing' | 'done';
 
+const STORAGE_KEY = 'qm-pending-menu';
+
+function loadPendingMenu(): MenuVisionOutput | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function savePendingMenu(result: MenuVisionOutput | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (result) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+    else sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Storage puede fallar en modo privado; el estado en memoria sigue vivo.
+  }
+}
+
 interface OnboardingState {
   step: Step;
   images: File[];
@@ -26,13 +48,16 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   step: 'upload',
   images: [],
   additionalText: '',
-  aiResult: null,
+  aiResult: loadPendingMenu(),
   importResult: null,
   error: null,
 
   setImages: (files) => set({ images: files, error: null }),
   setText: (text) => set({ additionalText: text }),
-  updateResult: (result) => set({ aiResult: result }),
+  updateResult: (result) => {
+    set({ aiResult: result });
+    savePendingMenu(result);
+  },
 
   analyzeMenu: async () => {
     const { images, additionalText } = get();
@@ -46,9 +71,11 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       if (additionalText.trim()) {
         formData.append('text', additionalText.trim());
       }
+      formData.append('currency', 'ARS');
 
       const result = await api.postFormData<MenuVisionOutput>('/onboarding/analyze', formData);
       set({ aiResult: result, step: 'preview' });
+      savePendingMenu(result);
     } catch (e: any) {
       set({ error: e.message || 'Error al analizar el menu', step: 'upload' });
     }
@@ -63,17 +90,21 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     try {
       const res = await api.post<{ success: boolean; counts: BulkImportResult }>('/onboarding/import', aiResult);
       set({ importResult: res.counts, step: 'done' });
+      savePendingMenu(null);
     } catch (e: any) {
       set({ error: e.message || 'Error al importar el menu', step: 'preview' });
     }
   },
 
-  reset: () => set({
-    step: 'upload',
-    images: [],
-    additionalText: '',
-    aiResult: null,
-    importResult: null,
-    error: null,
-  }),
+  reset: () => {
+    savePendingMenu(null);
+    set({
+      step: 'upload',
+      images: [],
+      additionalText: '',
+      aiResult: null,
+      importResult: null,
+      error: null,
+    });
+  },
 }));
