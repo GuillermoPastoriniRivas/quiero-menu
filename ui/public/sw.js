@@ -1,5 +1,5 @@
 /* quiero.menu service worker - offline-first for the static export */
-const VERSION = 'qm-v3';
+const VERSION = 'qm-v4';
 const CACHE = `quiero-menu-${VERSION}`;
 const PRECACHE = 'quiero-menu-precache';
 
@@ -65,22 +65,24 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET' || !shouldCache(new URL(request.url))) return;
 
-  // Navigation requests: serve cached HTML, fallback to network
+  // Navigation requests: network-first so stale cached HTML never points to
+  // hashed chunks that a new deploy removed (previously: stale HTML + 200 HTML
+  // fallback from nginx for missing JS = "Unexpected token '<'" and the app
+  // never boots). Fallback to cache, then offline page.
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((resp) => {
-          if (resp && resp.ok) {
-            const copy = resp.clone();
-            caches.open(CACHE).then((c) => c.put(request, copy));
-          }
-          return resp;
-        }).catch(() => {
-          // Offline: fallback to the offline page
+      fetch(request).then((resp) => {
+        if (resp && resp.ok) {
+          const copy = resp.clone();
+          caches.open(CACHE).then((c) => c.put(request, copy));
+        }
+        return resp;
+      }).catch(() =>
+        caches.match(request).then((cached) => {
+          if (cached) return cached;
           return caches.match('/offline.html');
-        });
-      })
+        })
+      )
     );
     return;
   }

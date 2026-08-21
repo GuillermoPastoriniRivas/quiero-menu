@@ -81,7 +81,7 @@ jobs:
           host: ${{ secrets.SHARED_EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.SHARED_EC2_SSH_KEY }}
-          source: "quiero-menu-static.tar.gz,infra/scripts/hydrate-env.sh"
+          source: "quiero-menu-static.tar.gz,infra/scripts/hydrate-env.sh,infra/nginx/shared/20-quiero-menu.conf"
           target: ${{ env.APP_DIR }}
 
       - name: Activate quiero-menu API and static UI
