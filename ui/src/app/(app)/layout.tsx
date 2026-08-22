@@ -5,6 +5,14 @@ import { MobileUserMenu } from "@/components/layout/mobile-user-menu";
 import { OpenStatusProvider } from "@/components/layout/open-status-provider";
 import { OpenStatusBadge } from "@/components/layout/open-status-badge";
 import { Logo } from "@/components/ui/logo";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (

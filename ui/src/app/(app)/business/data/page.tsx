@@ -85,7 +85,7 @@ export default function BusinessDataPage() {
       setSlug(candidate);
       const user = useAuthStore.getState().user;
       if (user) {
-        useAuthStore.setState({ user: { ...user, restaurantSlug: candidate } });
+        useAuthStore.getState().setUser({ ...user, restaurantSlug: candidate });
       }
       toast.success("URL actualizada");
     } catch (e) {
