@@ -27,8 +27,20 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Quiero Menu - Menu digital para restaurantes",
-  description: "Crea tu menu digital y recibe pedidos por WhatsApp",
+  metadataBase: new URL("https://quiero.menu"),
+  title: {
+    default: "Menu Digital Gratis para Restaurantes | quiero.menu",
+    template: "%s | quiero.menu",
+  },
+  description: "Crea tu menu digital gratis, sin tarjeta. Recibi pedidos directos por WhatsApp o QR, sin comisiones por pedido.",
+  keywords: [
+    "menu digital gratis",
+    "menu digital",
+    "menu QR gratis",
+    "carta digital gratis",
+    "menu online restaurante",
+    "pedidos por whatsapp",
+  ],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -36,6 +48,22 @@ export const metadata: Metadata = {
     title: "Quiero",
   },
   applicationName: "Quiero",
+  category: "BusinessApplication",
+  openGraph: {
+    type: "website",
+    locale: "es_AR",
+    url: "https://quiero.menu",
+    siteName: "quiero.menu",
+    title: "Menu Digital Gratis para Restaurantes | quiero.menu",
+    description: "Crea tu menu digital gratis, sin tarjeta. Recibi pedidos directos por WhatsApp o QR, sin comisiones por pedido.",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "quiero.menu - Menu digital gratis para restaurantes" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Menu Digital Gratis para Restaurantes | quiero.menu",
+    description: "Crea tu menu digital gratis, sin tarjeta. Recibi pedidos directos por WhatsApp o QR, sin comisiones por pedido.",
+    images: ["/og.png"],
+  },
   icons: {
     icon: [{ url: "/icon-192.png", type: "image/png", sizes: "192x192" }, { url: "/icon.svg", type: "image/svg+xml", sizes: "any" }],
     apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
@@ -48,7 +76,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${plusJakartaSans.variable} ${inter.variable} ${poppins.variable} h-full antialiased`}>
+    <html lang="es-AR" className={`${plusJakartaSans.variable} ${inter.variable} ${poppins.variable} h-full antialiased`}>
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" sizes="any" />
         <link rel="manifest" href="/manifest.json" />

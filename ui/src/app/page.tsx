@@ -5,14 +5,122 @@ import { CookielessAnalytics } from '@/components/analytics/cookieless-analytics
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'quiero.menu | Tu menu digital sin comisiones',
-  description: 'Mostra tu menu online y recibi pedidos directos por WhatsApp. Sin comisiones. Gratis.',
+  title: { absolute: 'Menu Digital Gratis | Crea tu menu online en 5 minutos' },
+  description:
+    'Crea tu menu digital gratis y sin tarjeta. Compartilo por WhatsApp o con un QR en tu local y recibi pedidos directos, sin comisiones por pedido.',
+  keywords: [
+    'menu digital gratis',
+    'menu digital',
+    'menu QR gratis',
+    'carta digital gratis',
+    'menu online restaurante',
+    'pedidos por whatsapp',
+  ],
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'es_AR',
+    url: 'https://quiero.menu',
+    siteName: 'quiero.menu',
+    title: 'Menu Digital Gratis | Crea tu menu online en 5 minutos',
+    description:
+      'Crea tu menu digital gratis y sin tarjeta. Compartilo por WhatsApp o con un QR en tu local y recibi pedidos directos, sin comisiones por pedido.',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'quiero.menu - Menu digital gratis para restaurantes' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Menu Digital Gratis | Crea tu menu online en 5 minutos',
+    description:
+      'Crea tu menu digital gratis y sin tarjeta. Compartilo por WhatsApp o con un QR en tu local y recibi pedidos directos, sin comisiones por pedido.',
+    images: ['/og.png'],
+  },
 };
+
+const faqs = [
+  {
+    q: 'Como reciben mis clientes el menu?',
+    a: 'Tus clientes acceden mediante un enlace directo o escaneando un codigo QR en tu local, sin necesidad de descargar ninguna aplicacion.',
+  },
+  {
+    q: 'Cuanto tardo en configurar todo?',
+    a: 'Podes tener tu menu listo en menos de 10 minutos. Nuestra herramienta de IA te ayuda a cargar tus platos si ya tenes una foto de tu menu fisico.',
+  },
+  {
+    q: 'Como cobro los pedidos?',
+    a: 'Como ya lo haces hoy: en efectivo al retirar o contra entrega, o por transferencia. Quiero.menu te muestra los datos de tu banco al cliente y el comprobante lo sube directamente en el seguimiento del pedido.',
+  },
+  {
+    q: 'Como me entero de un pedido nuevo?',
+    a: 'Recibis una notificacion sonora en tu panel de control y, opcionalmente, el pedido armado directamente en tu WhatsApp.',
+  },
+  {
+    q: 'Hay limite de productos o categorias?',
+    a: 'No, podes cargar todos los productos y categorias que necesites para organizar tu carta de la mejor manera.',
+  },
+  {
+    q: 'Que pasa si me quedo sin stock de algo?',
+    a: 'Podes pausar cualquier producto en tiempo real desde tu celular y dejara de aparecer como disponible para tus clientes de inmediato.',
+  },
+];
+
+const webSiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'quiero.menu',
+  url: 'https://quiero.menu',
+  description:
+    'Crea tu menu digital gratis para tu restaurante y recibi pedidos directos por WhatsApp o QR, sin comisiones por pedido.',
+  inLanguage: 'es-AR',
+};
+
+const softwareApplicationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'quiero.menu',
+  url: 'https://quiero.menu',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description:
+    'Menu digital gratis con pedidos directos por WhatsApp o QR, seguimiento del pedido en vivo y pagos por transferencia o efectivo.',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'ARS',
+    description: 'Plan gratuito hasta 50 pedidos al mes. Plan Pro ARS 15.000 al mes.',
+  },
+};
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a,
+    },
+  })),
+};
+
+function JsonLd({ data }: { data: Record<string, unknown> }) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
+    />
+  );
+}
 
 export default function LandingPage() {
   return (
     <div className="bg-surface text-on-surface">
       <CookielessAnalytics />
+      <JsonLd data={webSiteJsonLd} />
+      <JsonLd data={softwareApplicationJsonLd} />
+      <JsonLd data={faqJsonLd} />
       {/* TopAppBar */}
       <nav className="fixed top-0 w-full z-50 bg-white/90 bg-glass border-b border-outline-variant/30">
         <div className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
@@ -25,12 +133,15 @@ export default function LandingPage() {
             <a className="text-on-surface-variant font-medium hover:text-primary transition-colors font-[family-name:var(--font-heading)]" href="#precios">Precios</a>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="hidden md:block text-on-surface-variant font-semibold hover:text-primary transition-colors font-[family-name:var(--font-heading)]">
-              Iniciar sesion
+            <Link
+              href="/login"
+              className="text-on-surface-variant font-semibold hover:text-primary transition-colors font-[family-name:var(--font-heading)]"
+            >
+              Iniciar sesión
             </Link>
             <Link
               href="/onboarding"
-              className="gradient-cta text-white px-6 py-2.5 rounded-lg font-bold hover:opacity-90 transition-all"
+              className="hidden md:inline-block gradient-cta text-white px-6 py-2.5 rounded-lg font-bold hover:opacity-90 transition-all"
             >
               Empezar gratis
             </Link>
@@ -47,7 +158,7 @@ export default function LandingPage() {
                 Tu menu digital. <span className="text-primary">Pedidos directos.</span> Sin comisiones.
               </h1>
               <p className="text-xl text-on-surface-variant max-w-lg leading-relaxed">
-                Mostra tu menu online y recibi pedidos directos. Sin pagar 30% de comision a nadie. Comparti tu link por WhatsApp, redes sociales o con un QR en tu local.
+                Crea tu menu en minutos, compartilo por WhatsApp o con QR en tu local, y recibi los pedidos directo en tu telefono.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
@@ -58,7 +169,7 @@ export default function LandingPage() {
                 </Link>
                 <a
                   href="#demo"
-                  className="bg-white text-primary border border-primary/20 px-8 py-4 rounded-lg font-bold text-lg hover:bg-surface-container-low transition-colors text-center"
+                  className="hidden md:inline-block bg-white text-primary border border-primary/20 px-8 py-4 rounded-lg font-bold text-lg hover:bg-surface-container-low transition-colors text-center"
                 >
                   Ver demo en vivo
                 </a>
@@ -176,63 +287,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Competitive Comparison */}
-        <section className="bg-white py-24">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4">Basta de repartir tus ganancias</h2>
-              <p className="text-on-surface-variant text-lg">Compara y elegi la mejor opcion para tu negocio.</p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <div className="bg-surface p-8 rounded-2xl border border-outline-variant/30">
-                <div className="flex items-center gap-3 mb-6 text-on-surface-variant font-bold">
-                  <MaterialIcon name="cancel" />
-                  Apps de Delivery
-                </div>
-                <ul className="space-y-4 text-on-surface-variant">
-                  <li className="flex items-start gap-3">
-                    <MaterialIcon name="remove" size="sm" className="text-error mt-1" />
-                    <span>Hasta 30% de comision por cada pedido.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <MaterialIcon name="remove" size="sm" className="text-error mt-1" />
-                    <span>Tus clientes son de la app, no tuyos.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <MaterialIcon name="remove" size="sm" className="text-error mt-1" />
-                    <span>Cobras hasta 15 dias despues.</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="bg-primary/5 p-8 rounded-2xl border-2 border-primary relative overflow-hidden">
-                <div className="absolute top-4 right-4 gradient-cta text-white text-[10px] font-bold px-2 py-1 rounded">MEJOR OPCION</div>
-                <div className="flex items-center gap-3 mb-6 text-primary font-bold">
-                  <MaterialIcon name="check_circle" />
-                  quiero.menu
-                </div>
-                <ul className="space-y-4 text-on-surface">
-                  <li className="flex items-start gap-3">
-                    <MaterialIcon name="add" size="sm" className="text-primary mt-1" />
-                    <span>0% de comision por pedido.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <MaterialIcon name="add" size="sm" className="text-primary mt-1" />
-                    <span>Tus clientes te contactan directo.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <MaterialIcon name="add" size="sm" className="text-primary mt-1" />
-                    <span>Cobras al momento, como quieras.</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* The math: one order pays for the whole month */}
-        <section className="py-24 px-6 max-w-7xl mx-auto">
+        <section className="bg-white py-24 px-6">
+          <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">La matematica es simple</h2>
+            <h2 className="text-4xl font-bold mb-4">Basta de repartir tus ganancias</h2>
             <p className="text-on-surface-variant text-lg">Con un solo pedido ya evitaste pagar mas que un mes de quiero.menu.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
@@ -249,24 +308,25 @@ export default function LandingPage() {
                 <div className="border-t border-error/20 pt-2 flex justify-between font-extrabold"><span>Te queda</span><span>$11.250</span></div>
               </div>
             </div>
-            <div className="bg-primary/5 rounded-2xl border-2 border-primary p-8 flex flex-col relative overflow-hidden">
+            <div className="bg-success/5 rounded-2xl border-2 border-success p-8 flex flex-col relative overflow-hidden">
               <div className="absolute top-4 right-4 gradient-cta text-white text-[10px] font-bold px-2 py-1 rounded">TODOS LOS PEDIDOS</div>
-              <div className="flex items-center gap-2 text-primary font-bold mb-4">
+              <div className="flex items-center gap-2 text-success font-bold mb-4">
                 <MaterialIcon name="trending_up" />
                 quiero.menu
               </div>
-              <p className="text-5xl font-extrabold text-primary mb-2">$0 comision</p>
+              <p className="text-5xl font-extrabold text-success mb-2">$0 comision</p>
               <p className="text-sm text-on-surface-variant mb-6">el 100% del pedido va a tu bolsillo, siempre</p>
               <div className="bg-white rounded-xl p-4 text-sm text-on-surface space-y-1 flex-1">
                 <div className="flex justify-between"><span>Pedido del cliente</span><span className="font-bold">$15.000</span></div>
-                <div className="flex justify-between text-primary"><span>Comision quiero.menu</span><span className="font-bold">$0</span></div>
-                <div className="border-t border-primary/20 pt-2 flex justify-between font-extrabold"><span>Te queda</span><span>$15.000</span></div>
+                <div className="flex justify-between text-success"><span>Comision quiero.menu</span><span className="font-bold">$0</span></div>
+                <div className="border-t border-success/20 pt-2 flex justify-between font-extrabold"><span>Te queda</span><span>$15.000</span></div>
               </div>
             </div>
           </div>
           <p className="text-center text-on-surface-variant mt-8 max-w-2xl mx-auto">
             Pro cuesta <span className="font-bold text-on-surface">AR$15.000 al mes</span>. Con 4 pedidos de $15.000 evitando el 25% de comision, te lo pagaste entero.
           </p>
+          </div>
         </section>
 
         {/* Process */}
@@ -636,32 +696,7 @@ export default function LandingPage() {
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12">Preguntas frecuentes</h2>
             <div className="space-y-4">
-              {[
-                {
-                  q: 'Como reciben mis clientes el menu?',
-                  a: 'Tus clientes acceden mediante un enlace directo o escaneando un codigo QR en tu local, sin necesidad de descargar ninguna aplicacion.',
-                },
-                {
-                  q: 'Cuanto tardo en configurar todo?',
-                  a: 'Podes tener tu menu listo en menos de 10 minutos. Nuestra herramienta de IA te ayuda a cargar tus platos si ya tenes una foto de tu menu fisico.',
-                },
-                {
-                  q: 'Como cobro los pedidos?',
-                  a: 'Como ya lo haces hoy: en efectivo al retirar o contra entrega, o por transferencia. Quiero.menu te muestra los datos de tu banco al cliente y el comprobante lo sube directamente en el seguimiento del pedido.',
-                },
-                {
-                  q: 'Como me entero de un pedido nuevo?',
-                  a: 'Recibis una notificacion sonora en tu panel de control y, opcionalmente, el pedido armado directamente en tu WhatsApp.',
-                },
-                {
-                  q: 'Hay limite de productos o categorias?',
-                  a: 'No, podes cargar todos los productos y categorias que necesites para organizar tu carta de la mejor manera.',
-                },
-                {
-                  q: 'Que pasa si me quedo sin stock de algo?',
-                  a: 'Podes pausar cualquier producto en tiempo real desde tu celular y dejara de aparecer como disponible para tus clientes de inmediato.',
-                },
-              ].map((faq) => (
+              {faqs.map((faq) => (
                 <details key={faq.q} className="group bg-surface rounded-xl p-6 [&_summary::-webkit-details-marker]:hidden">
                   <summary className="flex justify-between items-center cursor-pointer font-bold text-lg">
                     {faq.q}

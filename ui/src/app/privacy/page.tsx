@@ -2,8 +2,11 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Politica de Privacidad | quiero.menu',
+  title: 'Politica de Privacidad',
   description: 'Politica de privacidad y proteccion de datos personales de quiero.menu',
+  alternates: {
+    canonical: '/privacy',
+  },
 };
 
 export default function PrivacyPage() {

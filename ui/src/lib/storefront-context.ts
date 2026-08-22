@@ -2,8 +2,10 @@ export const KNOWN_HOSTS = ['quiero.menu', 'www.quiero.menu', 'localhost'];
 
 export function isCustomDomainHost(): boolean {
   if (typeof window === 'undefined') return false;
-  const host = window.location.host;
-  return !KNOWN_HOSTS.includes(host) && !host.endsWith('.vercel.app');
+  const hostname = window.location.hostname;
+  return (
+    !KNOWN_HOSTS.includes(hostname) && !hostname.endsWith('.vercel.app')
+  );
 }
 
 /**

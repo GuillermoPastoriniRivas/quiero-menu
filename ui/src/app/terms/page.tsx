@@ -2,8 +2,11 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Terminos y Condiciones | quiero.menu',
+  title: 'Terminos y Condiciones',
   description: 'Terminos y condiciones de uso de la plataforma quiero.menu',
+  alternates: {
+    canonical: '/terms',
+  },
 };
 
 export default function TermsPage() {

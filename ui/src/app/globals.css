@@ -90,6 +90,12 @@
   --color-on-error: var(--on-error);
   --color-on-error-container: var(--on-error-container);
 
+  /* Success extended */
+  --color-success: var(--success);
+  --color-success-container: var(--success-container);
+  --color-on-success: var(--on-success);
+  --color-on-success-container: var(--on-success-container);
+
   /* Inverse */
   --color-inverse-surface: var(--inverse-surface);
   --color-inverse-on-surface: var(--inverse-on-surface);
@@ -151,6 +157,12 @@
   --on-error: #ffffff;
   --on-error-container: #93000a;
   --destructive: #ba1a1a;
+
+  /* Success */
+  --success: #33691e;
+  --success-container: #e9f1e0;
+  --on-success: #ffffff;
+  --on-success-container: #1d3312;
 
   /* Inverse */
   --inverse-surface: #3d2d29;
@@ -234,6 +246,11 @@
   --on-error: #690005;
   --on-error-container: #ffdad6;
   --destructive: #ffb4ab;
+
+  --success: #9ccb8e;
+  --success-container: #1d3312;
+  --on-success: #0e1a08;
+  --on-success-container: #e9f1e0;
 
   --inverse-surface: #ffede9;
   --inverse-on-surface: #3d2d29;
