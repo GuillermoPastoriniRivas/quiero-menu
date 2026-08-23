@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Inter, Poppins } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { RegisterSW } from "@/components/register-sw";
 import { SentryInit } from "@/components/sentry-init";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -94,6 +95,7 @@ export default function RootLayout({
         {children}
         <RegisterSW />
         <SentryInit />
+        <GoogleAnalytics />
         <Toaster />
       </body>
     </html>
