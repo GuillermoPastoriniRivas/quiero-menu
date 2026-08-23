@@ -450,11 +450,7 @@ const useCaseProviders = [
   },
   {
     provide: 'ListActiveStorefrontsUseCase',
-    useFactory: (
-      restRepo: any,
-      catRepo: any,
-      itemRepo: any,
-    ) =>
+    useFactory: (restRepo: any, catRepo: any, itemRepo: any) =>
       new ListActiveStorefrontsUseCase(restRepo, catRepo, itemRepo),
     inject: [
       'RestaurantRepository',
