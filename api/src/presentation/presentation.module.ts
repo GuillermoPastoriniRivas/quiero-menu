@@ -11,6 +11,7 @@ import { RolesGuard } from './guards/roles.guard.js';
 // Controllers
 import { AuthController } from './controllers/auth.controller.js';
 import { StorefrontController } from './controllers/storefront.controller.js';
+import { StorefrontsIndexController } from './controllers/storefronts-index.controller.js';
 import { RestaurantController } from './controllers/restaurant.controller.js';
 import { MenuController } from './controllers/menu.controller.js';
 import { OrderController } from './controllers/order.controller.js';
@@ -47,6 +48,7 @@ import { ResetPasswordUseCase } from '../application/use-cases/auth/reset-passwo
 // Use Cases — Restaurant
 import { GetRestaurantUseCase } from '../application/use-cases/restaurant/get-restaurant.use-case.js';
 import { GetRestaurantBySlugUseCase } from '../application/use-cases/restaurant/get-restaurant-by-slug.use-case.js';
+import { ListActiveStorefrontsUseCase } from '../application/use-cases/restaurant/list-active-storefronts.use-case.js';
 import { UpdateRestaurantUseCase } from '../application/use-cases/restaurant/update-restaurant.use-case.js';
 import { UpdateOperatingHoursUseCase } from '../application/use-cases/restaurant/update-operating-hours.use-case.js';
 import { GetRestaurantOperatingHoursUseCase } from '../application/use-cases/restaurant/get-restaurant-operating-hours.use-case.js';
@@ -444,6 +446,20 @@ const useCaseProviders = [
       'OperatingHoursRepository',
       'DeliveryZoneRepository',
       'SubscriptionRepository',
+    ],
+  },
+  {
+    provide: 'ListActiveStorefrontsUseCase',
+    useFactory: (
+      restRepo: any,
+      catRepo: any,
+      itemRepo: any,
+    ) =>
+      new ListActiveStorefrontsUseCase(restRepo, catRepo, itemRepo),
+    inject: [
+      'RestaurantRepository',
+      'MenuCategoryRepository',
+      'MenuItemRepository',
     ],
   },
   {
@@ -945,6 +961,7 @@ const useCaseProviders = [
     HealthController,
     AuthController,
     StorefrontController,
+    StorefrontsIndexController,
     RestaurantController,
     MenuController,
     OrderController,

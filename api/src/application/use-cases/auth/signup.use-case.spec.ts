@@ -87,6 +87,7 @@ describe('SignupUseCase', () => {
         ),
       findById: jest.fn(),
       findBySlug: jest.fn().mockResolvedValue(null),
+      findByStatus: jest.fn().mockResolvedValue([]),
       findByCustomDomain: jest.fn().mockResolvedValue(null),
       listByCustomDomainState: jest.fn().mockResolvedValue([]),
       listStaleCustomDomainProvisioning: jest.fn().mockResolvedValue([]),

@@ -31,6 +31,16 @@ export class MongoMenuCategoryRepository implements MenuCategoryRepository {
     return docs.map(MenuCategoryMapper.toDomain);
   }
 
+  async findByRestaurantIds(
+    restaurantIds: string[],
+  ): Promise<MenuCategory[]> {
+    const ids = restaurantIds.map((id) => new Types.ObjectId(id));
+    const docs = await this.model
+      .find({ restaurantId: { $in: ids } })
+      .sort({ displayOrder: 1 });
+    return docs.map(MenuCategoryMapper.toDomain);
+  }
+
   async findById(id: string): Promise<MenuCategory | null> {
     const doc = await this.model.findById(id);
     return doc ? MenuCategoryMapper.toDomain(doc) : null;

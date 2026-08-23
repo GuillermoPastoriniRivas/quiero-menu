@@ -82,6 +82,7 @@ describe('LoginUseCase', () => {
     const restaurantRepo: RestaurantRepository = {
       create: jest.fn(),
       findBySlug: jest.fn(),
+      findByStatus: jest.fn().mockResolvedValue([]),
       findById: jest.fn().mockResolvedValue(restaurant),
       findByCustomDomain: jest.fn().mockResolvedValue(null),
       listByCustomDomainState: jest.fn().mockResolvedValue([]),

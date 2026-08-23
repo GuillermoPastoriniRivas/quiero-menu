@@ -1,4 +1,5 @@
 import { Restaurant } from '../entities/restaurant.entity.js';
+import { RestaurantStatus } from '../enums/restaurant-status.enum.js';
 
 export interface RestaurantRepository {
   create(
@@ -6,6 +7,7 @@ export interface RestaurantRepository {
   ): Promise<Restaurant>;
   findById(id: string): Promise<Restaurant | null>;
   findBySlug(slug: string): Promise<Restaurant | null>;
+  findByStatus(status: RestaurantStatus): Promise<Restaurant[]>;
   findByCustomDomain(domain: string): Promise<Restaurant | null>;
   listByCustomDomainState(
     state: 'pending' | 'provisioning' | 'active' | 'failed',

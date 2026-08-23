@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RestaurantRepository } from '../../../../domain/repositories/restaurant.repository.js';
 import { Restaurant } from '../../../../domain/entities/restaurant.entity.js';
+import { RestaurantStatus } from '../../../../domain/enums/restaurant-status.enum.js';
 import {
   RestaurantModel,
   RestaurantDocument,
@@ -31,6 +32,11 @@ export class MongoRestaurantRepository implements RestaurantRepository {
   async findBySlug(slug: string): Promise<Restaurant | null> {
     const doc = await this.model.findOne({ slug });
     return doc ? RestaurantMapper.toDomain(doc) : null;
+  }
+
+  async findByStatus(status: RestaurantStatus): Promise<Restaurant[]> {
+    const docs = await this.model.find({ status });
+    return docs.map((doc) => RestaurantMapper.toDomain(doc));
   }
 
   async findByCustomDomain(domain: string): Promise<Restaurant | null> {

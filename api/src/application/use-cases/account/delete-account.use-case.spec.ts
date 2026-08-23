@@ -75,6 +75,7 @@ describe('DeleteAccountUseCase', () => {
       create: jest.fn(),
       findById: jest.fn().mockResolvedValue({ id: 'r1', slug: 'resto' }),
       findBySlug: jest.fn(),
+      findByStatus: jest.fn().mockResolvedValue([]),
       findByCustomDomain: jest.fn().mockResolvedValue(null),
       listByCustomDomainState: jest.fn().mockResolvedValue([]),
       listStaleCustomDomainProvisioning: jest.fn().mockResolvedValue([]),
@@ -84,6 +85,7 @@ describe('DeleteAccountUseCase', () => {
     const categoryRepo: MenuCategoryRepository = {
       create: jest.fn(),
       findByRestaurantId: jest.fn().mockResolvedValue([{ id: 'c1' }]),
+      findByRestaurantIds: jest.fn().mockResolvedValue([]),
       findById: jest.fn(),
       update: jest.fn(),
       delete: jest.fn().mockResolvedValue(true),
@@ -93,6 +95,7 @@ describe('DeleteAccountUseCase', () => {
     const itemRepo: MenuItemRepository = {
       create: jest.fn(),
       findByRestaurantId: jest.fn(),
+      findByRestaurantIds: jest.fn().mockResolvedValue([]),
       findByCategoryId: jest.fn().mockResolvedValue([{ id: 'i1' }]),
       findById: jest.fn(),
       update: jest.fn(),

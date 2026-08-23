@@ -3,6 +3,7 @@ import { MenuCategory } from '../entities/menu-category.entity.js';
 export interface MenuCategoryRepository {
   create(data: Omit<MenuCategory, 'id'>): Promise<MenuCategory>;
   findByRestaurantId(restaurantId: string): Promise<MenuCategory[]>;
+  findByRestaurantIds(restaurantIds: string[]): Promise<MenuCategory[]>;
   findById(id: string): Promise<MenuCategory | null>;
   update(
     id: string,
