@@ -1,11 +1,21 @@
 import type { MetadataRoute } from 'next';
+import { getStorefrontIndex } from '@/lib/storefront-index';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 const BASE_URL = 'https://quiero.menu';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const index = await getStorefrontIndex();
+
+  const storefronts: MetadataRoute.Sitemap = index.map((entry) => ({
+    url: `${BASE_URL}/${entry.slug}`,
+    lastModified: entry.updatedAt,
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
   return [
     {
       url: BASE_URL,
@@ -25,5 +35,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    ...storefronts,
   ];
 }

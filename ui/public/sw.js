@@ -1,32 +1,19 @@
-/* quiero.menu service worker - offline-first for the static export */
-const VERSION = 'qm-v4';
+/* quiero.menu service worker - offline-first (SSR) */
+const VERSION = 'qm-v5';
 const CACHE = `quiero-menu-${VERSION}`;
 const PRECACHE = 'quiero-menu-precache';
 
 const PRECACHE_URLS = [
   '/',
-  '/index.html',
   '/offline.html',
   '/login',
-  '/login.html',
   '/signup',
-  '/signup.html',
   '/dashboard',
-  '/dashboard.html',
   '/orders',
-  '/orders.html',
   '/menu',
-  '/menu.html',
   '/settings',
-  '/settings.html',
   '/publicar',
-  '/publicar.html',
   '/onboarding',
-  '/onboarding.html',
-  '/__dynamic__.html',
-  '/tracking/__dynamic__.html',
-  '/kitchen/__dynamic__.html',
-  '/delivery/__dynamic__.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',

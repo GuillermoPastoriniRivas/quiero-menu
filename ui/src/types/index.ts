@@ -339,6 +339,16 @@ export interface PaginatedResponse<T> {
   meta: { total: number; page: number; pages: number };
 }
 
+export interface StorefrontIndexEntry {
+  slug: string;
+  name: string;
+  city: string;
+  description: string;
+  logoUrl: string;
+  bannerUrl: string;
+  updatedAt: string;
+}
+
 export interface StorefrontData {
   restaurant: Restaurant;
   categories: (MenuCategory & {

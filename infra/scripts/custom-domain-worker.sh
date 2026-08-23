@@ -14,6 +14,7 @@
 #   QM_SHARED_DIR      (def: ~/shared) — APP_DIR del host compartido
 #   QM_TLS_EMAIL       (def: contact@quiero.menu)
 #   QM_UPSTREAM        (def: quiero-menu-api:3000) — servicio del API en la red compartida
+#   QM_UI_UPSTREAM     (def: quiero-menu-ui:3002) — server SSR de Next en la red compartida
 #   QM_PUBLIC_IP       (opcional) — IP pública del host; si está, valida que el
 #                      dominio resuelva a ella antes de emitir el certificado
 #
@@ -31,6 +32,7 @@ NGINX_ENABLED="$SHARED/nginx-enabled"
 CERTBOT_WEBROOT="$SHARED/certbot"
 TLS_EMAIL="${QM_TLS_EMAIL:-contact@quiero.menu}"
 UPSTREAM="${QM_UPSTREAM:-quiero-menu-api:3000}"
+UI_UPSTREAM="${QM_UI_UPSTREAM:-quiero-menu-ui:3002}"
 VHOST_PREFIX="99-custom-"
 LOCK="$SHARED/.custom-domain-worker.lock"
 
@@ -135,8 +137,14 @@ server {
     }
 
     location / {
-        root /usr/share/nginx/html/quiero-menu;
-        try_files \$uri /quiero-menu/__dynamic__.html;
+        proxy_pass http://$UI_UPSTREAM/__dynamic__;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 }
 EOF

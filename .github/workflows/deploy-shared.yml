@@ -10,6 +10,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   ECR_API: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/quiero-menu/api
+  ECR_UI: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/quiero-menu/ui
   APP_DIR: /home/ubuntu/shared
 
 jobs:
@@ -66,26 +67,24 @@ jobs:
             -t ${{ env.ECR_API }}:${{ github.sha }} \
             -t ${{ env.ECR_API }}:latest ./api
 
-      - name: Build static UI
-        working-directory: ui
-        env:
-          NEXT_PUBLIC_API_URL: https://quiero.menu/api
-          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+      - name: Build and push ARM UI (SSR standalone)
         run: |
-          npm ci
-          npm run build
-          tar -czf ../quiero-menu-static.tar.gz -C out .
+          docker buildx build --platform linux/arm64 --push \
+            --build-arg NEXT_PUBLIC_API_URL=https://quiero.menu/api \
+            --build-arg NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }} \
+            -t ${{ env.ECR_UI }}:${{ github.sha }} \
+            -t ${{ env.ECR_UI }}:latest ./ui
 
-      - name: Copy static UI
+      - name: Copy configs and scripts
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SHARED_EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.SHARED_EC2_SSH_KEY }}
-          source: "quiero-menu-static.tar.gz,infra/scripts/hydrate-env.sh,infra/nginx/shared/20-quiero-menu.conf"
+          source: "infra/scripts/hydrate-env.sh,infra/nginx/shared/20-quiero-menu.conf"
           target: ${{ env.APP_DIR }}
 
-      - name: Activate quiero-menu API and static UI
+      - name: Deploy API and UI containers
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SHARED_EC2_HOST }}
@@ -94,20 +93,27 @@ jobs:
           script: |
             set -euo pipefail
             cd ${{ env.APP_DIR }}
-            mkdir -p static/quiero-menu quiero-menu/api nginx-enabled certbot
+            mkdir -p quiero-menu/api nginx-enabled certbot
 
             chmod +x infra/scripts/hydrate-env.sh
             bash infra/scripts/hydrate-env.sh /quiero-menu/api ./quiero-menu/api/.env
             test -s ./quiero-menu/api/.env
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
             docker pull ${{ env.ECR_API }}:latest
             docker tag ${{ env.ECR_API }}:latest shared-quiero-menu-api:latest
-
-            rm -rf static/quiero-menu
-            mkdir -p static/quiero-menu
-            tar -xzf quiero-menu-static.tar.gz -C static/quiero-menu
+            docker pull ${{ env.ECR_UI }}:latest
+            docker tag ${{ env.ECR_UI }}:latest shared-quiero-menu-ui:latest
 
             docker compose -f docker-compose.yml up -d --no-deps quiero-menu-api
+            docker compose -f docker-compose.yml up -d --no-deps quiero-menu-ui
+
+            # Esperar a que la UI responda antes de apuntarle nginx
+            for i in $(seq 1 30); do
+              ok=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/ || true)
+              [ "$ok" = "200" ] && break
+              sleep 4
+            done
 
             if ! sudo test -f /etc/letsencrypt/live/quiero.menu/fullchain.pem; then
               sudo certbot certonly --webroot -w "$PWD/certbot" --non-interactive --agree-tos \
@@ -119,15 +125,19 @@ jobs:
             docker exec shared-nginx nginx -t
             docker exec shared-nginx nginx -s reload
 
-            rm -f quiero-menu-static.tar.gz
             docker image prune -f
 
       - name: Verify quiero-menu is serving
         run: |
-          for i in $(seq 1 10); do
+          ok=0
+          for i in $(seq 1 12); do
             code=$(curl -s -o /dev/null -w '%{http_code}' https://quiero.menu/api/v1/health || true)
-            [ "$code" = "200" ] && echo "quiero.menu/api/v1/health OK" && exit 0
+            root=$(curl -s -o /dev/null -w '%{http_code}' https://quiero.menu/ || true)
+            if [ "$code" = "200" ] && [ "$root" = "200" ]; then
+              echo "quiero.menu OK (api=$code root=$root)"
+              exit 0
+            fi
             sleep 6
           done
-          echo "quiero.menu/api/v1/health no respondió 200 (último: ${code:-sin respuesta})"
+          echo "quiero.menu no respondió 200 (api=${code:-sin respuesta}, root=${root:-sin respuesta})"
           exit 1
