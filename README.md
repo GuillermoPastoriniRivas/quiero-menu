@@ -60,5 +60,5 @@ quiero-menu/
 ---
 
 <div align="center">
-<sub>Built by <a href="https://github.com/GuillermoPastoriniRivas">Guillermo Pastorini</a></sub>
+<sub>Built by the quiero.menu team</sub>
 </div>

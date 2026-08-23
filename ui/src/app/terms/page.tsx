@@ -40,9 +40,7 @@ export default function TermsPage() {
               <strong>Datos del responsable:</strong>
             </p>
             <ul>
-              <li>Titular: Guillermo Rene Pastorini Rivas</li>
-              <li>Argentina: CUIT 20-95431673-8 — Maximo Alvarez 421, Concepcion del Uruguay, Entre Rios, Argentina — Tel: 03442670825</li>
-              <li>Uruguay: RUT 150788960019 — Charruas 727, Paysandu, Uruguay — Tel: 091260680</li>
+              <li>Responsable: quiero.menu</li>
               <li>Email: legal@quiero.menu</li>
             </ul>
             <p>
