@@ -35,7 +35,7 @@ export async function generateMetadata({
   const image = entry.logoUrl || entry.bannerUrl || undefined;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical: url },
     keywords: ["menú digital", entry.name, ...(entry.city ? [entry.city] : [])],
