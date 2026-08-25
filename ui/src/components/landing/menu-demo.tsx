@@ -128,6 +128,13 @@ export function MenuDemo() {
         className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[115%] w-[125%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl"
       />
 
+      <div className="mb-5 flex justify-center">
+        <span className="flex items-center gap-1.5 rounded-full border border-outline-variant/50 bg-surface-container-lowest px-3.5 py-2 text-xs font-bold text-on-surface-variant shadow-ambient">
+          <MaterialIcon name="touch_app" size="xs" className="text-primary" />
+          Tocá el menú: es una demo de verdad
+        </span>
+      </div>
+
       <PhoneFrame className="animate-float">
         {screen === 'menu' && (
           <>
@@ -481,13 +488,6 @@ export function MenuDemo() {
           </div>
         )}
       </PhoneFrame>
-
-      <div className="mt-5 flex justify-center">
-        <span className="flex items-center gap-1.5 rounded-full border border-outline-variant/50 bg-surface-container-lowest px-3.5 py-2 text-xs font-bold text-on-surface-variant shadow-ambient">
-          <MaterialIcon name="touch_app" size="xs" className="text-primary" />
-          Tocá el menú: es una demo de verdad
-        </span>
-      </div>
     </div>
   );
 }

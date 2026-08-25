@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useConsentStore } from '@/stores/consent.store';
 
 const subscribeNever = () => () => {};
 
 export function CookieConsent() {
+  const pathname = usePathname();
   const status = useConsentStore((s) => s.status);
   const hydrate = useConsentStore((s) => s.hydrate);
   const setConsent = useConsentStore((s) => s.setConsent);
@@ -24,7 +26,7 @@ export function CookieConsent() {
     hydrate();
   }, [hydrate]);
 
-  if (!isClient || embedded || status !== 'unknown') {
+  if (!isClient || embedded || status !== 'unknown' || pathname === '/') {
     return null;
   }
 

@@ -5,7 +5,6 @@ import { Logo } from '@/components/ui/logo';
 import { CookielessAnalytics } from '@/components/analytics/cookieless-analytics';
 import { LandingNav } from '@/components/landing/landing-nav';
 import { MenuDemo } from '@/components/landing/menu-demo';
-import { CommissionCalculator } from '@/components/landing/commission-calculator';
 import { PanelMock } from '@/components/landing/panel-mock';
 import { StickyCta } from '@/components/landing/sticky-cta';
 
@@ -117,24 +116,6 @@ const FEATURES = [
     title: 'Cobrás como cobrás hoy',
     text: 'Efectivo o transferencia. Le mostrás tus datos bancarios y sube el comprobante ahí mismo.',
   },
-];
-
-const TODAY = [
-  'Mandás el menú en foto o PDF y nadie termina de ver bien los precios',
-  'Contestás cien veces "¿cuánto sale?" y "¿llegan hasta acá?"',
-  'Anotás el pedido en un papel y sumás con la calculadora',
-  'Se cuela un error en la comanda y lo terminás pagando vos',
-  'Te llaman para preguntar si el pedido ya salió',
-  'Cerrás el día sin saber qué se vendió más',
-];
-
-const WITH_US = [
-  'Tu carta siempre al día, con fotos y precios que se leen',
-  'El horario, el envío y las formas de pago están a la vista',
-  'El pedido llega armado y con el total ya calculado',
-  'Lo que pidieron es lo que ves: sin malentendidos',
-  'El cliente sigue su pedido solo, por un link',
-  'Cerrás el día sabiendo qué se vendió y a qué hora',
 ];
 
 const SITUATIONS = [
@@ -353,8 +334,8 @@ export default function LandingPage() {
               </span>
 
               <h1 className="mt-6 font-[family-name:var(--font-heading)] text-[2.6rem] font-extrabold leading-[0.98] tracking-[-0.035em] text-balance sm:text-6xl lg:text-[4.25rem]">
-                Tomar pedidos ya no es tu trabajo.{' '}
-                <span className="text-gradient-brand">Atender a tu gente, sí.</span>
+                Pedidos directos.{' '}
+                <span className="text-gradient-brand">Sin comisiones.</span>
               </h1>
 
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-on-surface-variant text-pretty sm:text-xl">
@@ -399,15 +380,51 @@ export default function LandingPage() {
           <div aria-hidden className="landing-hairline mx-auto h-px max-w-5xl" />
         </section>
 
+        {/* Panel */}
+        <section className="bg-surface-container-low py-20 sm:py-28">
+          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-8 lg:grid-cols-2">
+            <div className="reveal">
+              <SectionLabel>Tu panel</SectionLabel>
+              <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl font-extrabold leading-tight tracking-tight text-balance sm:text-4xl">
+                Ves cada pedido apenas entra, con todo lo que necesitás para prepararlo
+              </h2>
+              <p className="mt-5 text-lg leading-relaxed text-on-surface-variant text-pretty">
+                Nada de capturas de pantalla ni de mensajes sueltos. El pedido llega completo, con la
+                dirección y la forma de pago, y vos solo lo movés de estado.
+              </p>
+
+              <ul className="mt-8 space-y-5">
+                {PANEL_POINTS.map(([icon, title, text]) => (
+                  <li key={title} className="flex gap-4">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <MaterialIcon name={icon} size="sm" />
+                    </span>
+                    <span>
+                      <span className="block font-[family-name:var(--font-heading)] font-bold">
+                        {title}
+                      </span>
+                      <span className="block text-on-surface-variant">{text}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="reveal">
+              <PanelMock />
+            </div>
+          </div>
+        </section>
+
         {/* Prueba social real */}
-        <section className="border-b border-outline-variant/30 bg-surface-container-lowest">
+        <section className="landing-dark relative overflow-hidden border-b border-white/10">
           <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="lg:max-w-xs">
-                <p className="font-[family-name:var(--font-heading)] text-lg font-extrabold">
+                <p className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
                   Menús publicados, funcionando hoy
                 </p>
-                <p className="mt-1 text-sm text-on-surface-variant">
+                <p className="mt-1 text-sm text-white/70">
                   Locales reales en Argentina, Uruguay y Colombia. Abrilos y mirá cómo queda el tuyo.
                 </p>
               </div>
@@ -418,19 +435,19 @@ export default function LandingPage() {
                     href={`/${s.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex items-center gap-3 rounded-2xl border border-outline-variant/50 bg-surface px-4 py-3 transition-colors hover:border-primary/50"
+                    className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-colors hover:border-primary/50"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-primary-fixed-dim">
                       <MaterialIcon name="storefront" size="sm" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-bold text-on-surface">{s.name}</span>
-                      <span className="block truncate text-xs text-on-surface-variant">{s.place}</span>
+                      <span className="block truncate text-sm font-bold text-white">{s.name}</span>
+                      <span className="block truncate text-xs text-white/60">{s.place}</span>
                     </span>
                     <MaterialIcon
                       name="arrow_outward"
                       size="xs"
-                      className="text-outline transition-colors group-hover:text-primary"
+                      className="text-white/40 transition-colors group-hover:text-primary-fixed-dim"
                     />
                   </a>
                 ))}
@@ -439,65 +456,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* El día a día */}
-        <section id="el-dia-a-dia" className="landing-dark relative overflow-hidden py-20 sm:py-28">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="reveal mx-auto max-w-3xl text-center">
-              <SectionLabel tone="dark">El día a día</SectionLabel>
-              <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl font-extrabold leading-tight tracking-tight text-white text-balance sm:text-5xl">
-                De contestar cien veces lo mismo, a que el pedido te llegue armado
-              </h2>
-              <p className="mt-5 text-lg leading-relaxed text-white/70 text-pretty">
-                No hace falta estar en ninguna app de delivery para que tomar pedidos te cueste plata y
-                paciencia. Si hoy los tomás por WhatsApp, por teléfono o en el mostrador, esto es lo que
-                cambia.
-              </p>
-            </div>
-
-            <div className="reveal mt-12 grid gap-5 lg:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white/70">
-                    <MaterialIcon name="sentiment_stressed" size="md" />
-                  </span>
-                  <p className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white/80">
-                    Como lo hacés hoy
-                  </p>
-                </div>
-                <ul className="mt-6 space-y-4">
-                  {TODAY.map((t) => (
-                    <li key={t} className="flex gap-3 leading-relaxed text-white/60">
-                      <MaterialIcon name="close" size="sm" className="mt-0.5 shrink-0 text-[#ff8f6d]" />
-                      <span>{t}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-3xl border border-primary/40 bg-primary/[0.09] p-6 sm:p-8">
-                <div className="flex items-center gap-3">
-                  <span className="gradient-cta flex h-10 w-10 items-center justify-center rounded-2xl text-white">
-                    <MaterialIcon name="bolt" size="md" />
-                  </span>
-                  <p className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
-                    Como queda con quiero.menu
-                  </p>
-                </div>
-                <ul className="mt-6 space-y-4">
-                  {WITH_US.map((t) => (
-                    <li key={t} className="flex gap-3 leading-relaxed text-white/85">
-                      <MaterialIcon name="check" size="sm" className="mt-0.5 shrink-0 text-[#9ccb8e]" />
-                      <span>{t}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Cómo funciona */}
-        <section id="como-funciona" className="bg-surface-container-lowest py-20 sm:py-28">
+        <section id="como-funciona" className="bg-surface-container-low py-20 sm:py-28">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="reveal mx-auto max-w-3xl text-center">
               <SectionLabel>Cómo funciona</SectionLabel>
@@ -536,42 +496,6 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Panel */}
-        <section className="bg-surface-container-low py-20 sm:py-28">
-          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-8 lg:grid-cols-2">
-            <div className="reveal">
-              <SectionLabel>Tu panel</SectionLabel>
-              <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl font-extrabold leading-tight tracking-tight text-balance sm:text-4xl">
-                Ves cada pedido apenas entra, con todo lo que necesitás para prepararlo
-              </h2>
-              <p className="mt-5 text-lg leading-relaxed text-on-surface-variant text-pretty">
-                Nada de capturas de pantalla ni de mensajes sueltos. El pedido llega completo, con la
-                dirección y la forma de pago, y vos solo lo movés de estado.
-              </p>
-
-              <ul className="mt-8 space-y-5">
-                {PANEL_POINTS.map(([icon, title, text]) => (
-                  <li key={title} className="flex gap-4">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <MaterialIcon name={icon} size="sm" />
-                    </span>
-                    <span>
-                      <span className="block font-[family-name:var(--font-heading)] font-bold">
-                        {title}
-                      </span>
-                      <span className="block text-on-surface-variant">{text}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="reveal">
-              <PanelMock />
             </div>
           </div>
         </section>
@@ -688,27 +612,6 @@ export default function LandingPage() {
                   {label}
                 </span>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Calculadora */}
-        <section id="calculadora" className="landing-dark relative overflow-hidden py-20 sm:py-28">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="reveal mx-auto max-w-3xl text-center">
-              <SectionLabel tone="dark">Si mirás para el lado de las apps</SectionLabel>
-              <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl font-extrabold leading-tight tracking-tight text-white text-balance sm:text-5xl">
-                Lo que cuesta vender por una app, con tus números
-              </h2>
-              <p className="mt-5 text-lg leading-relaxed text-white/70 text-pretty">
-                Las apps de delivery cobran entre 20% y 30% de cada pedido. Si ya vendés por una, esto es
-                lo que se lleva por año. Si todavía no entraste, es la cuenta que conviene tener a mano
-                antes de firmar.
-              </p>
-            </div>
-
-            <div className="reveal mt-12">
-              <CommissionCalculator />
             </div>
           </div>
         </section>
@@ -923,7 +826,6 @@ export default function LandingPage() {
               <div className="mt-3 flex flex-col gap-2.5 text-sm text-on-surface-variant">
                 <a className="hover:text-primary" href="#como-funciona">Cómo funciona</a>
                 <a className="hover:text-primary" href="#funciones">Funciones</a>
-                <a className="hover:text-primary" href="#calculadora">Comisiones de las apps</a>
                 <a className="hover:text-primary" href="#precios">Precios</a>
               </div>
             </div>
