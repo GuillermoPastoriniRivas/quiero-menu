@@ -271,11 +271,8 @@ export default function DashboardPage() {
 
       {/* Ventas Recientes */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between px-2">
+        <div className="px-2">
           <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Ventas Recientes</h2>
-          <Link href="/orders" className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
-            Ver todos <MaterialIcon name="arrow_forward" size="xs" />
-          </Link>
         </div>
 
         {salesLoading ? (

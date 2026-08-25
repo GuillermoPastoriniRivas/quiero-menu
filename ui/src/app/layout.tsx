@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { RegisterSW } from "@/components/register-sw";
 import { SentryInit } from "@/components/sentry-init";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { CookieConsent } from "@/components/analytics/cookie-consent";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -95,6 +96,7 @@ export default function RootLayout({
         <RegisterSW />
         <SentryInit />
         <GoogleAnalytics />
+        <CookieConsent />
         <Toaster />
       </body>
     </html>
