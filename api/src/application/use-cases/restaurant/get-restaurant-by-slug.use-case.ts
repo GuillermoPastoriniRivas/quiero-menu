@@ -4,7 +4,6 @@ import { MenuItemRepository } from '../../../domain/repositories/menu-item.repos
 import { MenuItemVariantRepository } from '../../../domain/repositories/menu-item-variant.repository.js';
 import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item-option.repository.js';
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
-import { DeliveryZoneRepository } from '../../../domain/repositories/delivery-zone.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
 import { OperatingHoursPolicy } from '../../../domain/services/operating-hours-policy.js';
 import { Restaurant } from '../../../domain/entities/restaurant.entity.js';
@@ -13,7 +12,6 @@ import { MenuItem } from '../../../domain/entities/menu-item.entity.js';
 import { MenuItemVariant } from '../../../domain/entities/menu-item-variant.entity.js';
 import { MenuItemOption } from '../../../domain/entities/menu-item-option.entity.js';
 import { OperatingHours } from '../../../domain/entities/operating-hours.entity.js';
-import { DeliveryZone } from '../../../domain/entities/delivery-zone.entity.js';
 import { Result, ok, err } from '../../common/result.js';
 import { RestaurantNotFoundError } from '../../../domain/errors/domain-errors.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
@@ -29,7 +27,6 @@ export interface StorefrontData {
     })[];
   })[];
   operatingHours: OperatingHours[];
-  deliveryZones: DeliveryZone[];
   showPoweredByFooter: boolean;
   isOpen: boolean;
   todayHours: OperatingHours | null;
@@ -43,7 +40,6 @@ export class GetRestaurantBySlugUseCase {
     private readonly variantRepo: MenuItemVariantRepository,
     private readonly optionRepo: MenuItemOptionRepository,
     private readonly hoursRepo: OperatingHoursRepository,
-    private readonly zoneRepo: DeliveryZoneRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
     private readonly hoursPolicy: OperatingHoursPolicy = new OperatingHoursPolicy(),
   ) {}
@@ -54,13 +50,11 @@ export class GetRestaurantBySlugUseCase {
     const restaurant = await this.restaurantRepo.findBySlug(slug);
     if (!restaurant) return err(new RestaurantNotFoundError());
 
-    const [rawCategories, allItems, operatingHours, deliveryZones] =
-      await Promise.all([
-        this.categoryRepo.findByRestaurantId(restaurant.id),
-        this.itemRepo.findByRestaurantId(restaurant.id),
-        this.hoursRepo.findByRestaurantId(restaurant.id),
-        this.zoneRepo.findByRestaurantId(restaurant.id),
-      ]);
+    const [rawCategories, allItems, operatingHours] = await Promise.all([
+      this.categoryRepo.findByRestaurantId(restaurant.id),
+      this.itemRepo.findByRestaurantId(restaurant.id),
+      this.hoursRepo.findByRestaurantId(restaurant.id),
+    ]);
 
     const visibleCategories = rawCategories
       .filter((c) => c.isVisible)
@@ -129,7 +123,6 @@ export class GetRestaurantBySlugUseCase {
       restaurant,
       categories,
       operatingHours,
-      deliveryZones,
       showPoweredByFooter,
       isOpen: openStatus.isOpen,
       todayHours: openStatus.todayHours,

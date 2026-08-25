@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { MaterialIcon } from '@/components/ui/material-icon';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { QRCodeSVG } from 'qrcode.react';
+import { BrandedQr } from '@/components/publicar/branded-qr';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function MiMenuPage() {
   const { restaurant, fetch: fetchRestaurant } = useRestaurantStore();
@@ -120,14 +122,32 @@ export default function MiMenuPage() {
 
           <div ref={qrRef} className="flex justify-center py-4">
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/10">
-              <QRCodeSVG value={menuUrl} size={200} level="M" />
+              <BrandedQr
+                value={menuUrl}
+                size={200}
+                logoUrl={restaurant.logoUrl}
+              />
             </div>
           </div>
 
-          <Button onClick={downloadQR} variant="outline" className="w-full font-bold">
-            <MaterialIcon name="download" size="sm" />
-            Descargar QR
-          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button onClick={downloadQR} variant="outline" className="font-bold">
+              <MaterialIcon name="download" size="sm" />
+              Descargar QR
+            </Button>
+            <Link
+              href="/publicar/imprimir"
+              className={cn(buttonVariants({ variant: 'outline' }), 'font-bold')}
+            >
+              <MaterialIcon name="print" size="sm" />
+              Hoja A4 para imprimir
+            </Link>
+          </div>
+
+          <p className="text-xs text-on-surface-variant text-center">
+            El QR lleva tu color y tu logo. Imprimilo solo o con la hoja A4, que incluye tus
+            datos de contacto para poner en el local.
+          </p>
         </CardContent>
       </Card>
     </div>

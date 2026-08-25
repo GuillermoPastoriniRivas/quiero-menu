@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useRestaurantStore } from '@/stores/restaurant.store';
-import { StorefrontView } from '@/components/storefront/storefront-view';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,10 +10,10 @@ import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import type { StorefrontData } from '@/types';
-
-const API_URL =
-  (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api') + '/v1';
+import {
+  PREVIEW_DRAFT_MESSAGE,
+  isPreviewReadyMessage,
+} from '@/lib/storefront-preview';
 
 const DEFAULT_COLOR = '#E8532C';
 
@@ -40,10 +39,9 @@ export default function AparienciaPage() {
   const { restaurant, fetch: fetchRestaurant, update } = useRestaurantStore();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [published, setPublished] = useState<Draft | null>(null);
-  const [storefront, setStorefront] = useState<StorefrontData | null>(null);
-  const [previewFailed, setPreviewFailed] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const previewRef = useRef<HTMLIFrameElement>(null);
+  const [previewReady, setPreviewReady] = useState(false);
 
   useEffect(() => {
     fetchRestaurant();
@@ -63,27 +61,21 @@ export default function AparienciaPage() {
   const slug = restaurant?.slug ?? '';
 
   useEffect(() => {
-    if (!slug) return;
-    let cancelled = false;
-    setPreviewFailed(false);
-    setStorefront(null);
-    fetch(`${API_URL}/storefront/${encodeURIComponent(slug)}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((value: StorefrontData | null) => {
-        if (cancelled) return;
-        if (value) {
-          setStorefront(value);
-        } else {
-          setPreviewFailed(true);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewFailed(true);
-      });
-    return () => {
-      cancelled = true;
+    const handler = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (isPreviewReadyMessage(event.data)) setPreviewReady(true);
     };
-  }, [slug, retryKey]);
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!previewReady || !draft) return;
+    previewRef.current?.contentWindow?.postMessage(
+      { type: PREVIEW_DRAFT_MESSAGE, payload: draft },
+      window.location.origin,
+    );
+  }, [draft, previewReady]);
 
   const dirty = useMemo(() => {
     if (!draft || !published) return false;
@@ -93,19 +85,6 @@ export default function AparienciaPage() {
       draft.primaryColor !== published.primaryColor
     );
   }, [draft, published]);
-
-  const previewData = useMemo<StorefrontData | null>(() => {
-    if (!storefront || !draft) return null;
-    return {
-      ...storefront,
-      restaurant: {
-        ...storefront.restaurant,
-        logoUrl: draft.logoUrl,
-        bannerUrl: draft.bannerUrl,
-        theme: { primaryColor: draft.primaryColor },
-      },
-    };
-  }, [storefront, draft]);
 
   const setField = (patch: Partial<Draft>) => {
     setDraft((d) => (d ? { ...d, ...patch } : d));
@@ -288,27 +267,19 @@ export default function AparienciaPage() {
                 quiero.menu/{restaurant.slug}
               </span>
             </div>
-            <div className="h-[75vh] overflow-y-auto overscroll-contain">
-              {previewData ? (
-                <StorefrontView data={previewData} slug={slug} trackView={false} />
-              ) : previewFailed ? (
-                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-sm text-on-surface-variant">
-                  <MaterialIcon name="error_outline" size="lg" className="text-on-surface-variant/50" />
-                  No se pudo cargar tu menú para la vista previa.
-                  <button
-                    type="button"
-                    className="text-primary font-semibold hover:underline"
-                    onClick={() => setRetryKey((k) => k + 1)}
-                  >
-                    Reintentar
-                  </button>
-                </div>
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-on-surface-variant">
-                  Cargando tu menú...
-                </div>
-              )}
-            </div>
+            {slug ? (
+              <iframe
+                ref={previewRef}
+                key={slug}
+                title="Vista previa de tu menú"
+                src={`/${encodeURIComponent(slug)}?preview=1`}
+                className="block h-[75vh] w-full border-0 bg-white"
+              />
+            ) : (
+              <div className="flex h-[75vh] items-center justify-center text-sm text-on-surface-variant">
+                Cargando tu menú...
+              </div>
+            )}
           </div>
         </div>
       </div>

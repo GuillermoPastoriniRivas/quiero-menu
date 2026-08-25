@@ -66,7 +66,6 @@ export function StorefrontView({
   const {
     restaurant,
     categories,
-    deliveryZones,
     showPoweredByFooter,
     isOpen,
     todayHours,
@@ -96,7 +95,9 @@ export function StorefrontView({
   // Hoy (calculado en el server con la timezone del local)
   const todayHoursLabel = todayHours
     ? todayHours.isClosed
-      ? "Cerrado hoy"
+      ? isOpen
+        ? "Abierto hoy"
+        : "Cerrado hoy"
       : `Hoy ${todayHours.opensAt} – ${todayHours.closesAt}`
     : null;
 
@@ -325,17 +326,11 @@ export function StorefrontView({
   };
 
   const subtotal = cart.subtotal();
-  const deliveryZone = deliveryZones.find((z) => z.id === cart.deliveryZoneId);
   const appliedCoupon = cart.appliedCoupon;
   const freeDelivery =
     !!appliedCoupon?.freeDelivery &&
     cart.deliveryType === DeliveryType.DELIVERY;
-  const deliveryFee =
-    cart.deliveryType === DeliveryType.DELIVERY && deliveryZone
-      ? freeDelivery
-        ? 0
-        : deliveryZone.price
-      : 0;
+  const deliveryFee = 0;
   const discount = appliedCoupon
     ? appliedCoupon.freeDelivery
       ? 0
@@ -452,7 +447,6 @@ export function StorefrontView({
         customerLatitude: cart.customerLatitude ?? undefined,
         customerLongitude: cart.customerLongitude ?? undefined,
         deliveryType: cart.deliveryType,
-        deliveryZoneId: cart.deliveryZoneId || undefined,
         paymentMethod: cart.paymentMethod,
         couponCode: cart.couponCode || undefined,
         notes: cart.notes,
@@ -1372,32 +1366,6 @@ export function StorefrontView({
                       <p className="text-xs text-destructive">{gpsError}</p>
                     )}
                   </div>
-                  {deliveryZones.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Zona</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {deliveryZones
-                          .filter((z) => z.isActive)
-                          .map((z) => (
-                            <Button
-                              key={z.id}
-                              variant={
-                                cart.deliveryZoneId === z.id
-                                  ? "default"
-                                  : "outline"
-                              }
-                              size="sm"
-                              onClick={() =>
-                                cart.setDelivery({ deliveryZoneId: z.id })
-                              }
-                            >
-                              {z.name} (+
-                              {formatCurrency(z.price, restaurant.currency)})
-                            </Button>
-                          ))}
-                      </div>
-                    </div>
-                  )}
                 </>
               )}
 

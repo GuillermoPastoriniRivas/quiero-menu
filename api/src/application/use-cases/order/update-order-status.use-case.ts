@@ -59,7 +59,6 @@ export class UpdateOrderStatusUseCase {
     }
 
     const timestamps: Record<string, Date> = {};
-    if (newStatus === OrderStatus.NEW) timestamps.confirmedAt = new Date();
     if (newStatus === OrderStatus.READY) timestamps.readyAt = new Date();
     if (newStatus === OrderStatus.DELIVERED)
       timestamps.deliveredAt = new Date();

@@ -5,7 +5,6 @@ import { OperatingHoursRepository } from '../../../domain/repositories/operating
 import { MenuItemRepository } from '../../../domain/repositories/menu-item.repository.js';
 import { MenuItemVariantRepository } from '../../../domain/repositories/menu-item-variant.repository.js';
 import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item-option.repository.js';
-import { DeliveryZoneRepository } from '../../../domain/repositories/delivery-zone.repository.js';
 import { CouponRepository } from '../../../domain/repositories/coupon.repository.js';
 import { RealtimeGatewayPort } from '../../ports/realtime-gateway.port.js';
 import { PushServicePort } from '../../ports/push-service.port.js';
@@ -49,7 +48,6 @@ export interface CreateStorefrontOrderInput {
   customerLatitude?: number;
   customerLongitude?: number;
   deliveryType: DeliveryType;
-  deliveryZoneId?: string;
   paymentMethod: string;
   receiptUrl?: string | null;
   couponCode?: string | null;
@@ -71,7 +69,6 @@ export class CreateStorefrontOrderUseCase {
     private readonly menuItemRepo: MenuItemRepository,
     private readonly variantRepo: MenuItemVariantRepository,
     private readonly optionRepo: MenuItemOptionRepository,
-    private readonly zoneRepo: DeliveryZoneRepository,
     private readonly couponRepo: CouponRepository,
     private readonly gateway: RealtimeGatewayPort,
     private readonly pushService: PushServicePort,
@@ -102,14 +99,6 @@ export class CreateStorefrontOrderUseCase {
       return err(new RestaurantClosedError());
 
     let deliveryFee = 0;
-    if (input.deliveryType === DeliveryType.DELIVERY && input.deliveryZoneId) {
-      const zone = await this.zoneRepo.findById(input.deliveryZoneId);
-      if (zone) {
-        if (zone.restaurantId !== restaurant.id)
-          return err(new CrossRestaurantAccessError());
-        deliveryFee = zone.price;
-      }
-    }
 
     const orderItemsData: Omit<OrderItem, 'id'>[] = [];
     let subtotal = 0;
@@ -195,7 +184,6 @@ export class CreateStorefrontOrderUseCase {
       customerLatitude: input.customerLatitude ?? null,
       customerLongitude: input.customerLongitude ?? null,
       deliveryType: input.deliveryType,
-      deliveryZoneId: input.deliveryZoneId ?? null,
       deliveryFee,
       subtotal,
       discount,

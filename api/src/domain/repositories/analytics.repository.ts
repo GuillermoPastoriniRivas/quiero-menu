@@ -29,6 +29,15 @@ export interface StatusCount {
   count: number;
 }
 
+export interface StageTiming {
+  from: string;
+  to: string;
+  count: number;
+  avgMinutes: number;
+  minMinutes: number;
+  maxMinutes: number;
+}
+
 export interface AnalyticsRepository {
   getSummary(
     restaurantId: string,
@@ -58,4 +67,9 @@ export interface AnalyticsRepository {
     since: Date,
     to: Date,
   ): Promise<StatusCount[]>;
+  getStatusTimings(
+    restaurantId: string,
+    since: Date,
+    to: Date,
+  ): Promise<StageTiming[]>;
 }

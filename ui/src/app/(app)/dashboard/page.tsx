@@ -1,28 +1,125 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useOrderStore } from '@/stores/order.store';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useBillingStore } from '@/stores/billing.store';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Button } from '@/components/ui/button';
-import { OrderStatus, PlanTier } from '@/types';
+import { RecentOrdersList, NEXT_STATUS, STATUS_LABELS } from '@/components/dashboard/recent-orders-list';
+import { WeeklySalesChart } from '@/components/dashboard/weekly-sales-chart';
+import { OrderStatus, PlanTier, StorefrontData } from '@/types';
+import type { AnalyticsOverview, OrderWithRedaction } from '@/types';
 import { formatCurrency } from '@/lib/format';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import Link from 'next/link';
+
+interface ChecklistStep {
+  key: string;
+  title: string;
+  description: string;
+  icon: string;
+  href: string;
+  done: boolean;
+}
 
 export default function DashboardPage() {
   const { orders, fetch: fetchOrders } = useOrderStore();
-  const { restaurant, fetch: fetchRestaurant } = useRestaurantStore();
-  const { user } = useAuthStore();
+  const {
+    restaurant,
+    fetch: fetchRestaurant,
+    operatingHours,
+    fetchHours,
+  } = useRestaurantStore();
+  const user = useAuthStore((s) => s.user);
   const billing = useBillingStore();
   const fetchBilling = useBillingStore((s) => s.fetch);
+  const updateStatus = useOrderStore((s) => s.updateStatus);
+  const [menuHasItems, setMenuHasItems] = useState(false);
+  const [analytics, setAnalytics] = useState<{ loading: boolean; data: AnalyticsOverview | null }>({
+    loading: true,
+    data: null,
+  });
 
   useEffect(() => {
     fetchOrders();
     fetchRestaurant();
     fetchBilling();
-  }, [fetchOrders, fetchRestaurant, fetchBilling]);
+    fetchHours();
+
+    if (user?.restaurantSlug) {
+      api
+        .get<StorefrontData>(`/storefront/${user.restaurantSlug}`)
+        .then((data) => setMenuHasItems(data.categories.some((c) => c.items.length > 0)))
+        .catch(() => setMenuHasItems(false));
+    }
+  }, [fetchOrders, fetchRestaurant, fetchBilling, fetchHours, user?.restaurantSlug]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<AnalyticsOverview>('/analytics/overview?range=7')
+      .then((data) => {
+        if (!cancelled) setAnalytics({ loading: false, data });
+      })
+      .catch(() => {
+        if (!cancelled) setAnalytics({ loading: false, data: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const paymentMethods = restaurant?.paymentMethods;
+  const paymentsConfigured = !!(
+    paymentMethods &&
+    (paymentMethods.cashEnabled ||
+      paymentMethods.cardEnabled ||
+      paymentMethods.transferEnabled ||
+      paymentMethods.transferCbu ||
+      paymentMethods.transferAlias)
+  );
+  const hoursConfigured = operatingHours.length > 0;
+
+  const steps: ChecklistStep[] = [
+    {
+      key: 'menu',
+      title: 'Completá tu menú',
+      description: menuHasItems
+        ? 'Tu menú tiene productos listos para que pidan.'
+        : 'Subí tus platos y bebidas para que tus clientes puedan pedirlos.',
+      icon: 'restaurant',
+      href: '/menu',
+      done: menuHasItems,
+    },
+    {
+      key: 'payments',
+      title: 'Configurá los pagos',
+      description: paymentsConfigured
+        ? 'Ya tenés un método de pago configurado.'
+        : 'Elegí cómo querés cobrar: efectivo, tarjeta o transferencia.',
+      icon: 'payments',
+      href: '/business/payments',
+      done: paymentsConfigured,
+    },
+    {
+      key: 'hours',
+      title: 'Definí tus horarios',
+      description: hoursConfigured
+        ? 'Tus horarios están configurados.'
+        : 'Indicá cuándo está abierto tu local para recibir pedidos.',
+      icon: 'schedule',
+      href: '/business/hours',
+      done: hoursConfigured,
+    },
+  ];
+
+  const doneCount = steps.filter((s) => s.done).length;
+  const totalSteps = steps.length;
+  const progressPct = Math.round((doneCount / totalSteps) * 100);
+  const allReady = doneCount === totalSteps;
 
   const todayOrders = orders.filter((o) => {
     const d = new Date(o.createdAt);
@@ -34,6 +131,21 @@ export default function DashboardPage() {
   const todayRevenue = todayOrders.filter((o) => o.status === OrderStatus.DELIVERED).reduce((sum, o) => sum + o.total, 0);
   const deliveredToday = todayOrders.filter((o) => o.status === OrderStatus.DELIVERED).length;
   const avgTicket = deliveredToday > 0 ? todayRevenue / deliveredToday : 0;
+
+  const recentOrders = orders.filter((o) => !o.redacted).slice(0, 5);
+  const hasSales = analytics.data ? analytics.data.summary.orders > 0 : orders.length > 0;
+  const salesLoading = analytics.loading && orders.length === 0;
+
+  const handleAdvance = async (order: OrderWithRedaction) => {
+    const next = NEXT_STATUS[order.status];
+    if (!next) return;
+    try {
+      await updateStatus(order.id, next.status);
+      toast.success(`${order.code} actualizado a ${STATUS_LABELS[next.status]}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al actualizar pedido');
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -50,116 +162,81 @@ export default function DashboardPage() {
             </span>
           )}
         </div>
-        <p className="text-on-surface-variant text-lg">Solo faltan unos pasos para empezar a recibir pedidos.</p>
+        <p className="text-on-surface-variant text-lg">
+          {allReady
+            ? (todayOrders.length > 0
+                ? `Tenés ${todayOrders.length} pedido${todayOrders.length === 1 ? '' : 's'} hoy.`
+                : 'Tu cuenta está lista. Compartí tu menú para empezar a recibir pedidos.')
+            : 'Completá estos pasos y tu menú va a estar listo para recibir pedidos.'}
+        </p>
       </section>
 
-      {/* Plan banner */}
-      {billing.info?.plan === PlanTier.FREE && (
-        <section className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+      {/* Próximos pasos */}
+      <section className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-              <MaterialIcon name="workspace_premium" size="lg" />
+            <div className="w-11 h-11 rounded-xl bg-surface-container-low flex items-center justify-center text-primary shrink-0">
+              <MaterialIcon name={allReady ? 'check_circle' : 'flag'} size="lg" />
             </div>
             <div>
-              <p className="font-bold">Plan Gratis · 50 pedidos/mes</p>
-              <p className="text-sm text-on-surface-variant">Subí a Pro por {formatCurrency(15000, 'ARS')}/mes con 30 días gratis: pedidos ilimitados y sin marca quiero.menu.</p>
+              <h2 className="text-lg font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
+                {allReady ? '¡Todo listo para recibir pedidos!' : 'Tus próximos pasos'}
+              </h2>
+              <p className="text-sm text-on-surface-variant">
+                {allReady
+                  ? 'Configuraste lo esencial. Ahora compartí tu menú y empezá a recibir pedidos.'
+                  : `${doneCount} de ${totalSteps} completados · ${progressPct}%`}
+              </p>
             </div>
           </div>
-          <Link href="/billing">
-            <Button size="sm" className="gradient-cta text-white">
-              <MaterialIcon name="bolt" size="sm" className="mr-1" />Subir a Pro
-            </Button>
-          </Link>
-        </section>
-      )}
-
-      {/* Onboarding Bento Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Task 1 - Menu */}
-        <div className="group bg-white p-6 rounded-2xl transition-all hover:shadow-ambient border border-outline-variant/10 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-surface-container-low rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
-          <div className="mb-4 w-12 h-12 bg-surface-container-low rounded-xl flex items-center justify-center text-primary">
-            <MaterialIcon name="restaurant" size="lg" />
+          <div className="w-full md:w-40 h-2.5 rounded-full bg-surface-container-low overflow-hidden">
+            <div
+              className="h-full rounded-full gradient-cta transition-all duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
           </div>
-          <h3 className="font-bold text-lg mb-2 text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Completar tu Menu</h3>
-          <p className="text-sm text-on-surface-variant mb-6">Sube tus mejores platos y bebidas con fotos tentadoras.</p>
-          <Link
-            href="/menu"
-            className="block w-full gradient-cta text-white py-2.5 rounded-xl font-bold text-sm text-center active:scale-95 duration-200 transition-transform"
-          >
-            Ir al Menu
-          </Link>
         </div>
 
-        {/* Task 2 - Delivery Zones */}
-        <div className="group bg-white p-6 rounded-2xl transition-all hover:shadow-ambient border border-outline-variant/10 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-surface-container-low rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
-          <div className="mb-4 w-12 h-12 bg-surface-container-low rounded-xl flex items-center justify-center text-primary">
-            <MaterialIcon name="local_shipping" size="lg" />
-          </div>
-          <h3 className="font-bold text-lg mb-2 text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Zonas de entrega</h3>
-          <p className="text-sm text-on-surface-variant mb-6">Define hasta donde llegas y tus costos de envio.</p>
-          <Link
-            href="/business/zones"
-            className="block w-full bg-surface-container-low text-primary border border-outline-variant/20 py-2.5 rounded-xl font-bold text-sm text-center active:scale-95 duration-200 transition-transform"
-          >
-            Configurar
-          </Link>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {steps.map((step) => {
+            const done = step.done;
+            return (
+              <Link
+                key={step.key}
+                href={step.href}
+                className={`group flex items-start gap-3 rounded-xl border p-4 transition-all ${
+                  done
+                    ? 'border-primary/20 bg-primary/5 hover:bg-primary/10'
+                    : 'border-outline-variant/20 bg-surface-container-low/40 hover:bg-surface-container-low'
+                }`}
+              >
+                <div
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                    done ? 'bg-primary/10 text-primary' : 'bg-white text-on-surface-variant'
+                  }`}
+                >
+                  <MaterialIcon name={done ? 'check' : step.icon} size="md" />
+                </div>
+                <div className="min-w-0">
+                  <p className={`font-bold text-sm ${done ? 'text-primary' : 'text-on-surface'}`}>{step.title}</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5 leading-snug">{step.description}</p>
+                </div>
+                {!done && <MaterialIcon name="chevron_right" size="sm" className="ml-auto mt-1 shrink-0 text-on-surface-variant group-hover:text-primary" />}
+              </Link>
+            );
+          })}
         </div>
 
-        {/* Task 3 - Share Link */}
-        <div className="group bg-white p-6 rounded-2xl transition-all hover:shadow-ambient border border-outline-variant/10 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-surface-container-low rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
-          <div className="mb-4 w-12 h-12 bg-surface-container-low rounded-xl flex items-center justify-center text-primary">
-            <MaterialIcon name="share" size="lg" />
-          </div>
-          <h3 className="font-bold text-lg mb-2 text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Compartir tu Menu</h3>
-          <p className="text-sm text-on-surface-variant mb-6">Comparti tu link con clientes por WhatsApp o con un QR en tu local.</p>
-          <Link
-            href="/publicar"
-            className="block w-full bg-surface-container-low text-primary border border-outline-variant/20 py-2.5 rounded-xl font-bold text-sm text-center active:scale-95 duration-200 transition-transform"
-          >
-            Ver mi link
-          </Link>
-        </div>
-      </section>
-
-      {/* Analytics Empty State */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Ventas Recientes</h2>
-          <span className="text-sm font-medium text-on-surface-variant">Ultimos 7 dias</span>
-        </div>
-
-        {todayOrders.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 min-h-[300px] flex flex-col items-center justify-center text-center space-y-6 border-2 border-dashed border-outline-variant/20">
-            <div className="w-full max-w-lg opacity-10 flex items-end justify-between h-32 gap-4 px-8">
-              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[20%]" />
-              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[35%]" />
-              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[15%]" />
-              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[50%]" />
-              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[25%]" />
-              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[40%]" />
-              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[10%]" />
-            </div>
-            <div className="space-y-2 max-w-sm">
-              <div className="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-4">
-                <MaterialIcon name="analytics" size="xl" className="text-on-surface-variant/30" />
-              </div>
-              <h3 className="text-xl font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Esperando tus primeros pedidos</h3>
-              <p className="text-on-surface-variant">Una vez que tus clientes empiecen a pedir, aqui veras el crecimiento de tu restaurante en tiempo real.</p>
-            </div>
-            <Link
-              href="/publicar"
-              className="inline-flex items-center gap-2 gradient-cta text-white px-6 py-3 rounded-xl font-bold transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95"
-            >
-              <MaterialIcon name="rocket_launch" size="md" />
-              Compartir mi Menu
+        {!allReady && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/10 pt-4">
+            <p className="text-sm text-on-surface-variant">
+              ¿Ya configuraste todo? Asegurate de que tu menú esté compartido para que tus clientes puedan verlo.
+            </p>
+            <Link href="/publicar">
+              <Button size="sm" className="gradient-cta text-white">
+                <MaterialIcon name="share" size="sm" className="mr-1" />Compartir mi menú
+              </Button>
             </Link>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl p-6 shadow-ambient">
-            <p className="text-on-surface-variant text-sm">Tienes {todayOrders.length} pedidos hoy.</p>
           </div>
         )}
       </section>
@@ -191,6 +268,77 @@ export default function DashboardPage() {
           </p>
         </div>
       </section>
+
+      {/* Ventas Recientes */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Ventas Recientes</h2>
+          <Link href="/orders" className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
+            Ver todos <MaterialIcon name="arrow_forward" size="xs" />
+          </Link>
+        </div>
+
+        {salesLoading ? (
+          <div className="bg-white rounded-2xl p-8 min-h-[220px] flex items-center justify-center">
+            <MaterialIcon name="progress_activity" size="xl" className="animate-spin text-primary" />
+          </div>
+        ) : !hasSales ? (
+          <div className="bg-white rounded-2xl p-8 min-h-[300px] flex flex-col items-center justify-center text-center space-y-6 border-2 border-dashed border-outline-variant/20">
+            <div className="w-full max-w-lg opacity-10 flex items-end justify-between h-32 gap-4 px-8">
+              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[20%]" />
+              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[35%]" />
+              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[15%]" />
+              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[50%]" />
+              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[25%]" />
+              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[40%]" />
+              <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[10%]" />
+            </div>
+            <div className="space-y-2 max-w-sm">
+              <div className="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-4">
+                <MaterialIcon name="analytics" size="xl" className="text-on-surface-variant/30" />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Esperando tus primeros pedidos</h3>
+              <p className="text-on-surface-variant">Una vez que tus clientes empiecen a pedir, aqui veras el crecimiento de tu restaurante en tiempo real.</p>
+            </div>
+            <Link
+              href="/publicar"
+              className="inline-flex items-center gap-2 gradient-cta text-white px-6 py-3 rounded-xl font-bold transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95"
+            >
+              <MaterialIcon name="rocket_launch" size="md" />
+              Compartir mi Menu
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-outline-variant/10 lg:col-span-2">
+              <RecentOrdersList orders={recentOrders} currency={restaurant?.currency} onAdvance={handleAdvance} />
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-outline-variant/10">
+              <WeeklySalesChart data={analytics.data} loading={analytics.loading} currency={restaurant?.currency} />
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Plan banner */}
+      {billing.info?.plan === PlanTier.FREE && (
+        <section className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <MaterialIcon name="workspace_premium" size="lg" />
+            </div>
+            <div>
+              <p className="font-bold">Plan Gratis · 50 pedidos/mes</p>
+              <p className="text-sm text-on-surface-variant">Subí a Pro por {formatCurrency(15000, 'ARS')}/mes con 30 días gratis: pedidos ilimitados y sin marca quiero.menu.</p>
+            </div>
+          </div>
+          <Link href="/billing">
+            <Button size="sm" className="gradient-cta text-white">
+              <MaterialIcon name="bolt" size="sm" className="mr-1" />Subir a Pro
+            </Button>
+          </Link>
+        </section>
+      )}
     </div>
   );
 }

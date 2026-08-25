@@ -17,7 +17,6 @@ export class OrderMapper {
       doc.customerLatitude ?? null,
       doc.customerLongitude ?? null,
       doc.deliveryType as DeliveryType,
-      doc.deliveryZoneId?.toHexString() ?? null,
       doc.deliveryFee,
       doc.subtotal,
       doc.discount,
@@ -31,6 +30,10 @@ export class OrderMapper {
       doc.confirmedAt,
       doc.readyAt,
       doc.deliveredAt,
+      (doc.statusHistory ?? []).map((h) => ({
+        status: h.status as OrderStatus,
+        at: h.at,
+      })),
     );
   }
 }

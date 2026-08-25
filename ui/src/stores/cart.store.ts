@@ -23,7 +23,6 @@ interface CartState {
   customerLatitude: number | null;
   customerLongitude: number | null;
   deliveryType: DeliveryType;
-  deliveryZoneId: string;
   paymentMethod: string;
   receiptUrl: string | null;
   notes: string;
@@ -35,7 +34,7 @@ interface CartState {
   updateQuantity: (index: number, quantity: number) => void;
   setCustomer: (data: Partial<Pick<CartState, 'customerName' | 'customerPhone' | 'customerAddress'>>) => void;
   setLocation: (lat: number | null, lng: number | null) => void;
-  setDelivery: (data: Partial<Pick<CartState, 'deliveryType' | 'deliveryZoneId'>>) => void;
+  setDelivery: (data: Partial<Pick<CartState, 'deliveryType'>>) => void;
   setPaymentMethod: (method: string) => void;
   setReceiptUrl: (url: string | null) => void;
   setNotes: (notes: string) => void;
@@ -52,7 +51,6 @@ export const useCartStore = create<CartState>((set, get) => ({
   customerLatitude: null,
   customerLongitude: null,
   deliveryType: 'pickup' as DeliveryType,
-  deliveryZoneId: '',
   paymentMethod: 'efectivo',
   receiptUrl: null,
   notes: '',
@@ -81,7 +79,6 @@ export const useCartStore = create<CartState>((set, get) => ({
       customerLatitude: null,
       customerLongitude: null,
       deliveryType: 'pickup' as DeliveryType,
-      deliveryZoneId: '',
       paymentMethod: 'efectivo',
       receiptUrl: null,
       notes: '',

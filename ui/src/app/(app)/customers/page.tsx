@@ -10,6 +10,7 @@ import { MaterialIcon } from '@/components/ui/material-icon';
 import type { CustomerSummary, Order, PaginatedResponse } from '@/types';
 import { OrderStatus } from '@/types';
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
+import { waMeUrl } from '@/lib/utils';
 
 const STATUS_LABELS: Record<string, string> = {
   [OrderStatus.NEW]: 'Nuevo',
@@ -113,17 +114,32 @@ export default function CustomersPage() {
         <div className="space-y-3">
           {customers.map((c) => (
             <Card key={c.phone} size="sm" className="shadow-sm border border-outline-variant/10">
-              <button
-                type="button"
-                className="w-full text-left px-4 py-3 flex items-center gap-4"
+              <div
+                role="button"
+                tabIndex={0}
+                className="w-full text-left px-4 py-3 flex items-center gap-4 cursor-pointer"
                 onClick={() => toggleExpand(c.phone)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleExpand(c.phone);
+                  }
+                }}
               >
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                   {(c.name || c.phone).slice(0, 1).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate">{c.name || 'Cliente'}</p>
-                  <p className="text-xs text-on-surface-variant">{c.phone}</p>
+                  <a
+                    href={waMeUrl(c.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {c.phone}
+                  </a>
                 </div>
                 <div className="hidden sm:flex items-center gap-6">
                   <div className="text-center">
@@ -144,7 +160,7 @@ export default function CustomersPage() {
                   size="sm"
                   className="text-on-surface-variant"
                 />
-              </button>
+              </div>
 
               {expanded === c.phone && (
                 <CardContent className="px-4 pb-4 space-y-2">

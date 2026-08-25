@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 const TAB_REDIRECTS: Record<string, string> = {
   general: "/business/data",
   payments: "/business/payments",
-  delivery: "/business/zones",
   hours: "/business/hours",
   billing: "/billing",
   kitchen: "/account?tab=access",

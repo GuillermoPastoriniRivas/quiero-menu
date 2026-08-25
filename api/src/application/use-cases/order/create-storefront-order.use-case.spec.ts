@@ -67,7 +67,6 @@ function makeOrder(): Order {
     null,
     null,
     DeliveryType.PICKUP,
-    null,
     0,
     0,
     0,
@@ -81,6 +80,7 @@ function makeOrder(): Order {
     null,
     null,
     null,
+    [],
   );
 }
 
@@ -114,7 +114,6 @@ describe('CreateStorefrontOrderUseCase — guard de horarios', () => {
       { createBulk: jest.fn().mockResolvedValue([]) } as any,
       restaurantRepo as any,
       hoursRepo as any,
-      { findById: stub() } as any,
       { findById: stub() } as any,
       { findById: stub() } as any,
       { findById: stub() } as any,

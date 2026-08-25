@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { MaterialIcon } from '@/components/ui/material-icon';
 import type { AnalyticsOverview } from '@/types';
 import { OrderStatus } from '@/types';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, formatMinutes } from '@/lib/format';
 
 const STATUS_LABELS: Record<string, string> = {
   [OrderStatus.NEW]: 'Nuevos',
@@ -17,6 +17,15 @@ const STATUS_LABELS: Record<string, string> = {
   [OrderStatus.DELIVERING]: 'En camino',
   [OrderStatus.DELIVERED]: 'Entregados',
   [OrderStatus.CANCELLED]: 'Cancelados',
+};
+
+const STAGE_LABELS: Record<string, string> = {
+  'new|preparing': 'Aceptación del pedido',
+  'preparing|ready': 'Preparación',
+  'ready|delivering': 'Salida a delivery',
+  'delivering|delivered': 'Entrega',
+  'ready|delivered': 'Entrega (retiro)',
+  'new|ready': 'Preparación',
 };
 
 export default function AnalyticsPage() {
@@ -240,6 +249,37 @@ export default function AnalyticsPage() {
                     <div key={s.status} className="flex items-center justify-between rounded-xl bg-surface-container-low px-4 py-3">
                       <span className="text-sm font-medium capitalize">{STATUS_LABELS[s.status] || s.status}</span>
                       <span className="font-bold">{s.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Tiempos entre estados */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tiempo entre estados</CardTitle>
+              <CardDescription>Cuánto tarda cada etapa, en promedio, durante el período</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.timings.length === 0 ? (
+                <p className="text-sm text-on-surface-variant py-4 text-center">
+                  Todavía no hay datos. Se registran a partir de cada cambio de estado de los pedidos.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {data.timings.map((t) => (
+                    <div key={`${t.from}|${t.to}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-container-low px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold">{STAGE_LABELS[`${t.from}|${t.to}`] || `${STATUS_LABELS[t.from] || t.from} → ${STATUS_LABELS[t.to] || t.to}`}</p>
+                        <p className="text-xs text-on-surface-variant">
+                          {t.count} pedido{t.count === 1 ? '' : 's'} · mínimo {formatMinutes(t.minMinutes)} · máximo {formatMinutes(t.maxMinutes)}
+                        </p>
+                      </div>
+                      <span className="text-lg font-extrabold text-primary" style={{ fontFamily: 'var(--font-heading)' }}>
+                        {formatMinutes(t.avgMinutes)}
+                      </span>
                     </div>
                   ))}
                 </div>

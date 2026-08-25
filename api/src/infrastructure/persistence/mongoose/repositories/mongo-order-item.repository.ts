@@ -34,6 +34,13 @@ export class MongoOrderItemRepository implements OrderItemRepository {
     });
     return docs.map(OrderItemMapper.toDomain);
   }
+
+  async findByOrderIds(orderIds: string[]): Promise<OrderItem[]> {
+    if (orderIds.length === 0) return [];
+    const ids = orderIds.map((id) => new Types.ObjectId(id));
+    const docs = await this.model.find({ orderId: { $in: ids } });
+    return docs.map(OrderItemMapper.toDomain);
+  }
   async deleteManyByRestaurantId(restaurantId: string): Promise<void> {
     await this.model.deleteMany({
       restaurantId: new Types.ObjectId(restaurantId),

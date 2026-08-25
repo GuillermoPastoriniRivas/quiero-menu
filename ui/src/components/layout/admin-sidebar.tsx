@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRestaurantStore } from "@/stores/restaurant.store";
-import { Logo } from "@/components/ui/logo";
+import { PanelLogo } from "@/components/layout/panel-logo";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { OpenStatusBadge } from "@/components/layout/open-status-badge";
 import { NAV_SECTIONS } from "@/components/layout/nav-items";
@@ -40,7 +40,7 @@ export function AdminSidebar() {
     <aside className="hidden lg:flex flex-col h-screen w-72 bg-white sticky top-0 shadow-[4px_0_16px_rgba(0,0,0,0.03)]">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-8">
-        <Logo size="lg" href="/dashboard" />
+        <PanelLogo size="lg" />
       </div>
 
       {/* Navigation */}

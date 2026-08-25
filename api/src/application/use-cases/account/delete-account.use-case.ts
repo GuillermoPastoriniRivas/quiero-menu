@@ -8,7 +8,6 @@ import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item
 import { OrderRepository } from '../../../domain/repositories/order.repository.js';
 import { OrderItemRepository } from '../../../domain/repositories/order-item.repository.js';
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
-import { DeliveryZoneRepository } from '../../../domain/repositories/delivery-zone.repository.js';
 import { KitchenAccessTokenRepository } from '../../../domain/repositories/kitchen-access-token.repository.js';
 import { DeliveryAccessTokenRepository } from '../../../domain/repositories/delivery-access-token.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
@@ -41,7 +40,6 @@ export class DeleteAccountUseCase {
     private readonly orderRepo: OrderRepository,
     private readonly orderItemRepo: OrderItemRepository,
     private readonly operatingHoursRepo: OperatingHoursRepository,
-    private readonly deliveryZoneRepo: DeliveryZoneRepository,
     private readonly kitchenTokenRepo: KitchenAccessTokenRepository,
     private readonly deliveryTokenRepo: DeliveryAccessTokenRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
@@ -126,7 +124,6 @@ export class DeleteAccountUseCase {
     await this.orderRepo.deleteManyByRestaurantId(restaurantId);
 
     await this.operatingHoursRepo.deleteByRestaurantId(restaurantId);
-    await this.deliveryZoneRepo.deleteManyByRestaurantId(restaurantId);
     await this.kitchenTokenRepo.deleteManyByRestaurantId(restaurantId);
     await this.deliveryTokenRepo.deleteManyByRestaurantId(restaurantId);
     await this.pushSubRepo.deleteManyByRestaurantId(restaurantId);

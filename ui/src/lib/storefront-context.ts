@@ -16,7 +16,7 @@ export function isCustomDomainHost(): boolean {
  * - En hosts propios (quiero.menu, localhost): NEXT_PUBLIC_API_URL + /v1.
  */
 export function getApiBase(): string {
-  const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+  const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3015/api';
   if (isCustomDomainHost()) {
     return `${window.location.origin}/api/v1`;
   }

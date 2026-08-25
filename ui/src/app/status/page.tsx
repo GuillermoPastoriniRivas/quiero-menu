@@ -31,7 +31,7 @@ export default function StatusPage() {
           const base =
             check.url === '/'
               ? ''
-              : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+              : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3015/api';
           const res = await fetch(`${base}${check.url}`, {
             cache: 'no-store',
           });

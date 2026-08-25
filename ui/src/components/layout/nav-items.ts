@@ -26,7 +26,6 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: '/analytics', label: 'Análisis', icon: 'insights' },
       { href: '/business/data', label: 'Datos del restaurante', icon: 'store' },
       { href: '/business/payments', label: 'Pagos', icon: 'payments' },
-      { href: '/business/zones', label: 'Zonas de delivery', icon: 'local_shipping' },
       { href: '/business/hours', label: 'Horarios', icon: 'schedule' },
     ],
   },

@@ -114,6 +114,21 @@ export default function TrackingPage() {
     };
   }, [restaurantId, code, fetchTracking]);
 
+  // Título de pestaña: solo el nombre del local. Favicon: el logo del local.
+  useEffect(() => {
+    if (!data) return;
+    document.title = data.restaurant.name;
+    if (data.restaurant.logoUrl) {
+      document
+        .querySelectorAll('link[rel="icon"]')
+        .forEach((el) => el.remove());
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = data.restaurant.logoUrl;
+      document.head.appendChild(link);
+    }
+  }, [data]);
+
   const handleReceiptUpload = async (file: File) => {
     if (!data) return;
     setUploadingReceipt(true);

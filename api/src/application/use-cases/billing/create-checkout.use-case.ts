@@ -47,7 +47,7 @@ export class CreateCheckoutUseCase {
         tenantId: input.restaurantId,
         customerEmail: user.email,
         plan: PlanTier.PRO,
-        successUrl: `${process.env.FRONTEND_URL ?? 'http://localhost:3001'}/settings?section=billing&success=true`,
+        successUrl: `${process.env.FRONTEND_URL ?? 'http://localhost:3003'}/settings?section=billing&success=true`,
       });
       return ok(result);
     } catch (error) {

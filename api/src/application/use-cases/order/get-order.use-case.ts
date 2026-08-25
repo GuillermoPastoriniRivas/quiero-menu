@@ -83,7 +83,6 @@ export class GetOrderUseCase {
       null,
       null,
       order.deliveryType,
-      order.deliveryZoneId,
       0,
       0,
       0,
@@ -97,6 +96,7 @@ export class GetOrderUseCase {
       order.confirmedAt,
       order.readyAt,
       order.deliveredAt,
+      order.statusHistory,
     );
 
     return ok({ order: redactedOrder, items: [], redacted: true });

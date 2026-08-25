@@ -4,7 +4,7 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileUserMenu } from "@/components/layout/mobile-user-menu";
 import { OpenStatusProvider } from "@/components/layout/open-status-provider";
 import { OpenStatusBadge } from "@/components/layout/open-status-badge";
-import { Logo } from "@/components/ui/logo";
+import { PanelLogo } from "@/components/layout/panel-logo";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Mobile Top Bar */}
             <header className="lg:hidden flex justify-between items-center w-full px-4 h-16 bg-white/90 backdrop-blur-xl sticky top-0 z-40 border-b border-outline-variant/10">
               <div className="flex items-center gap-2">
-                <Logo size="sm" href="/dashboard" />
+                <PanelLogo size="sm" />
               </div>
               <OpenStatusBadge compact />
               <MobileUserMenu />

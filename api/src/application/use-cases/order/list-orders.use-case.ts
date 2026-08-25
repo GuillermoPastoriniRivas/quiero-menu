@@ -2,14 +2,17 @@ import {
   OrderRepository,
   OrderFilters,
 } from '../../../domain/repositories/order.repository.js';
+import { OrderItemRepository } from '../../../domain/repositories/order-item.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
 import { Order } from '../../../domain/entities/order.entity.js';
+import { OrderItem } from '../../../domain/entities/order-item.entity.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
 import { SubscriptionStatus } from '../../../domain/enums/subscription-status.enum.js';
 import { PLAN_LIMITS } from '../../../domain/constants/plan-limits.js';
 
 export interface OrderWithRedaction extends Order {
   redacted: boolean;
+  items: OrderItem[];
 }
 
 export interface PlanInfo {
@@ -25,41 +28,39 @@ export interface ListOrdersOutput {
   planInfo: PlanInfo;
 }
 
-function redactOrder(order: Order): OrderWithRedaction {
-  return Object.assign(
-    new Order(
-      order.id,
-      order.restaurantId,
-      order.code,
-      order.status,
-      '***',
-      '***',
-      '***',
-      null,
-      null,
-      order.deliveryType,
-      order.deliveryZoneId,
-      0,
-      0,
-      0,
-      0,
-      null,
-      '',
-      null,
-      '',
-      order.source,
-      order.createdAt,
-      order.confirmedAt,
-      order.readyAt,
-      order.deliveredAt,
-    ),
-    { redacted: true },
+function redactOrder(order: Order): Order {
+  return new Order(
+    order.id,
+    order.restaurantId,
+    order.code,
+    order.status,
+    '***',
+    '***',
+    '***',
+    null,
+    null,
+    order.deliveryType,
+    0,
+    0,
+    0,
+    0,
+    null,
+    '',
+    null,
+    '',
+    order.source,
+    order.createdAt,
+    order.confirmedAt,
+    order.readyAt,
+    order.deliveredAt,
+    order.statusHistory,
   );
 }
 
 export class ListOrdersUseCase {
   constructor(
     private readonly orderRepo: OrderRepository,
+    private readonly orderItemRepo: OrderItemRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
   ) {}
 
@@ -85,48 +86,67 @@ export class ListOrdersUseCase {
     );
 
     // If PRO or unlimited, no redaction
+    let data: OrderWithRedaction[];
     if (limits.maxOrdersPerMonth === -1) {
-      const data = result.data.map(
-        (o) => Object.assign(o, { redacted: false }) as OrderWithRedaction,
+      data = result.data.map(
+        (o) => ({ ...o, redacted: false, items: [] }) as OrderWithRedaction,
       );
-      return {
-        data,
-        meta: result.meta,
-        planInfo: { plan, ordersUsed, ordersLimit: -1, redactedCount: 0 },
-      };
+    } else {
+      // FREE plan: find the cutoff date (the createdAt of the Nth order this month)
+      const cutoffDate = await this.orderRepo.findNthOrderCreatedAt(
+        filters.restaurantId,
+        monthStart,
+        limits.maxOrdersPerMonth,
+      );
+
+      data = result.data.map((order) => {
+        // If no cutoff, all orders are within limit
+        if (!cutoffDate) {
+          return { ...order, redacted: false, items: [] } as OrderWithRedaction;
+        }
+
+        // Orders created after the cutoff (the Nth order) are redacted
+        // Orders from before this month are never redacted
+        if (order.createdAt >= monthStart && order.createdAt > cutoffDate) {
+          return {
+            ...redactOrder(order),
+            redacted: true,
+            items: [],
+          } as OrderWithRedaction;
+        }
+
+        return { ...order, redacted: false, items: [] } as OrderWithRedaction;
+      });
     }
 
-    // FREE plan: find the cutoff date (the createdAt of the Nth order this month)
-    const cutoffDate = await this.orderRepo.findNthOrderCreatedAt(
-      filters.restaurantId,
-      monthStart,
-      limits.maxOrdersPerMonth,
-    );
-
-    const data = result.data.map((order) => {
-      // If no cutoff, all orders are within limit
-      if (!cutoffDate) {
-        return Object.assign(order, { redacted: false }) as OrderWithRedaction;
-      }
-
-      // Orders created after the cutoff (the Nth order) are redacted
-      // Orders from before this month are never redacted
-      if (order.createdAt >= monthStart && order.createdAt > cutoffDate) {
-        return redactOrder(order);
-      }
-
-      return Object.assign(order, { redacted: false }) as OrderWithRedaction;
-    });
+    // Batch-load items for visible orders (single query, no N+1)
+    const visibleIds = data.filter((o) => !o.redacted).map((o) => o.id);
+    const items =
+      visibleIds.length > 0
+        ? await this.orderItemRepo.findByOrderIds(visibleIds)
+        : [];
+    const itemsByOrderId = new Map<string, OrderItem[]>();
+    for (const item of items) {
+      const list = itemsByOrderId.get(item.orderId) ?? [];
+      list.push(item);
+      itemsByOrderId.set(item.orderId, list);
+    }
 
     return {
-      data,
+      data: data.map((o) => ({
+        ...o,
+        items: o.redacted ? [] : (itemsByOrderId.get(o.id) ?? []),
+      })),
       meta: result.meta,
-      planInfo: {
-        plan,
-        ordersUsed,
-        ordersLimit: limits.maxOrdersPerMonth,
-        redactedCount: Math.max(0, ordersUsed - limits.maxOrdersPerMonth),
-      },
+      planInfo:
+        limits.maxOrdersPerMonth === -1
+          ? { plan, ordersUsed, ordersLimit: -1, redactedCount: 0 }
+          : {
+              plan,
+              ordersUsed,
+              ordersLimit: limits.maxOrdersPerMonth,
+              redactedCount: Math.max(0, ordersUsed - limits.maxOrdersPerMonth),
+            },
     };
   }
 }

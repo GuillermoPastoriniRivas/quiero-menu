@@ -10,19 +10,24 @@ interface OrderState {
   meta: { total: number; page: number; pages: number } | null;
   planInfo: PlanInfo | null;
   isLoading: boolean;
+  isLoadingMore: boolean;
+  hasMore: boolean;
 
   fetch: (params?: { page?: number; status?: OrderStatus }) => Promise<void>;
+  loadMore: () => Promise<void>;
   getOrder: (id: string) => Promise<{ order: Order; items: OrderItem[]; redacted: boolean }>;
   updateStatus: (id: string, status: OrderStatus) => Promise<void>;
   connectRealtime: () => void;
   disconnectRealtime: () => void;
 }
 
-export const useOrderStore = create<OrderState>((set) => ({
+export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
   meta: null,
   planInfo: null,
   isLoading: false,
+  isLoadingMore: false,
+  hasMore: false,
 
   fetch: async (params) => {
     set({ isLoading: true });
@@ -32,9 +37,36 @@ export const useOrderStore = create<OrderState>((set) => ({
       if (params?.status) query.set('status', params.status);
       const qs = query.toString();
       const data = await api.get<OrderListResponse>(`/orders${qs ? `?${qs}` : ''}`);
-      set({ orders: data.data, meta: data.meta, planInfo: data.planInfo });
+      set({
+        orders: data.data,
+        meta: data.meta,
+        planInfo: data.planInfo,
+        hasMore: data.data.length < data.meta.total,
+      });
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  loadMore: async () => {
+    const { meta, hasMore, isLoadingMore } = get();
+    if (!hasMore || isLoadingMore || !meta) return;
+    set({ isLoadingMore: true });
+    try {
+      const next = meta.page + 1;
+      const data = await api.get<OrderListResponse>(`/orders?page=${next}&limit=50`);
+      set((s) => {
+        const seen = new Set(s.orders.map((o) => o.id));
+        const merged = [...s.orders, ...data.data.filter((o) => !seen.has(o.id))];
+        return {
+          orders: merged,
+          meta: data.meta,
+          planInfo: data.planInfo,
+          hasMore: merged.length < data.meta.total,
+        };
+      });
+    } finally {
+      set({ isLoadingMore: false });
     }
   },
 
@@ -46,7 +78,9 @@ export const useOrderStore = create<OrderState>((set) => ({
     const updated = await api.patch<Order>(`/orders/${id}/status`, { status });
     set((s) => ({
       orders: s.orders.map((o) =>
-        o.id === id ? { ...updated, redacted: o.redacted } : o,
+        o.id === id
+          ? { ...o, ...updated, redacted: o.redacted, items: o.items }
+          : o,
       ),
     }));
   },
@@ -59,10 +93,12 @@ export const useOrderStore = create<OrderState>((set) => ({
       const orderWithRedaction: OrderWithRedaction = { ...order, redacted: false };
       set((s) => {
         const exists = s.orders.some((o) => o.id === order.id);
+        const orders = exists
+          ? s.orders.map((o) => (o.id === order.id ? { ...orderWithRedaction, redacted: o.redacted } : o))
+          : [orderWithRedaction, ...s.orders];
         return {
-          orders: exists
-            ? s.orders.map((o) => (o.id === order.id ? { ...orderWithRedaction, redacted: o.redacted } : o))
-            : [orderWithRedaction, ...s.orders],
+          orders,
+          hasMore: s.meta ? orders.length < s.meta.total : true,
         };
       });
     });

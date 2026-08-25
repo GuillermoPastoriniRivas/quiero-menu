@@ -8,6 +8,7 @@ import {
   TopItem,
   HourlySalesPoint,
   StatusCount,
+  StageTiming,
 } from '../../../../domain/repositories/analytics.repository.js';
 import { OrderModel, OrderDocument } from '../schemas/order.schema.js';
 import {
@@ -175,5 +176,75 @@ export class MongoAnalyticsRepository implements AnalyticsRepository {
       status: r._id as string,
       count: r.count as number,
     }));
+  }
+
+  async getStatusTimings(
+    restaurantId: string,
+    since: Date,
+    to: Date,
+  ): Promise<StageTiming[]> {
+    const rows = await this.orderModel
+      .find(this.match(restaurantId, since, to))
+      .select('statusHistory')
+      .lean();
+
+    interface Bucket {
+      count: number;
+      sumMs: number;
+      minMs: number;
+      maxMs: number;
+    }
+    const buckets = new Map<string, Bucket>();
+
+    for (const row of rows) {
+      const history = (row.statusHistory ?? [])
+        .filter((h) => h && h.status && h.at)
+        .map((h) => ({
+          status: h.status,
+          at: new Date(h.at).getTime(),
+        }))
+        .sort((a, b) => a.at - b.at);
+
+      const uniq: { status: string; at: number }[] = [];
+      for (const h of history) {
+        const last = uniq[uniq.length - 1];
+        if (last && last.status === h.status) {
+          last.at = h.at;
+          continue;
+        }
+        uniq.push(h);
+      }
+
+      for (let i = 1; i < uniq.length; i++) {
+        const delta = uniq[i].at - uniq[i - 1].at;
+        if (delta < 0) continue;
+        const key = `${uniq[i - 1].status}|${uniq[i].status}`;
+        const b = buckets.get(key) ?? {
+          count: 0,
+          sumMs: 0,
+          minMs: Infinity,
+          maxMs: 0,
+        };
+        b.count += 1;
+        b.sumMs += delta;
+        b.minMs = Math.min(b.minMs, delta);
+        b.maxMs = Math.max(b.maxMs, delta);
+        buckets.set(key, b);
+      }
+    }
+
+    return [...buckets.entries()]
+      .map(([key, b]) => {
+        const [from, toStatus] = key.split('|');
+        return {
+          from,
+          to: toStatus,
+          count: b.count,
+          avgMinutes: +(b.sumMs / b.count / 60000).toFixed(1),
+          minMinutes: +(b.minMs / 60000).toFixed(1),
+          maxMinutes: +(b.maxMs / 60000).toFixed(1),
+        };
+      })
+      .sort((a, b) => b.count - a.count);
   }
 }

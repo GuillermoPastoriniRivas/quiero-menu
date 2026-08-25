@@ -8,10 +8,11 @@ import { OrderStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
+import { waMeUrl } from '@/lib/utils';
 import { browserPathParam } from '@/lib/static-route-param';
 
 const API_URL =
-  (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api') + '/v1';
+  (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3015/api') + '/v1';
 
 const STATUS_LABELS: Record<string, string> = {
   [OrderStatus.READY]: 'Listo para recoger',
@@ -42,7 +43,7 @@ export default function DeliveryBoardPage() {
   const params = useParams<{ code: string }>();
   const pathname = usePathname();
   const code = browserPathParam(pathname, params.code);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Array<Order & { items?: OrderItem[] }>>([]);
   const [loading, setLoading] = useState(true);
   const [invalid, setInvalid] = useState(false);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
@@ -50,8 +51,11 @@ export default function DeliveryBoardPage() {
   const knownOrderIds = useRef<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const fetchOrderItems = useCallback(async (orderIds: string[], token: string) => {
-    const missing = orderIds.filter((id) => !(id in orderItems));
+  const fetchOrderItems = useCallback(async (orders: Array<Order & { items?: OrderItem[] }>, token: string) => {
+    const missing = orders
+      .filter((o) => !(o.items && o.items.length > 0))
+      .map((o) => o.id)
+      .filter((id) => !(id in orderItems));
     if (missing.length === 0) return;
     const results = await Promise.allSettled(
       missing.map(async (id) => {
@@ -109,7 +113,7 @@ export default function DeliveryBoardPage() {
       const active: Order[] = data.data;
       alertNewOrders(active);
       setOrders(active);
-      fetchOrderItems(active.map((o: Order) => o.id), code);
+      fetchOrderItems(active, code);
     } catch {
       setInvalid(true);
     } finally {
@@ -200,7 +204,7 @@ export default function DeliveryBoardPage() {
               </div>
               <div className="flex-1 space-y-3 overflow-y-auto">
                 {statusOrders.map((order) => {
-                  const items = orderItems[order.id];
+                  const items = order.items ?? orderItems[order.id];
 
                   return (
                     <div
@@ -221,10 +225,12 @@ export default function DeliveryBoardPage() {
                         {/* Phone */}
                         {order.customerPhone && order.customerPhone !== '***' && (
                           <a
-                            href={`tel:${order.customerPhone}`}
+                            href={waMeUrl(order.customerPhone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="flex items-center gap-2 text-sm text-primary hover:underline"
                           >
-                            <MaterialIcon name="call" size="sm" />
+                            <MaterialIcon name="chat" size="sm" />
                             {order.customerPhone}
                           </a>
                         )}

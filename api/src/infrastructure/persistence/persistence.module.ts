@@ -9,10 +9,6 @@ import {
   OperatingHoursSchema,
 } from './mongoose/schemas/operating-hours.schema.js';
 import {
-  DeliveryZoneModel,
-  DeliveryZoneSchema,
-} from './mongoose/schemas/delivery-zone.schema.js';
-import {
   MenuCategoryModel,
   MenuCategorySchema,
 } from './mongoose/schemas/menu-category.schema.js';
@@ -82,7 +78,6 @@ import {
 
 import { MongoRestaurantRepository } from './mongoose/repositories/mongo-restaurant.repository.js';
 import { MongoOperatingHoursRepository } from './mongoose/repositories/mongo-operating-hours.repository.js';
-import { MongoDeliveryZoneRepository } from './mongoose/repositories/mongo-delivery-zone.repository.js';
 import { MongoMenuCategoryRepository } from './mongoose/repositories/mongo-menu-category.repository.js';
 import { MongoMenuItemRepository } from './mongoose/repositories/mongo-menu-item.repository.js';
 import { MongoMenuItemVariantRepository } from './mongoose/repositories/mongo-menu-item-variant.repository.js';
@@ -106,7 +101,6 @@ import { MongoAnalyticsRepository } from './mongoose/repositories/mongo-analytic
 const schemas = MongooseModule.forFeature([
   { name: RestaurantModel.name, schema: RestaurantSchema },
   { name: OperatingHoursModel.name, schema: OperatingHoursSchema },
-  { name: DeliveryZoneModel.name, schema: DeliveryZoneSchema },
   { name: MenuCategoryModel.name, schema: MenuCategorySchema },
   { name: MenuItemModel.name, schema: MenuItemSchema },
   { name: MenuItemVariantModel.name, schema: MenuItemVariantSchema },
@@ -134,7 +128,6 @@ const repositories = [
     provide: 'OperatingHoursRepository',
     useClass: MongoOperatingHoursRepository,
   },
-  { provide: 'DeliveryZoneRepository', useClass: MongoDeliveryZoneRepository },
   { provide: 'MenuCategoryRepository', useClass: MongoMenuCategoryRepository },
   { provide: 'MenuItemRepository', useClass: MongoMenuItemRepository },
   {

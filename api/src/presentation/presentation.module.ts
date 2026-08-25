@@ -15,7 +15,6 @@ import { StorefrontsIndexController } from './controllers/storefronts-index.cont
 import { RestaurantController } from './controllers/restaurant.controller.js';
 import { MenuController } from './controllers/menu.controller.js';
 import { OrderController } from './controllers/order.controller.js';
-import { DeliveryZoneController } from './controllers/delivery-zone.controller.js';
 import { KitchenController } from './controllers/kitchen.controller.js';
 import { DeliveryController } from './controllers/delivery.controller.js';
 import { OnboardingController } from './controllers/onboarding.controller.js';
@@ -79,12 +78,6 @@ import { ListOrdersUseCase } from '../application/use-cases/order/list-orders.us
 import { GetOrderUseCase } from '../application/use-cases/order/get-order.use-case.js';
 import { UpdateOrderStatusUseCase } from '../application/use-cases/order/update-order-status.use-case.js';
 import { NotifyReceiptUploadedUseCase } from '../application/use-cases/order/notify-receipt-uploaded.use-case.js';
-
-// Use Cases — Delivery Zone
-import { CreateDeliveryZoneUseCase } from '../application/use-cases/delivery-zone/create-delivery-zone.use-case.js';
-import { ListDeliveryZonesUseCase } from '../application/use-cases/delivery-zone/list-delivery-zones.use-case.js';
-import { UpdateDeliveryZoneUseCase } from '../application/use-cases/delivery-zone/update-delivery-zone.use-case.js';
-import { DeleteDeliveryZoneUseCase } from '../application/use-cases/delivery-zone/delete-delivery-zone.use-case.js';
 
 // Use Cases — Kitchen
 import { CreateKitchenTokenUseCase } from '../application/use-cases/kitchen/create-kitchen-token.use-case.js';
@@ -244,7 +237,6 @@ const useCaseProviders = [
       orderRepo: any,
       orderItemRepo: any,
       ohRepo: any,
-      zoneRepo: any,
       subRepo: any,
       billingRepo: any,
     ) =>
@@ -259,7 +251,6 @@ const useCaseProviders = [
         orderRepo,
         orderItemRepo,
         ohRepo,
-        zoneRepo,
         subRepo,
         billingRepo,
       ),
@@ -274,7 +265,6 @@ const useCaseProviders = [
       'OrderRepository',
       'OrderItemRepository',
       'OperatingHoursRepository',
-      'DeliveryZoneRepository',
       'SubscriptionRepository',
       'BillingRecordRepository',
     ],
@@ -292,7 +282,6 @@ const useCaseProviders = [
       orderRepo: any,
       orderItemRepo: any,
       ohRepo: any,
-      zoneRepo: any,
       kitchenRepo: any,
       deliveryRepo: any,
       subRepo: any,
@@ -314,7 +303,6 @@ const useCaseProviders = [
         orderRepo,
         orderItemRepo,
         ohRepo,
-        zoneRepo,
         kitchenRepo,
         deliveryRepo,
         subRepo,
@@ -336,7 +324,6 @@ const useCaseProviders = [
       'OrderRepository',
       'OrderItemRepository',
       'OperatingHoursRepository',
-      'DeliveryZoneRepository',
       'KitchenAccessTokenRepository',
       'DeliveryAccessTokenRepository',
       'SubscriptionRepository',
@@ -424,7 +411,6 @@ const useCaseProviders = [
       varRepo: any,
       optRepo: any,
       hoursRepo: any,
-      zoneRepo: any,
       subRepo: any,
     ) =>
       new GetRestaurantBySlugUseCase(
@@ -434,7 +420,6 @@ const useCaseProviders = [
         varRepo,
         optRepo,
         hoursRepo,
-        zoneRepo,
         subRepo,
       ),
     inject: [
@@ -444,7 +429,6 @@ const useCaseProviders = [
       'MenuItemVariantRepository',
       'MenuItemOptionRepository',
       'OperatingHoursRepository',
-      'DeliveryZoneRepository',
       'SubscriptionRepository',
     ],
   },
@@ -603,7 +587,6 @@ const useCaseProviders = [
       itemRepo: any,
       varRepo: any,
       optRepo: any,
-      zoneRepo: any,
       couponRepo: any,
       gateway: any,
       pushService: any,
@@ -616,7 +599,6 @@ const useCaseProviders = [
         itemRepo,
         varRepo,
         optRepo,
-        zoneRepo,
         couponRepo,
         gateway,
         pushService,
@@ -629,7 +611,6 @@ const useCaseProviders = [
       'MenuItemRepository',
       'MenuItemVariantRepository',
       'MenuItemOptionRepository',
-      'DeliveryZoneRepository',
       'CouponRepository',
       'RealtimeGatewayPort',
       'PushServicePort',
@@ -643,9 +624,13 @@ const useCaseProviders = [
   },
   {
     provide: 'ListOrdersUseCase',
-    useFactory: (orderRepo: any, subRepo: any) =>
-      new ListOrdersUseCase(orderRepo, subRepo),
-    inject: ['OrderRepository', 'SubscriptionRepository'],
+    useFactory: (orderRepo: any, orderItemRepo: any, subRepo: any) =>
+      new ListOrdersUseCase(orderRepo, orderItemRepo, subRepo),
+    inject: [
+      'OrderRepository',
+      'OrderItemRepository',
+      'SubscriptionRepository',
+    ],
   },
   {
     provide: 'GetOrderUseCase',
@@ -689,28 +674,6 @@ const useCaseProviders = [
       'EmailServicePort',
       ConfigService,
     ],
-  },
-
-  // Delivery Zone
-  {
-    provide: 'CreateDeliveryZoneUseCase',
-    useFactory: (zoneRepo: any) => new CreateDeliveryZoneUseCase(zoneRepo),
-    inject: ['DeliveryZoneRepository'],
-  },
-  {
-    provide: 'ListDeliveryZonesUseCase',
-    useFactory: (zoneRepo: any) => new ListDeliveryZonesUseCase(zoneRepo),
-    inject: ['DeliveryZoneRepository'],
-  },
-  {
-    provide: 'UpdateDeliveryZoneUseCase',
-    useFactory: (zoneRepo: any) => new UpdateDeliveryZoneUseCase(zoneRepo),
-    inject: ['DeliveryZoneRepository'],
-  },
-  {
-    provide: 'DeleteDeliveryZoneUseCase',
-    useFactory: (zoneRepo: any) => new DeleteDeliveryZoneUseCase(zoneRepo),
-    inject: ['DeliveryZoneRepository'],
   },
 
   // Onboarding
@@ -961,7 +924,6 @@ const useCaseProviders = [
     RestaurantController,
     MenuController,
     OrderController,
-    DeliveryZoneController,
     KitchenController,
     DeliveryController,
     OnboardingController,

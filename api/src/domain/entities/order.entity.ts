@@ -2,6 +2,11 @@ import { OrderStatus } from '../enums/order-status.enum.js';
 import { OrderSource } from '../enums/order-source.enum.js';
 import { DeliveryType } from '../enums/delivery-type.enum.js';
 
+export interface StatusTransition {
+  status: OrderStatus;
+  at: Date;
+}
+
 export class Order {
   constructor(
     public readonly id: string,
@@ -14,7 +19,6 @@ export class Order {
     public readonly customerLatitude: number | null,
     public readonly customerLongitude: number | null,
     public readonly deliveryType: DeliveryType,
-    public readonly deliveryZoneId: string | null,
     public readonly deliveryFee: number,
     public readonly subtotal: number,
     public readonly discount: number,
@@ -28,5 +32,6 @@ export class Order {
     public readonly confirmedAt: Date | null,
     public readonly readyAt: Date | null,
     public readonly deliveredAt: Date | null,
+    public readonly statusHistory: StatusTransition[],
   ) {}
 }

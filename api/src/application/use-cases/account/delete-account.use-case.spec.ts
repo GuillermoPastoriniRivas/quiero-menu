@@ -9,7 +9,6 @@ import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item
 import { OrderRepository } from '../../../domain/repositories/order.repository.js';
 import { OrderItemRepository } from '../../../domain/repositories/order-item.repository.js';
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
-import { DeliveryZoneRepository } from '../../../domain/repositories/delivery-zone.repository.js';
 import { KitchenAccessTokenRepository } from '../../../domain/repositories/kitchen-access-token.repository.js';
 import { DeliveryAccessTokenRepository } from '../../../domain/repositories/delivery-access-token.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
@@ -36,7 +35,6 @@ describe('DeleteAccountUseCase', () => {
       orderRepo?: Partial<OrderRepository>;
       orderItemRepo?: Partial<OrderItemRepository>;
       operatingHoursRepo?: Partial<OperatingHoursRepository>;
-      deliveryZoneRepo?: Partial<DeliveryZoneRepository>;
       kitchenTokenRepo?: Partial<KitchenAccessTokenRepository>;
       deliveryTokenRepo?: Partial<DeliveryAccessTokenRepository>;
       subscriptionRepo?: Partial<SubscriptionRepository>;
@@ -144,20 +142,13 @@ describe('DeleteAccountUseCase', () => {
     const orderItemRepo: OrderItemRepository = {
       createBulk: jest.fn(),
       findByOrderId: jest.fn(),
+      findByOrderIds: jest.fn(),
       deleteManyByRestaurantId: jest.fn().mockResolvedValue(undefined),
     };
     const operatingHoursRepo: OperatingHoursRepository = {
       findByRestaurantId: jest.fn(),
       upsertBulk: jest.fn(),
       deleteByRestaurantId: jest.fn().mockResolvedValue(undefined),
-    };
-    const deliveryZoneRepo: DeliveryZoneRepository = {
-      create: jest.fn(),
-      findByRestaurantId: jest.fn(),
-      findById: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      deleteManyByRestaurantId: jest.fn().mockResolvedValue(undefined),
     };
     const kitchenTokenRepo: KitchenAccessTokenRepository = {
       create: jest.fn(),
@@ -233,7 +224,6 @@ describe('DeleteAccountUseCase', () => {
     Object.assign(orderRepo, overrides.orderRepo);
     Object.assign(orderItemRepo, overrides.orderItemRepo);
     Object.assign(operatingHoursRepo, overrides.operatingHoursRepo);
-    Object.assign(deliveryZoneRepo, overrides.deliveryZoneRepo);
     Object.assign(kitchenTokenRepo, overrides.kitchenTokenRepo);
     Object.assign(deliveryTokenRepo, overrides.deliveryTokenRepo);
     Object.assign(subscriptionRepo, overrides.subscriptionRepo);
@@ -255,7 +245,6 @@ describe('DeleteAccountUseCase', () => {
       orderRepo,
       orderItemRepo,
       operatingHoursRepo,
-      deliveryZoneRepo,
       kitchenTokenRepo,
       deliveryTokenRepo,
       subscriptionRepo,
@@ -278,7 +267,6 @@ describe('DeleteAccountUseCase', () => {
       orderRepo,
       orderItemRepo,
       operatingHoursRepo,
-      deliveryZoneRepo,
       kitchenTokenRepo,
       deliveryTokenRepo,
       subscriptionRepo,
@@ -304,7 +292,6 @@ describe('DeleteAccountUseCase', () => {
       orderRepo,
       orderItemRepo,
       operatingHoursRepo,
-      deliveryZoneRepo,
       kitchenTokenRepo,
       deliveryTokenRepo,
       subscriptionRepo,
@@ -324,9 +311,6 @@ describe('DeleteAccountUseCase', () => {
     expect(orderItemRepo.deleteManyByRestaurantId).toHaveBeenCalledWith('r1');
     expect(orderRepo.deleteManyByRestaurantId).toHaveBeenCalledWith('r1');
     expect(operatingHoursRepo.deleteByRestaurantId).toHaveBeenCalledWith('r1');
-    expect(deliveryZoneRepo.deleteManyByRestaurantId).toHaveBeenCalledWith(
-      'r1',
-    );
     expect(kitchenTokenRepo.deleteManyByRestaurantId).toHaveBeenCalledWith(
       'r1',
     );

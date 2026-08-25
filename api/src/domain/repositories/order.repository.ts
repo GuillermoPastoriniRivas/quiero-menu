@@ -34,7 +34,12 @@ export interface OrderRepository {
   create(
     data: Omit<
       Order,
-      'id' | 'createdAt' | 'confirmedAt' | 'readyAt' | 'deliveredAt'
+      | 'id'
+      | 'createdAt'
+      | 'confirmedAt'
+      | 'readyAt'
+      | 'deliveredAt'
+      | 'statusHistory'
     >,
   ): Promise<Order>;
   findById(id: string): Promise<Order | null>;

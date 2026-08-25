@@ -35,6 +35,7 @@ export interface OrderTrackingOutput {
     id: string;
     slug: string;
     name: string;
+    logoUrl: string;
     currency: string;
     paymentMethods: PaymentMethodsConfig;
     phone: string;
@@ -86,6 +87,7 @@ export class GetOrderTrackingUseCase {
         id: restaurant.id,
         slug: restaurant.slug,
         name: restaurant.name,
+        logoUrl: restaurant.logoUrl,
         currency: restaurant.currency,
         paymentMethods: restaurant.paymentMethods,
         phone: restaurant.phone,

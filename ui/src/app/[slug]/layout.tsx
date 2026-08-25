@@ -26,7 +26,9 @@ export async function generateMetadata({
   }
 
   const url = `https://quiero.menu/${slug}`;
-  const title = entry.city
+  // Título de pestaña: solo el nombre del local. El título social (OG/Twitter)
+  // queda descriptivo para que la preview compartida explique el menú.
+  const socialTitle = entry.city
     ? `Menú de ${entry.name} en ${entry.city} | quiero.menu`
     : `Menú de ${entry.name} | quiero.menu`;
   const description =
@@ -35,12 +37,17 @@ export async function generateMetadata({
   const image = entry.logoUrl || entry.bannerUrl || undefined;
 
   return {
-    title: { absolute: title },
+    title: { absolute: entry.name },
     description,
     alternates: { canonical: url },
     keywords: ["menú digital", entry.name, ...(entry.city ? [entry.city] : [])],
+    icons: {
+      icon: entry.logoUrl
+        ? [{ url: entry.logoUrl, type: "image/png", sizes: "any" }]
+        : undefined,
+    },
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url,
       siteName: "quiero.menu",
@@ -50,7 +57,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: socialTitle,
       description,
       ...(image ? { images: [image] } : {}),
     },

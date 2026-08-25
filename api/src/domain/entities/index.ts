@@ -1,11 +1,11 @@
 export { Restaurant } from './restaurant.entity.js';
 export { OperatingHours } from './operating-hours.entity.js';
-export { DeliveryZone } from './delivery-zone.entity.js';
 export { MenuCategory } from './menu-category.entity.js';
 export { MenuItem } from './menu-item.entity.js';
 export { MenuItemVariant } from './menu-item-variant.entity.js';
 export { MenuItemOption } from './menu-item-option.entity.js';
 export { Order } from './order.entity.js';
+export type { StatusTransition } from './order.entity.js';
 export { OrderItem } from './order-item.entity.js';
 export type { SelectedOption } from './order-item.entity.js';
 export { User } from './user.entity.js';

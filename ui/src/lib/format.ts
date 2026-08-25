@@ -30,6 +30,15 @@ export function formatRelativeTime(date: string | Date): string {
   return formatDate(date);
 }
 
+export function formatMinutes(min: number): string {
+  if (min < 1) return '<1 min';
+  const total = Math.round(min);
+  if (total < 60) return `${total} min`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return m > 0 ? `${h} h ${m} min` : `${h} h`;
+}
+
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 export function dayName(dayOfWeek: number): string {

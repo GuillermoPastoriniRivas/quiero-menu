@@ -106,15 +106,6 @@ export interface OperatingHours {
   isClosed: boolean;
 }
 
-export interface DeliveryZone {
-  id: string;
-  restaurantId: string;
-  name: string;
-  price: number;
-  estimatedMinutes: number;
-  isActive: boolean;
-}
-
 export interface MenuCategory {
   id: string;
   restaurantId: string;
@@ -168,7 +159,6 @@ export interface Order {
   customerLatitude: number | null;
   customerLongitude: number | null;
   deliveryType: DeliveryType;
-  deliveryZoneId: string | null;
   deliveryFee: number;
   subtotal: number;
   discount: number;
@@ -182,6 +172,12 @@ export interface Order {
   confirmedAt: string | null;
   readyAt: string | null;
   deliveredAt: string | null;
+  statusHistory?: StatusTransition[];
+}
+
+export interface StatusTransition {
+  status: OrderStatus;
+  at: string;
 }
 
 export interface OrderItem {
@@ -312,6 +308,7 @@ export interface PlanInfo {
 
 export interface OrderWithRedaction extends Order {
   redacted: boolean;
+  items?: OrderItem[];
 }
 
 export interface OrderListResponse {
@@ -358,7 +355,6 @@ export interface StorefrontData {
     })[];
   })[];
   operatingHours: OperatingHours[];
-  deliveryZones: DeliveryZone[];
   showPoweredByFooter: boolean;
   isOpen: boolean;
   todayHours: OperatingHours | null;
@@ -404,6 +400,7 @@ export interface TrackingResponse {
     id: string;
     slug: string;
     name: string;
+    logoUrl: string;
     currency: string;
     paymentMethods: PaymentMethodsConfig;
     phone: string;
@@ -466,4 +463,12 @@ export interface AnalyticsOverview {
   }[];
   byHour: { hour: number; orders: number; revenue: number }[];
   status: { status: string; count: number }[];
+  timings: {
+    from: string;
+    to: string;
+    count: number;
+    avgMinutes: number;
+    minMinutes: number;
+    maxMinutes: number;
+  }[];
 }

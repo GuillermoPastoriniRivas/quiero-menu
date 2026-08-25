@@ -9,7 +9,7 @@ function requireEnv(key: string, fallbackForDev?: string): string {
 }
 
 export default () => ({
-  port: parseInt(process.env.PORT ?? '3000', 10),
+  port: parseInt(process.env.PORT ?? '3015', 10),
   mongodb: {
     uri: requireEnv('MONGODB_URI', 'mongodb://localhost:27017/quiero-menu'),
   },
@@ -22,7 +22,7 @@ export default () => ({
     ),
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
   },
-  frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3001',
+  frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3003',
   internalToken: process.env.INTERNAL_API_TOKEN ?? '',
   customDomain: {
     ownDomains: (process.env.OWN_DOMAINS ?? 'quiero.menu,www.quiero.menu')

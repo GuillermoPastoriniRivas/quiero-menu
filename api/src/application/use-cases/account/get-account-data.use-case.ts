@@ -8,7 +8,6 @@ import { MenuItemOptionRepository } from '../../../domain/repositories/menu-item
 import { OrderRepository } from '../../../domain/repositories/order.repository.js';
 import { OrderItemRepository } from '../../../domain/repositories/order-item.repository.js';
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
-import { DeliveryZoneRepository } from '../../../domain/repositories/delivery-zone.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
 import { BillingRecordRepository } from '../../../domain/repositories/billing-record.repository.js';
 import { Result, ok, err } from '../../common/result.js';
@@ -30,7 +29,6 @@ export class GetAccountDataUseCase {
     private readonly orderRepo: OrderRepository,
     private readonly orderItemRepo: OrderItemRepository,
     private readonly operatingHoursRepo: OperatingHoursRepository,
-    private readonly deliveryZoneRepo: DeliveryZoneRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
     private readonly billingRecordRepo: BillingRecordRepository,
   ) {}
@@ -88,9 +86,6 @@ export class GetAccountDataUseCase {
         menu,
         orders,
         operatingHours: await this.operatingHoursRepo.findByRestaurantId(
-          restaurant.id,
-        ),
-        deliveryZones: await this.deliveryZoneRepo.findByRestaurantId(
           restaurant.id,
         ),
         subscription: await this.subscriptionRepo.findByRestaurantId(

@@ -1,5 +1,8 @@
 import { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
-import { AnalyticsRepository } from '../../../domain/repositories/analytics.repository.js';
+import {
+  AnalyticsRepository,
+  StageTiming,
+} from '../../../domain/repositories/analytics.repository.js';
 import { StorefrontViewRepository } from '../../../domain/repositories/storefront-view.repository.js';
 
 export type AnalyticsRange = '7' | '30';
@@ -28,6 +31,7 @@ export interface AnalyticsOverview {
   }[];
   byHour: { hour: number; orders: number; revenue: number }[];
   status: { status: string; count: number }[];
+  timings: StageTiming[];
 }
 
 export class GetAnalyticsOverviewUseCase {
@@ -49,16 +53,25 @@ export class GetAnalyticsOverviewUseCase {
     const since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
     const prevSince = new Date(since.getTime() - days * 24 * 60 * 60 * 1000);
 
-    const [summary, prevSummary, views, daily, topItems, byHour, status] =
-      await Promise.all([
-        this.analyticsRepo.getSummary(restaurantId, since, now),
-        this.analyticsRepo.getSummary(restaurantId, prevSince, since),
-        this.viewRepo.countViews(restaurantId, since, now),
-        this.analyticsRepo.getDailySales(restaurantId, since, now, timezone),
-        this.analyticsRepo.getTopItems(restaurantId, since, now, 10),
-        this.analyticsRepo.getSalesByHour(restaurantId, since, now, timezone),
-        this.analyticsRepo.getStatusDistribution(restaurantId, since, now),
-      ]);
+    const [
+      summary,
+      prevSummary,
+      views,
+      daily,
+      topItems,
+      byHour,
+      status,
+      timings,
+    ] = await Promise.all([
+      this.analyticsRepo.getSummary(restaurantId, since, now),
+      this.analyticsRepo.getSummary(restaurantId, prevSince, since),
+      this.viewRepo.countViews(restaurantId, since, now),
+      this.analyticsRepo.getDailySales(restaurantId, since, now, timezone),
+      this.analyticsRepo.getTopItems(restaurantId, since, now, 10),
+      this.analyticsRepo.getSalesByHour(restaurantId, since, now, timezone),
+      this.analyticsRepo.getStatusDistribution(restaurantId, since, now),
+      this.analyticsRepo.getStatusTimings(restaurantId, since, now),
+    ]);
 
     const conversionRate = views > 0 ? (summary.orders / views) * 100 : 0;
     const cancelledRate =
@@ -94,6 +107,7 @@ export class GetAnalyticsOverviewUseCase {
       topItems,
       byHour,
       status,
+      timings,
     };
   }
 }

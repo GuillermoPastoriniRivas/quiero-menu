@@ -88,7 +88,6 @@ export class StorefrontController {
       ...body,
       deliveryType: body.deliveryType as DeliveryType,
       customerAddress: body.customerAddress,
-      deliveryZoneId: body.deliveryZoneId,
       receiptUrl: body.receiptUrl,
       couponCode: body.couponCode,
     });

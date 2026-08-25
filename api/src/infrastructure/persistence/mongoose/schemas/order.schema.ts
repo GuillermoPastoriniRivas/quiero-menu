@@ -38,9 +38,6 @@ export class OrderModel {
   @Prop({ required: true, enum: DeliveryType })
   deliveryType: string;
 
-  @Prop({ type: Types.ObjectId, default: null })
-  deliveryZoneId: Types.ObjectId | null;
-
   @Prop({ default: 0 })
   deliveryFee: number;
 
@@ -76,6 +73,17 @@ export class OrderModel {
 
   @Prop({ type: Date, default: null })
   deliveredAt: Date | null;
+
+  @Prop({
+    type: [
+      {
+        status: { type: String, required: true },
+        at: { type: Date, required: true },
+      },
+    ],
+    default: [],
+  })
+  statusHistory: { status: string; at: Date }[];
 
   createdAt: Date;
 }

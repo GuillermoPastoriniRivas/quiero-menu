@@ -268,7 +268,7 @@ export class MercadoPagoPaymentService implements PaymentProviderPort {
           transaction_amount: this.amount,
           currency_id: this.currency,
         },
-        back_url: `${process.env.FRONTEND_URL ?? 'http://localhost:3001'}/settings?section=billing`,
+        back_url: `${process.env.FRONTEND_URL ?? 'http://localhost:3003'}/settings?section=billing`,
       },
     );
 

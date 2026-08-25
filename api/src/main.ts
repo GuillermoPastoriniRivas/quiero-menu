@@ -33,7 +33,7 @@ async function bootstrap() {
 
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-    : ['http://localhost:3000', 'http://localhost:3001'];
+    : ['http://localhost:3003'];
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -47,7 +47,7 @@ async function bootstrap() {
     maxAge: 86400,
   });
 
-  const port = config.get<number>('port', 3000);
+  const port = config.get<number>('port', 3015);
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('quiero.menu — API')

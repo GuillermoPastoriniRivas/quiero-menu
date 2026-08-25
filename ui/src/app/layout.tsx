@@ -79,7 +79,6 @@ export default function RootLayout({
   return (
     <html lang="es-AR" className={`${plusJakartaSans.variable} ${inter.variable} ${poppins.variable} h-full antialiased`}>
       <head>
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" sizes="any" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#E8532C" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

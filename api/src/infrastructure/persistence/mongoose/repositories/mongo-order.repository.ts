@@ -28,15 +28,18 @@ export class MongoOrderRepository implements OrderRepository {
   async create(
     data: Omit<
       Order,
-      'id' | 'createdAt' | 'confirmedAt' | 'readyAt' | 'deliveredAt'
+      | 'id'
+      | 'createdAt'
+      | 'confirmedAt'
+      | 'readyAt'
+      | 'deliveredAt'
+      | 'statusHistory'
     >,
   ): Promise<Order> {
     const doc = await this.model.create({
       ...data,
       restaurantId: new Types.ObjectId(data.restaurantId),
-      deliveryZoneId: data.deliveryZoneId
-        ? new Types.ObjectId(data.deliveryZoneId)
-        : null,
+      statusHistory: [{ status: OrderStatus.NEW, at: new Date() }],
     });
     return OrderMapper.toDomain(doc);
   }
@@ -86,7 +89,10 @@ export class MongoOrderRepository implements OrderRepository {
     if (timestamps) Object.assign(update, timestamps);
     const doc = await this.model.findByIdAndUpdate(
       id,
-      { $set: update },
+      {
+        $set: update,
+        $push: { statusHistory: { status, at: new Date() } },
+      },
       { returnDocument: 'after' },
     );
     return doc ? OrderMapper.toDomain(doc) : null;
