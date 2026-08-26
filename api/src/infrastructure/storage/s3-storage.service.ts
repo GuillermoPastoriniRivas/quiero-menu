@@ -63,20 +63,41 @@ export class S3StorageService implements StoragePort {
   }
 
   async getObject(key: string): Promise<StoredObject | null> {
+    let result;
     try {
-      const result = await this.client.send(
+      result = await this.client.send(
         new GetObjectCommand({ Bucket: this.bucket, Key: key }),
       );
-      const bytes = await result.Body?.transformToByteArray();
-      if (!bytes) return null;
-      return {
-        body: Buffer.from(bytes),
-        contentType: result.ContentType ?? 'application/octet-stream',
-      };
     } catch (error) {
       const name = (error as { name?: string })?.name;
-      if (name === 'NoSuchKey') return null;
+      if (name === 'NoSuchKey' || name === 'NotFound') return null;
       throw error;
     }
+
+    const body = result.Body as unknown;
+    if (!body) return null;
+
+    let bytes: Uint8Array;
+    const withTransform = body as {
+      transformToByteArray?: () => Promise<Uint8Array>;
+    };
+    if (typeof withTransform.transformToByteArray === 'function') {
+      bytes = await withTransform.transformToByteArray();
+    } else {
+      bytes = await new Promise<Buffer>((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        const stream = body as NodeJS.ReadableStream;
+        stream.on('data', (chunk: Buffer | string) =>
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)),
+        );
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+        stream.on('error', reject);
+      });
+    }
+
+    return {
+      body: Buffer.from(bytes),
+      contentType: result.ContentType ?? 'application/octet-stream',
+    };
   }
 }
