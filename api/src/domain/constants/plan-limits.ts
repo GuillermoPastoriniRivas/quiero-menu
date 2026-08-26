@@ -9,7 +9,7 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   [PlanTier.FREE]: {
-    maxOrdersPerMonth: 50,
+    maxOrdersPerMonth: 100,
     showPoweredByFooter: true,
     customDomain: false,
     priceMonthly: 0,

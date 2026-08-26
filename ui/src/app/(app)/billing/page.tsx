@@ -120,13 +120,14 @@ export default function BillingPage() {
     }
   };
 
-  const maxOrders = limits?.maxOrdersPerMonth ?? 50;
+  const maxOrders = limits?.maxOrdersPerMonth ?? 100;
   const ordersThisMonth = usage?.ordersThisMonth ?? 0;
   const unlimited = maxOrders === -1;
   const usagePct = unlimited
     ? 0
     : Math.min(100, Math.round((ordersThisMonth / maxOrders) * 100));
   const overLimit = !unlimited && ordersThisMonth > maxOrders;
+  const nearLimit = !unlimited && ordersThisMonth >= 80 && ordersThisMonth <= maxOrders;
 
   return (
     <div className="space-y-6">
@@ -231,6 +232,11 @@ export default function BillingPage() {
               {overLimit && (
                 <p className="text-sm text-destructive">
                   Superaste el límite del plan Gratis. Subí a Pro para ver todos tus pedidos.
+                </p>
+              )}
+              {nearLimit && (
+                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Estás cerca del límite del plan gratis. Con Pro tenés pedidos ilimitados + estadísticas + sin marca.
                 </p>
               )}
             </>

@@ -209,7 +209,7 @@ const softwareApplicationJsonLd = {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'ARS',
-    description: 'Plan gratuito hasta 50 pedidos al mes. Plan Pro ARS 15.000 al mes.',
+    description: 'Plan gratuito hasta 100 pedidos al mes. Plan Pro ARS 15.000 al mes.',
   },
 };
 
@@ -330,7 +330,7 @@ export default function LandingPage() {
                   <span className="animate-ping-soft absolute inline-flex h-full w-full rounded-full bg-success" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
                 </span>
-                Gratis hasta 50 pedidos por mes · sin tarjeta
+                Gratis hasta 100 pedidos por mes · sin tarjeta
               </span>
 
               <h1 className="mt-6 font-[family-name:var(--font-heading)] text-[2.6rem] font-extrabold leading-[0.98] tracking-[-0.035em] text-balance sm:text-6xl lg:text-[4.25rem]">
@@ -651,7 +651,7 @@ export default function LandingPage() {
                 </p>
                 <ul className="mt-6 flex-1 space-y-3 text-sm">
                   {[
-                    'Hasta 50 pedidos al mes',
+                    'Hasta 100 pedidos al mes',
                     'Menú digital con QR',
                     'Pedidos online directos',
                     'Confirmación por WhatsApp',

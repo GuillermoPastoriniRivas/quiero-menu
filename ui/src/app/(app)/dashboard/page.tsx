@@ -136,6 +136,10 @@ export default function DashboardPage() {
   const hasSales = analytics.data ? analytics.data.summary.orders > 0 : orders.length > 0;
   const salesLoading = analytics.loading && orders.length === 0;
 
+  const freeOrdersLimit = billing.info?.limits?.maxOrdersPerMonth ?? 100;
+  const ordersThisMonth = billing.info?.usage?.ordersThisMonth ?? 0;
+  const nearFreeLimit = billing.info?.plan === PlanTier.FREE && ordersThisMonth >= 80 && ordersThisMonth <= freeOrdersLimit;
+
   const handleAdvance = async (order: OrderWithRedaction) => {
     const next = NEXT_STATUS[order.status];
     if (!next) return;
@@ -319,22 +323,33 @@ export default function DashboardPage() {
 
       {/* Plan banner */}
       {billing.info?.plan === PlanTier.FREE && (
-        <section className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-              <MaterialIcon name="workspace_premium" size="lg" />
+        <>
+          {nearFreeLimit && (
+            <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+              <MaterialIcon name="info" size="md" className="text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Estás cerca del límite del plan gratis</p>
+                <p className="text-sm text-amber-800">Con Pro tenés pedidos ilimitados + estadísticas + sin marca.</p>
+              </div>
+            </section>
+          )}
+          <section className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <MaterialIcon name="workspace_premium" size="lg" />
+              </div>
+              <div>
+                <p className="font-bold">Plan Gratis · {freeOrdersLimit} pedidos/mes</p>
+                <p className="text-sm text-on-surface-variant">Subí a Pro por {formatCurrency(15000, 'ARS')}/mes con 30 días gratis: pedidos ilimitados y sin marca quiero.menu.</p>
+              </div>
             </div>
-            <div>
-              <p className="font-bold">Plan Gratis · 50 pedidos/mes</p>
-              <p className="text-sm text-on-surface-variant">Subí a Pro por {formatCurrency(15000, 'ARS')}/mes con 30 días gratis: pedidos ilimitados y sin marca quiero.menu.</p>
-            </div>
-          </div>
-          <Link href="/billing">
-            <Button size="sm" className="gradient-cta text-white">
-              <MaterialIcon name="bolt" size="sm" className="mr-1" />Subir a Pro
-            </Button>
-          </Link>
-        </section>
+            <Link href="/billing">
+              <Button size="sm" className="gradient-cta text-white">
+                <MaterialIcon name="bolt" size="sm" className="mr-1" />Subir a Pro
+              </Button>
+            </Link>
+          </section>
+        </>
       )}
     </div>
   );
