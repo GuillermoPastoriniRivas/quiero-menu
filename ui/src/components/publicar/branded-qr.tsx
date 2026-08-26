@@ -14,7 +14,7 @@ function imageProxyUrl(publicUrl: string): string {
     const url = new URL(publicUrl);
     const key = url.pathname.replace(/^\/+/, '');
     if (!key) return publicUrl;
-    return `${API_URL}/uploads/image/${key}`;
+    return `${API_URL}/uploads/image?key=${encodeURIComponent(key)}`;
   } catch {
     return publicUrl;
   }

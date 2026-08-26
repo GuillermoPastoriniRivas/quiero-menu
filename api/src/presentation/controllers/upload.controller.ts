@@ -2,7 +2,7 @@ import {
   Controller,
   Post,
   Get,
-  Param,
+  Query,
   Body,
   Inject,
   BadRequestException,
@@ -53,10 +53,10 @@ export class UploadController {
    * La key es el path completo dentro del bucket, ej: <restaurantId>/logo/<uuid>.webp
    */
   @Public()
-  @Get('image/:key(*)')
+  @Get('image')
   @Header('Access-Control-Allow-Origin', '*')
   @Header('Cache-Control', 'public, max-age=86400')
-  async getImage(@Param('key') key: string) {
+  async getImage(@Query('key') key?: string) {
     if (!key || key.length > 200) {
       throw new BadRequestException('Invalid image key');
     }
