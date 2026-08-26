@@ -328,7 +328,88 @@ export interface LoginResponse {
     role: string;
     restaurantId: string;
     restaurantSlug: string;
+    platformAdmin?: boolean;
   };
+}
+
+// Admin (panel interno)
+export interface AdminRestaurantListItem {
+  id: string;
+  slug: string;
+  name: string;
+  city: string;
+  status: string;
+  plan: string | null;
+  createdAt: string;
+  ownerName: string;
+  ownerEmail: string;
+}
+
+export interface AdminRestaurantDetail {
+  restaurant: {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    city: string;
+    country: string;
+    address: string;
+    phone: string;
+    currency: string;
+    timezone: string;
+    status: string;
+    openOverride: "open" | "closed" | null;
+    customDomain: string | null;
+    customDomainStatus: unknown;
+    createdAt: string;
+    updatedAt: string;
+  };
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+    emailVerified: boolean;
+  } | null;
+  subscription: {
+    plan: string;
+    status: string;
+    currentPeriodEnd: string | null;
+    paymentProvider: string;
+    canceledAt: string | null;
+  } | null;
+  stats: {
+    ordersTotal: number;
+    ordersLast30d: number;
+    categories: number;
+    products: number;
+  };
+}
+
+export interface AdminAuditLogEntry {
+  id: string;
+  event: string;
+  actorUserId: string | null;
+  restaurantId: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface AdminCreateRestaurantResponse {
+  userId: string;
+  restaurantId: string;
+  slug: string;
+}
+
+export interface ImpersonateResponse extends LoginResponse {
+  impersonated: true;
+}
+
+export interface CurrentUserMeResponse {
+  id: string;
+  name: string;
+  email: string;
+  restaurants: { id: string; slug: string; name: string; role: string }[];
+  platformAdmin?: boolean;
 }
 
 export interface PaginatedResponse<T> {

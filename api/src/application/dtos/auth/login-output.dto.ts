@@ -8,5 +8,6 @@ export interface LoginOutput {
     role: string;
     restaurantId: string;
     restaurantSlug: string;
+    platformAdmin?: boolean;
   };
 }

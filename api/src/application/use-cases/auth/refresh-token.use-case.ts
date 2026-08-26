@@ -5,6 +5,7 @@ import { UserRestaurantRepository } from '../../../domain/repositories/user-rest
 import { TokenProviderPort } from '../../ports/token-provider.port.js';
 import { Result, ok, err } from '../../common/result.js';
 import { InvalidCredentialsError } from '../../../domain/errors/domain-errors.js';
+import { isPlatformAdminEmail } from '../../common/platform-admin.js';
 
 export interface RefreshOutput {
   accessToken: string;
@@ -17,6 +18,7 @@ export class RefreshTokenUseCase {
     private readonly userRepo: UserRepository,
     private readonly userRestaurantRepo: UserRestaurantRepository,
     private readonly tokenProvider: TokenProviderPort,
+    private readonly platformAdminEmails: string[] = [],
   ) {}
 
   async execute(
@@ -37,10 +39,16 @@ export class RefreshTokenUseCase {
 
     const primary = userRestaurants[0];
 
+    const platformAdmin = isPlatformAdminEmail(
+      user.email,
+      this.platformAdminEmails,
+    );
+
     const payload = {
       sub: user.id,
       restaurantId: primary.restaurantId,
       role: primary.role,
+      ...(platformAdmin ? { plat: true } : {}),
     };
     const accessToken = this.tokenProvider.signAccess(payload);
     const newRefreshToken = this.tokenProvider.signRefresh(payload);

@@ -15,6 +15,7 @@ import {
   EmailAlreadyExistsError,
   SlugAlreadyExistsError,
 } from '../../../domain/errors/domain-errors.js';
+import { isPlatformAdminEmail } from '../../common/platform-admin.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
 import { UserRole } from '../../../domain/enums/user-role.enum.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
@@ -35,6 +36,7 @@ export class SignupUseCase {
     private readonly verificationTokenRepo: VerificationTokenRepository,
     private readonly emailService: EmailServicePort,
     private readonly frontendUrl: string,
+    private readonly platformAdminEmails: string[] = [],
   ) {}
 
   async execute(
@@ -103,10 +105,16 @@ export class SignupUseCase {
       externalSubscriptionId: null,
     });
 
+    const platformAdmin = isPlatformAdminEmail(
+      user.email,
+      this.platformAdminEmails,
+    );
+
     const payload = {
       sub: user.id,
       restaurantId: restaurant.id,
       role: UserRole.OWNER,
+      ...(platformAdmin ? { plat: true } : {}),
     };
     const accessToken = this.tokenProvider.signAccess(payload);
     const refreshToken = this.tokenProvider.signRefresh(payload);
@@ -134,6 +142,7 @@ export class SignupUseCase {
         role: UserRole.OWNER,
         restaurantId: restaurant.id,
         restaurantSlug: restaurant.slug,
+        ...(platformAdmin ? { platformAdmin: true } : {}),
       },
     });
   }

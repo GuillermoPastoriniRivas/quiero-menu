@@ -136,7 +136,7 @@ export function CommissionCalculator() {
         </div>
 
         <Link
-          href="/onboarding"
+          href="/signup"
           className="gradient-cta mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-bold text-white transition-transform hover:scale-[1.01]"
         >
           Quiero quedarme con esa plata

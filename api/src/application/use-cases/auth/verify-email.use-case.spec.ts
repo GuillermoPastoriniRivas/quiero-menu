@@ -21,6 +21,7 @@ describe('VerifyEmailUseCase', () => {
       findByEmail: jest.fn(),
       updatePasswordHash: jest.fn(),
       updateEmailVerified: jest.fn().mockResolvedValue(null),
+      searchByEmail: jest.fn().mockResolvedValue([]),
       delete: jest.fn(),
     };
     const tokenRepo: VerificationTokenRepository = {

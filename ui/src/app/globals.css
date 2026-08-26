@@ -488,6 +488,83 @@
   }
 }
 
+/* ── Landing v2 ── */
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes orb-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(4%, -6%, 0) scale(1.08); }
+}
+
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes cta-shimmer {
+  0% { transform: translateX(-140%) skewX(-18deg); }
+  55%, 100% { transform: translateX(280%) skewX(-18deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-in {
+    animation: hero-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--d, 0s);
+  }
+
+  .animate-orb {
+    animation: orb-drift 16s ease-in-out infinite;
+  }
+
+  .marquee-track {
+    animation: marquee-x 34s linear infinite;
+  }
+
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
+
+  /* Brillo que barre el CTA primario. Requiere relative + overflow-hidden en el botón. */
+  .btn-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 34%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+    animation: cta-shimmer 4.5s ease-in-out infinite;
+  }
+}
+
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* Borde degradado para la card destacada (Pro). */
+.gradient-border-card {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--surface-container-lowest), var(--surface-container-lowest)) padding-box,
+    linear-gradient(135deg, var(--primary), #ff9a3c 55%, var(--primary)) border-box;
+}
+
+.noise-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
 @keyframes pulse-urgent {
   0%, 100% { box-shadow: 0 0 0 0 rgba(232, 83, 44, 0.4); }
   50% { box-shadow: 0 0 0 8px rgba(232, 83, 44, 0); }

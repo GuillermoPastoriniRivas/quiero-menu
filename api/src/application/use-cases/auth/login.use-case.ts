@@ -9,6 +9,7 @@ import { LoginInput } from '../../dtos/auth/login-input.dto.js';
 import { LoginOutput } from '../../dtos/auth/login-output.dto.js';
 import { Result, ok, err } from '../../common/result.js';
 import { InvalidCredentialsError } from '../../../domain/errors/domain-errors.js';
+import { isPlatformAdminEmail } from '../../common/platform-admin.js';
 
 export class LoginUseCase {
   constructor(
@@ -18,6 +19,7 @@ export class LoginUseCase {
     private readonly restaurantRepo: RestaurantRepository,
     private readonly passwordHasher: PasswordHasherPort,
     private readonly tokenProvider: TokenProviderPort,
+    private readonly platformAdminEmails: string[] = [],
   ) {}
 
   async execute(
@@ -38,10 +40,16 @@ export class LoginUseCase {
     const primary = userRestaurants[0];
     const restaurant = await this.restaurantRepo.findById(primary.restaurantId);
 
+    const platformAdmin = isPlatformAdminEmail(
+      user.email,
+      this.platformAdminEmails,
+    );
+
     const payload = {
       sub: user.id,
       restaurantId: primary.restaurantId,
       role: primary.role,
+      ...(platformAdmin ? { plat: true } : {}),
     };
     const accessToken = this.tokenProvider.signAccess(payload);
     const refreshToken = this.tokenProvider.signRefresh(payload);
@@ -64,6 +72,7 @@ export class LoginUseCase {
         role: primary.role,
         restaurantId: primary.restaurantId,
         restaurantSlug: restaurant?.slug ?? '',
+        ...(platformAdmin ? { platformAdmin: true } : {}),
       },
     });
   }

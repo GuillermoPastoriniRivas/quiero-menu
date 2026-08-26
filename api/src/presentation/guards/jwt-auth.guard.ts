@@ -42,6 +42,8 @@ export class JwtAuthGuard implements CanActivate {
         _id: payload.sub,
         restaurantId: payload.restaurantId,
         role: payload.role,
+        platformAdmin: payload.plat === true,
+        impersonating: payload.imp === true,
       };
       return true;
     } catch {

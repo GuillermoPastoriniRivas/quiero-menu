@@ -34,6 +34,32 @@ export class MongoRestaurantRepository implements RestaurantRepository {
     return doc ? RestaurantMapper.toDomain(doc) : null;
   }
 
+  async searchAdmin(term: string, limit: number): Promise<Restaurant[]> {
+    const filter = term
+      ? {
+          $or: [
+            {
+              slug: {
+                $regex: term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                $options: 'i',
+              },
+            },
+            {
+              name: {
+                $regex: term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                $options: 'i',
+              },
+            },
+          ],
+        }
+      : {};
+    const docs = await this.model
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit);
+    return docs.map((doc) => RestaurantMapper.toDomain(doc));
+  }
+
   async findByStatus(status: RestaurantStatus): Promise<Restaurant[]> {
     const docs = await this.model.find({ status });
     return docs.map((doc) => RestaurantMapper.toDomain(doc));

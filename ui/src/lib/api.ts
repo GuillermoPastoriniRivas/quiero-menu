@@ -149,8 +149,8 @@ class ApiClient {
     return this.request<T>('PATCH', path, body);
   }
 
-  delete<T>(path: string) {
-    return this.request<T>('DELETE', path);
+  delete<T>(path: string, body?: unknown) {
+    return this.request<T>('DELETE', path, body);
   }
 
   async postFormData<T>(path: string, formData: FormData): Promise<T> {

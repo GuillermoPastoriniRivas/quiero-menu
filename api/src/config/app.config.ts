@@ -23,6 +23,12 @@ export default () => ({
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
   },
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3003',
+  platformAdmin: {
+    emails: (process.env.PLATFORM_ADMIN_EMAILS ?? '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
+  },
   internalToken: process.env.INTERNAL_API_TOKEN ?? '',
   customDomain: {
     ownDomains: (process.env.OWN_DOMAINS ?? 'quiero.menu,www.quiero.menu')

@@ -2,6 +2,10 @@ export interface TokenPayload {
   sub: string;
   restaurantId: string;
   role: string;
+  /** Platform admin (quiero.menu staff). */
+  plat?: boolean;
+  /** Session issued via admin impersonation. */
+  imp?: boolean;
 }
 
 export interface TokenProviderPort {

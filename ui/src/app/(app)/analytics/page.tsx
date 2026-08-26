@@ -31,9 +31,9 @@ const STAGE_LABELS: Record<string, string> = {
 export default function AnalyticsPage() {
   const restaurant = useRestaurantStore((s) => s.restaurant);
   const fetchRestaurant = useRestaurantStore((s) => s.fetch);
-  const [range, setRange] = useState<'7' | '30'>('7');
+  const [range, setRange] = useState<'today' | '7' | '30'>('today');
   const [result, setResult] = useState<{
-    range: '7' | '30';
+    range: 'today' | '7' | '30';
     data: AnalyticsOverview | null;
     error: boolean;
   } | null>(null);
@@ -82,6 +82,13 @@ export default function AnalyticsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Análisis de ventas</h1>
         <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={range === 'today' ? 'default' : 'outline'}
+            onClick={() => setRange('today')}
+          >
+            Hoy
+          </Button>
           <Button
             size="sm"
             variant={range === '7' ? 'default' : 'outline'}

@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth.store';
+import { GuestGate } from '@/components/auth/guest-gate';
+import { AuthShell, FormError, IconInput } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
-import { Logo } from '@/components/ui/logo';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,81 +27,102 @@ export default function LoginPage() {
       await login(email, password);
       router.push('/dashboard');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al iniciar sesion');
+      setError(e instanceof Error ? e.message : 'Error al iniciar sesión');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface">
-      {/* Header */}
-      <header className="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-50 bg-surface">
-        <div className="flex items-center gap-2">
-          <Logo size="md" href="/" />
-        </div>
-        <Link href="/signup" className="text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors">
-          Registrate
-        </Link>
-      </header>
+    <AuthShell
+      badgeIcon="storefront"
+      title="Ingresá a tu panel"
+      subtitle="Mirá los pedidos de hoy y mové los estados para que tu cliente vea todo en vivo."
+      swapText="¿No tenés cuenta?"
+      swapLabel="Creá una gratis"
+      swapHref="/signup"
+    >
+      <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+        {error && <FormError message={error} />}
 
-      {/* Main */}
-      <main className="flex-grow flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl overflow-hidden shadow-ambient-lg p-8 lg:p-12">
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl font-bold text-on-surface mb-2" style={{ fontFamily: 'var(--font-heading)' }}>Bienvenido de vuelta</h1>
-            <p className="text-on-surface-variant text-sm">Ingresa a tu cuenta para gestionar tu restaurante</p>
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="ml-1 text-xs font-bold text-on-surface-variant">
+            Email
+          </Label>
+          <IconInput
+            id="email"
+            type="email"
+            icon="mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="nombre@ejemplo.com"
+            autoComplete="email"
+            required
+            className="h-10"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-end justify-between">
+            <Label htmlFor="password" className="ml-1 text-xs font-bold text-on-surface-variant">
+              Contraseña
+            </Label>
+            <Link
+              href="/forgot-password"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              La olvidé
+            </Link>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-error-container/30 text-on-error-container px-4 py-3 rounded-xl text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-bold text-on-surface-variant ml-1">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nombre@ejemplo.com" required />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-bold text-on-surface-variant ml-1">Contrasena</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  <MaterialIcon name={showPassword ? 'visibility_off' : 'visibility'} size="sm" />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-xs text-primary font-semibold hover:underline">
-                Olvidaste tu contrasena?
-              </Link>
-            </div>
-
-            <Button type="submit" className="w-full mt-6" size="lg" disabled={loading}>
-              {loading ? 'Ingresando...' : 'Ingresar'}
-            </Button>
-
-            <p className="text-center text-sm text-on-surface-variant pt-2">
-              No tenes cuenta?{' '}
-              <Link href="/signup" className="text-primary font-semibold hover:underline">Registrate</Link>
-            </p>
-          </form>
+          <IconInput
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            icon="lock"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+            className="h-10"
+            rightSlot={
+              <button
+                type="button"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                className="absolute right-3 top-1/2 z-10 -translate-y-1/2 text-outline transition-colors hover:text-on-surface"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <MaterialIcon name={showPassword ? 'visibility_off' : 'visibility'} size="sm" />
+              </button>
+            }
+          />
         </div>
-      </main>
-    </div>
+
+        <Button
+          type="submit"
+          size="lg"
+          disabled={loading}
+          className="btn-shimmer mt-1.5 h-11 w-full overflow-hidden rounded-2xl text-base font-bold"
+        >
+          {loading ? (
+            <>
+              <MaterialIcon name="progress_activity" size="sm" className="animate-spin" />
+              Ingresando...
+            </>
+          ) : (
+            <>
+              Ingresar
+              <MaterialIcon name="arrow_forward" size="sm" />
+            </>
+          )}
+        </Button>
+      </form>
+    </AuthShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <GuestGate>
+      <LoginForm />
+    </GuestGate>
   );
 }

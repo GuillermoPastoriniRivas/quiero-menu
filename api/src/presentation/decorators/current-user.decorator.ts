@@ -5,6 +5,8 @@ export interface RequestUser {
   _id: string;
   restaurantId: string;
   role: string;
+  platformAdmin?: boolean;
+  impersonating?: boolean;
 }
 
 export const CurrentUser = createParamDecorator(

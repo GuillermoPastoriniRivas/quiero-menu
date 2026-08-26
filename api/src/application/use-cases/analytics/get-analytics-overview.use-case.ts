@@ -5,7 +5,48 @@ import {
 } from '../../../domain/repositories/analytics.repository.js';
 import { StorefrontViewRepository } from '../../../domain/repositories/storefront-view.repository.js';
 
-export type AnalyticsRange = '7' | '30';
+export type AnalyticsRange = 'today' | '7' | '30';
+
+function zonedOffsetMs(date: Date, timeZone: string): number {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  const parts = dtf.formatToParts(date);
+  const values: Record<string, string> = {};
+  for (const part of parts) {
+    if (part.type !== 'literal') values[part.type] = part.value;
+  }
+  const asUTC = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour === '24' ? '00' : values.hour),
+    Number(values.minute),
+    Number(values.second),
+  );
+  return asUTC - date.getTime();
+}
+
+function startOfZonedDay(date: Date, timeZone: string): Date {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  // formato en-US: MM/DD/YYYY
+  const [month, day, year] = dtf.format(date).split('/');
+  const midnightLocal = Date.UTC(Number(year), Number(month) - 1, Number(day));
+  const offset = zonedOffsetMs(new Date(midnightLocal), timeZone);
+  return new Date(midnightLocal - offset);
+}
 
 export interface AnalyticsOverview {
   range: number;
@@ -48,10 +89,22 @@ export class GetAnalyticsOverviewUseCase {
     const restaurant = await this.restaurantRepo.findById(restaurantId);
     const timezone = restaurant?.timezone || 'UTC';
 
-    const days = range === '30' ? 30 : 7;
     const now = new Date();
-    const since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-    const prevSince = new Date(since.getTime() - days * 24 * 60 * 60 * 1000);
+    let since: Date;
+    let prevSince: Date;
+    let rangeDays: number;
+
+    if (range === 'today') {
+      since = startOfZonedDay(now, timezone);
+      // El período anterior compara contra una ventana de igual duración que terminó a medianoche
+      prevSince = new Date(since.getTime() - (now.getTime() - since.getTime()));
+      rangeDays = 1;
+    } else {
+      const days = range === '30' ? 30 : 7;
+      since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      prevSince = new Date(since.getTime() - days * 24 * 60 * 60 * 1000);
+      rangeDays = days;
+    }
 
     const [
       summary,
@@ -78,7 +131,7 @@ export class GetAnalyticsOverviewUseCase {
       summary.orders > 0 ? (summary.cancelled / summary.orders) * 100 : 0;
 
     return {
-      range: days,
+      range: rangeDays,
       summary: {
         revenue: summary.revenue,
         orders: summary.orders,

@@ -8,7 +8,7 @@ import { useRestaurantStore } from "@/stores/restaurant.store";
 import { PanelLogo } from "@/components/layout/panel-logo";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { OpenStatusBadge } from "@/components/layout/open-status-badge";
-import { NAV_SECTIONS } from "@/components/layout/nav-items";
+import { NAV_SECTIONS, NAV_SETTINGS_ITEM } from "@/components/layout/nav-items";
 import { cn } from "@/lib/utils";
 
 export function AdminSidebar() {
@@ -86,6 +86,26 @@ export function AdminSidebar() {
             </div>
           );
         })}
+
+        {/* Ajustes: config set-and-forget, al pie de la nav */}
+        <div className="mt-2 pt-3 border-t border-outline-variant/10">
+          <Link
+            href={NAV_SETTINGS_ITEM.href}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 active:translate-x-0.5",
+              pathname.startsWith(NAV_SETTINGS_ITEM.href)
+                ? "bg-surface-container-low text-primary"
+                : "text-on-surface hover:bg-surface-container-low",
+            )}
+          >
+            <MaterialIcon
+              name={NAV_SETTINGS_ITEM.icon}
+              size="md"
+              fill={pathname.startsWith(NAV_SETTINGS_ITEM.href)}
+            />
+            <span>{NAV_SETTINGS_ITEM.label}</span>
+          </Link>
+        </div>
       </nav>
 
       {/* User card at bottom */}
@@ -110,13 +130,15 @@ export function AdminSidebar() {
                 Mi menú público
               </Link>
             )}
+            {user?.platformAdmin && (
+              <Link href="/admin/locales" className={cn(userLinkClass, 'text-primary font-semibold')}>
+                <MaterialIcon name="admin_panel_settings" size="sm" />
+                Panel interno
+              </Link>
+            )}
             <Link href="/account" className={userLinkClass}>
-              <MaterialIcon name="notifications" size="sm" />
-              Notificaciones
-            </Link>
-            <Link href="/account?tab=access" className={userLinkClass}>
-              <MaterialIcon name="key" size="sm" />
-              Accesos
+              <MaterialIcon name="person" size="sm" />
+              Cuenta
             </Link>
             <Link href="/billing" className={userLinkClass}>
               <MaterialIcon name="workspace_premium" size="sm" />

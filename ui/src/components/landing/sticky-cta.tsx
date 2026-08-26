@@ -23,7 +23,7 @@ export function StickyCta() {
       )}
     >
       <Link
-        href="/onboarding"
+        href="/signup"
         className="gradient-cta flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-bold text-white"
       >
         Crear mi menú gratis

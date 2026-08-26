@@ -27,6 +27,16 @@ export class MongoUserRepository implements UserRepository {
     return doc ? UserMapper.toDomain(doc) : null;
   }
 
+  async searchByEmail(term: string, limit: number): Promise<User[]> {
+    if (!term) return [];
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const docs = await this.model
+      .find({ email: { $regex: escaped, $options: 'i' } })
+      .sort({ createdAt: -1 })
+      .limit(limit);
+    return docs.map((doc) => UserMapper.toDomain(doc));
+  }
+
   async updatePasswordHash(
     id: string,
     passwordHash: string,

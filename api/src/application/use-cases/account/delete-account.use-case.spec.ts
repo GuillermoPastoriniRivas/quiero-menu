@@ -56,6 +56,7 @@ describe('DeleteAccountUseCase', () => {
       findByEmail: jest.fn(),
       updatePasswordHash: jest.fn(),
       updateEmailVerified: jest.fn(),
+      searchByEmail: jest.fn().mockResolvedValue([]),
       delete: jest.fn().mockResolvedValue(true),
     };
     const userRestaurantRepo: UserRestaurantRepository = {
@@ -77,6 +78,7 @@ describe('DeleteAccountUseCase', () => {
       findByCustomDomain: jest.fn().mockResolvedValue(null),
       listByCustomDomainState: jest.fn().mockResolvedValue([]),
       listStaleCustomDomainProvisioning: jest.fn().mockResolvedValue([]),
+      searchAdmin: jest.fn().mockResolvedValue([]),
       update: jest.fn(),
       delete: jest.fn().mockResolvedValue(true),
     };

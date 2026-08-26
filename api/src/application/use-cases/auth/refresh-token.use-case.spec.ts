@@ -42,6 +42,7 @@ describe('RefreshTokenUseCase', () => {
       findByEmail: jest.fn(),
       updatePasswordHash: jest.fn(),
       updateEmailVerified: jest.fn(),
+      searchByEmail: jest.fn().mockResolvedValue([]),
       delete: jest.fn(),
     };
     const userRestaurantRepo: UserRestaurantRepository = {

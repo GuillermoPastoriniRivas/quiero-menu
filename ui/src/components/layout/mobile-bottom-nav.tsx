@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { MOBILE_PRIMARY, NAV_SECTIONS } from '@/components/layout/nav-items';
+import { MOBILE_PRIMARY, NAV_SECTIONS, NAV_SETTINGS_ITEM } from '@/components/layout/nav-items';
 import { cn } from '@/lib/utils';
 
 export function MobileBottomNav() {
@@ -77,6 +77,27 @@ export function MobileBottomNav() {
                 </div>
               </div>
             ))}
+
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/70 px-2 mb-2">
+                Configuración
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <Link
+                  href={NAV_SETTINGS_ITEM.href}
+                  onClick={() => setMoreOpen(false)}
+                  className={cn(
+                    'flex flex-col items-center gap-2 rounded-2xl p-4 text-xs font-semibold transition-colors',
+                    isActive(NAV_SETTINGS_ITEM.href)
+                      ? 'bg-surface-container text-primary'
+                      : 'bg-surface-container-low text-on-surface'
+                  )}
+                >
+                  <MaterialIcon name={NAV_SETTINGS_ITEM.icon} size="lg" fill={isActive(NAV_SETTINGS_ITEM.href)} />
+                  <span className="text-center leading-tight">{NAV_SETTINGS_ITEM.label}</span>
+                </Link>
+              </div>
+            </div>
           </div>
         </SheetContent>
       </Sheet>

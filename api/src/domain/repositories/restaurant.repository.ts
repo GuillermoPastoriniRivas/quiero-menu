@@ -7,6 +7,7 @@ export interface RestaurantRepository {
   ): Promise<Restaurant>;
   findById(id: string): Promise<Restaurant | null>;
   findBySlug(slug: string): Promise<Restaurant | null>;
+  searchAdmin(term: string, limit: number): Promise<Restaurant[]>;
   findByStatus(status: RestaurantStatus): Promise<Restaurant[]>;
   findByCustomDomain(domain: string): Promise<Restaurant | null>;
   listByCustomDomainState(

@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       return;
     }
     // Sesión sin usuario cacheado (de antes de persistirlo): rehidratar por API.
-    api.get<{ id: string; name: string; email: string; restaurants: { id: string; slug: string; name: string; role: string }[] }>('/auth/me')
+    api.get<{ id: string; name: string; email: string; restaurants: { id: string; slug: string; name: string; role: string }[]; platformAdmin?: boolean }>('/auth/me')
       .then((data) => {
         const r = data.restaurants[0];
         const user = {
@@ -75,6 +75,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           role: r?.role ?? '',
           restaurantId: r?.id ?? '',
           restaurantSlug: r?.slug ?? '',
+          ...(data.platformAdmin ? { platformAdmin: true as const } : {}),
         };
         persistUser(user);
         set({ user, isAuthenticated: true, isLoading: false });

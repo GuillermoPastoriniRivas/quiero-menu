@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { QRCodeSVG } from 'qrcode.react';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Logo } from '@/components/ui/logo';
 import { CookielessAnalytics } from '@/components/analytics/cookieless-analytics';
@@ -82,41 +83,7 @@ const PANEL_POINTS = [
   ['monitor', 'Pantalla aparte para la cocina', 'La cocina ve lo que tiene que preparar sin tocar tu panel.'],
   ['block', 'Pausás un plato en dos toques', 'Se te acabó la mozzarella: lo pausás y deja de aparecer al instante.'],
   ['insights', 'Sabés qué se vende y a qué hora', 'Tus platos más pedidos y tus horas pico, sin planillas.'],
-];
-
-const FEATURES = [
-  {
-    icon: 'palette',
-    title: 'Tu local, con tu cara',
-    text: 'Colores, logo, portada y descripción. No parece una plantilla más: parece tuyo.',
-  },
-  {
-    icon: 'local_offer',
-    title: 'Cupones para llenar los días flojos',
-    text: 'Armás un descuento para el martes a la noche y lo compartís por WhatsApp.',
-  },
-  {
-    icon: 'print',
-    title: 'QR listo para imprimir',
-    text: 'Hoja A4 con tu QR, tu contacto y las instrucciones. La imprimís y la pegás en la mesa.',
-  },
-  {
-    icon: 'language',
-    title: 'Tu propio dominio',
-    text: 'tulocal.com apuntando a tu menú, con certificado incluido.',
-    pro: true,
-  },
-  {
-    icon: 'groups',
-    title: 'Tus clientes son tuyos',
-    text: 'Quién te compró, qué pidió y cuánto gastó. Ninguna app se queda con esa lista.',
-  },
-  {
-    icon: 'payments',
-    title: 'Cobrás como cobrás hoy',
-    text: 'Efectivo o transferencia. Le mostrás tus datos bancarios y sube el comprobante ahí mismo.',
-  },
-];
+] as const;
 
 const SITUATIONS = [
   {
@@ -136,7 +103,7 @@ const SITUATIONS = [
   },
 ];
 
-const BUSINESSES = [
+const MARQUEE_ITEMS = [
   ['local_pizza', 'Pizzerías'],
   ['lunch_dining', 'Hamburgueserías'],
   ['restaurant', 'Rotiserías'],
@@ -145,6 +112,13 @@ const BUSINESSES = [
   ['bakery_dining', 'Panaderías'],
   ['ramen_dining', 'Sushi y delivery'],
   ['local_bar', 'Bares'],
+] as const;
+
+const STATS = [
+  { value: '$0', label: 'de comisión por pedido', detail: 'Hoy y siempre' },
+  { value: '100', label: 'pedidos por mes gratis', detail: 'Sin tarjeta de crédito' },
+  { value: '5 min', label: 'de foto a link publicado', detail: 'La IA carga tus platos' },
+  { value: '24/7', label: 'recibiendo pedidos solos', detail: 'Ni feriados ni lluvia' },
 ];
 
 const faqs = [
@@ -264,6 +238,252 @@ function SectionLabel({ children, tone = 'light' }: { children: React.ReactNode;
   );
 }
 
+function PrimaryCta({
+  className = '',
+  size = 'lg',
+}: {
+  className?: string;
+  size?: 'md' | 'lg';
+}) {
+  return (
+    <Link
+      href="/signup"
+      className={`btn-shimmer gradient-cta group relative flex items-center justify-center gap-2 overflow-hidden rounded-2xl font-bold text-white shadow-xl shadow-primary/25 transition-transform hover:scale-[1.02] ${
+        size === 'lg' ? 'px-8 py-4 text-lg' : 'px-6 py-3.5'
+      } ${className}`}
+    >
+      <span className="relative">Crear mi menú gratis</span>
+      <MaterialIcon
+        name="arrow_forward"
+        size="sm"
+        className="relative transition-transform group-hover:translate-x-1"
+      />
+    </Link>
+  );
+}
+
+function HeroFloatCard({
+  icon,
+  title,
+  sub,
+  className,
+  delay = '0s',
+}: {
+  icon: string;
+  title: string;
+  sub: string;
+  className: string;
+  delay?: string;
+}) {
+  return (
+    <div aria-hidden className={`pointer-events-none absolute z-30 hidden md:block ${className}`}>
+      <div
+        className="animate-float flex items-center gap-3 rounded-2xl border border-outline-variant/40 bg-white/90 px-4 py-3 shadow-ambient-lg backdrop-blur"
+        style={{ animationDelay: delay }}
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <MaterialIcon name={icon} size="sm" />
+        </span>
+        <span>
+          <span className="block whitespace-nowrap font-[family-name:var(--font-heading)] text-[13px] font-extrabold text-on-surface">
+            {title}
+          </span>
+          <span className="block whitespace-nowrap text-xs text-on-surface-variant">{sub}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function RubroMarquee() {
+  const row = (hidden: boolean) => (
+    <div aria-hidden={hidden || undefined} className="flex w-max shrink-0 items-center gap-12 pr-12">
+      {MARQUEE_ITEMS.map(([icon, label]) => (
+        <span key={label} className="flex items-center gap-2.5 whitespace-nowrap">
+          <MaterialIcon name={icon} size="sm" className="text-primary" fill />
+          <span className="font-[family-name:var(--font-heading)] text-sm font-bold uppercase tracking-wider text-on-surface-variant">
+            {label}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+
+  return (
+    <section className="border-y border-outline-variant/40 bg-surface-container-lowest py-5">
+      <div className="marquee marquee-mask overflow-hidden">
+        <div className="marquee-track flex w-max">
+          {row(false)}
+          {row(true)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function QrCardVisual() {
+  return (
+    <div className="relative mt-5 inline-flex rounded-3xl bg-surface-container-low p-4 ring-1 ring-outline-variant/40">
+      <QRCodeSVG
+        value="https://quiero.menu/tu-local"
+        size={104}
+        bgColor="transparent"
+        fgColor="#261815"
+        level="M"
+      />
+      <span className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-ambient ring-1 ring-outline-variant/40">
+        <MaterialIcon name="print" size="xs" className="text-primary" />
+      </span>
+    </div>
+  );
+}
+
+function CouponCardVisual() {
+  return (
+    <div
+      aria-hidden
+      className="relative mt-5 overflow-hidden rounded-2xl border-2 border-dashed border-primary/50 bg-primary/5 px-4 py-3"
+    >
+      <p className="font-[family-name:var(--font-heading)] text-[11px] font-bold uppercase tracking-widest text-primary">
+        Martes de pizzas
+      </p>
+      <p className="mt-0.5 font-[family-name:var(--font-heading)] text-3xl font-extrabold text-gradient-brand">
+        −20%
+      </p>
+      <span className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-surface-container-lowest ring-1 ring-primary/30" />
+      <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-surface-container-lowest ring-1 ring-primary/30" />
+    </div>
+  );
+}
+
+function CustomersCardVisual() {
+  const bars = [
+    ['L', 34],
+    ['M', 52],
+    ['M', 44],
+    ['J', 68],
+    ['V', 92],
+    ['S', 78],
+    ['D', 58],
+  ] as const;
+
+  return (
+    <div aria-hidden className="mt-5 flex h-24 items-end gap-1.5">
+      {bars.map(([day, h], i) => (
+        <div key={i} className="flex flex-1 flex-col items-center gap-1">
+          <div
+            className={`w-full rounded-t-md ${
+              i === 4 ? 'gradient-cta' : 'bg-primary/15'
+            }`}
+            style={{ height: `${h}%` }}
+          />
+          <span
+            className={`text-[10px] font-bold ${i === 4 ? 'text-primary' : 'text-on-surface-variant/60'}`}
+          >
+            {day}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DomainCardVisual() {
+  return (
+    <div
+      aria-hidden
+      className="mt-5 flex items-center gap-2 rounded-xl bg-surface-container-low px-3 py-2.5 ring-1 ring-outline-variant/40"
+    >
+      <MaterialIcon name="language" size="sm" className="shrink-0 text-primary" />
+      <span className="truncate font-mono text-sm font-semibold text-on-surface">tulocal.com</span>
+      <MaterialIcon name="arrow_outward" size="xs" className="ml-auto shrink-0 text-success" />
+    </div>
+  );
+}
+
+function PaymentsCardVisual() {
+  return (
+    <div aria-hidden className="mt-5 grid grid-cols-2 gap-2">
+      <span className="flex items-center gap-1.5 rounded-xl border-2 border-primary bg-primary/5 px-3 py-2.5 text-xs font-bold text-primary">
+        <MaterialIcon name="payments" size="xs" />
+        Efectivo
+      </span>
+      <span className="flex items-center gap-1.5 rounded-xl border border-outline-variant/60 bg-surface px-3 py-2.5 text-xs font-bold text-on-surface-variant">
+        <MaterialIcon name="account_balance" size="xs" />
+        Transferencia
+      </span>
+    </div>
+  );
+}
+
+function BrandCardVisual() {
+  return (
+    <div aria-hidden className="mt-5 overflow-hidden rounded-2xl ring-1 ring-outline-variant/40">
+      <div className="relative">
+        {/* eslint-disable-next-line @next/next/no-img-element -- mockup estático servido desde /public, sin optimizador */}
+        <img src="/demo/cover-pizzeria.webp" alt="" width={640} height={320} loading="lazy" className="h-28 w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+        <div className="absolute bottom-2 left-3 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white">
+            <MaterialIcon name="local_pizza" size="xs" fill />
+          </span>
+          <span className="text-xs font-extrabold text-white">Tu local</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 bg-surface-container-lowest px-3 py-2.5">
+        <span className="text-[11px] font-bold text-on-surface-variant">Colores:</span>
+        {['#E8532C', '#F59E0B', '#0F766E', '#1E293B'].map((c) => (
+          <span key={c} className="h-4 w-4 rounded-full ring-2 ring-white shadow-sm" style={{ backgroundColor: c }} />
+        ))}
+        <span className="ml-auto flex items-center gap-1 text-[11px] font-bold text-primary">
+          <MaterialIcon name="palette" size="xs" />
+          Tu logo
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const BENTO_FEATURES = [
+  {
+    title: 'Tu local, con tu cara',
+    text: 'Colores, logo, portada y descripción. No parece una plantilla más: parece tuyo.',
+    visual: BrandCardVisual,
+    span: 'lg:col-span-2',
+  },
+  {
+    title: 'QR listo para imprimir',
+    text: 'Hoja A4 con tu QR, tu contacto y las instrucciones. La imprimís y la pegás en la mesa.',
+    visual: QrCardVisual,
+    span: '',
+  },
+  {
+    title: 'Cupones para llenar los días flojos',
+    text: 'Armás un descuento para el martes a la noche y lo compartís por WhatsApp.',
+    visual: CouponCardVisual,
+    span: '',
+  },
+  {
+    title: 'Tus clientes son tuyos',
+    text: 'Quién te compró, qué pidió y cuánto gastó. Ninguna app se queda con esa lista.',
+    visual: CustomersCardVisual,
+    span: '',
+  },
+  {
+    title: 'Tu propio dominio',
+    text: 'tulocal.com apuntando a tu menú, con certificado incluido.',
+    pro: true,
+    visual: DomainCardVisual,
+    span: '',
+  },
+  {
+    title: 'Cobrás como cobrás hoy',
+    text: 'Efectivo o transferencia. El cliente sube el comprobante ahí mismo y vos lo ves en el pedido.',
+    visual: PaymentsCardVisual,
+    span: 'lg:col-span-3 lg:flex lg:items-center lg:justify-between',
+  },
+] as const;
+
 function WhatsAppMock() {
   return (
     <div className="mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-outline-variant/50 bg-[#0b141a] shadow-ambient-lg">
@@ -308,7 +528,7 @@ function WhatsAppMock() {
 
 export default function LandingPage() {
   return (
-    <div className="bg-surface text-on-surface">
+    <div className="overflow-x-clip bg-surface text-on-surface">
       <CookielessAnalytics />
       <JsonLd data={webSiteJsonLd} />
       <JsonLd data={softwareApplicationJsonLd} />
@@ -318,14 +538,21 @@ export default function LandingPage() {
       <StickyCta />
 
       <main className="pt-16">
-        {/* Hero */}
+        {/* ── Hero ── */}
         <section className="relative overflow-hidden">
-          <div aria-hidden className="landing-aurora absolute inset-0 -z-10" />
-          <div aria-hidden className="landing-dots absolute inset-0 -z-10" />
+          <div aria-hidden className="absolute inset-0 -z-10">
+            <div className="landing-aurora absolute inset-0" />
+            <div className="animate-orb absolute -top-24 right-[12%] h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+            <div
+              className="animate-orb absolute left-[4%] top-48 h-72 w-72 rounded-full bg-[#ff9a3c]/20 blur-3xl"
+              style={{ animationDelay: '-8s' }}
+            />
+            <div className="landing-dots absolute inset-0" />
+          </div>
 
-          <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-16 pt-10 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 lg:pb-24 lg:pt-16">
+          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 pt-12 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 lg:pb-28 lg:pt-16">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-success/25 bg-success-container px-3.5 py-1.5 text-xs font-bold text-on-success-container">
+              <span className="hero-in inline-flex items-center gap-2 rounded-full border border-success/25 bg-success-container px-3.5 py-1.5 text-xs font-bold text-on-success-container">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping-soft absolute inline-flex h-full w-full rounded-full bg-success" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
@@ -333,29 +560,36 @@ export default function LandingPage() {
                 Gratis hasta 100 pedidos por mes · sin tarjeta
               </span>
 
-              <h1 className="mt-6 font-[family-name:var(--font-heading)] text-[2.6rem] font-extrabold leading-[0.98] tracking-[-0.035em] text-balance sm:text-6xl lg:text-[4.25rem]">
-                Pedidos directos.{' '}
-                <span className="text-gradient-brand">Sin comisiones.</span>
+              <h1 className="mt-7 font-[family-name:var(--font-heading)] text-[3rem] font-extrabold leading-[0.96] tracking-[-0.04em] text-balance sm:text-7xl xl:text-[5.25rem]">
+                <span className="-mb-[0.12em] block overflow-hidden pb-[0.12em]">
+                  <span className="hero-in block" style={{ '--d': '90ms' } as React.CSSProperties}>
+                    Pedidos directos.
+                  </span>
+                </span>
+                <span className="block overflow-hidden pb-[0.14em]">
+                  <span
+                    className="hero-in block text-gradient-brand"
+                    style={{ '--d': '190ms' } as React.CSSProperties}
+                  >
+                    Sin comisiones.
+                  </span>
+                </span>
               </h1>
 
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-on-surface-variant text-pretty sm:text-xl">
+              <p
+                className="hero-in mt-7 max-w-xl text-lg leading-relaxed text-on-surface-variant text-pretty sm:text-xl"
+                style={{ '--d': '300ms' } as React.CSSProperties}
+              >
                 Armá tu <strong className="font-semibold text-on-surface">menú digital gratis</strong> y
-                compartilo por WhatsApp o con un QR. El pedido te llega listo, con dirección, forma de
-                pago y total. Sin comisión, nunca.
+                compartilo por WhatsApp o con un QR. El cliente arma solo, y a vos te llega el pedido
+                listo: dirección, forma de pago y total.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/onboarding"
-                  className="gradient-cta group flex items-center justify-center gap-2 rounded-2xl px-7 py-4 text-lg font-bold text-white shadow-xl shadow-primary/25 transition-transform hover:scale-[1.02]"
-                >
-                  Crear mi menú gratis
-                  <MaterialIcon
-                    name="arrow_forward"
-                    size="sm"
-                    className="transition-transform group-hover:translate-x-1"
-                  />
-                </Link>
+              <div
+                className="hero-in mt-9 flex flex-col gap-3 sm:flex-row"
+                style={{ '--d': '400ms' } as React.CSSProperties}
+              >
+                <PrimaryCta />
                 <a
                   href="/leonardos"
                   target="_blank"
@@ -367,21 +601,60 @@ export default function LandingPage() {
                 </a>
               </div>
 
-              <div className="mt-6">
+              <div className="hero-in mt-7" style={{ '--d': '500ms' } as React.CSSProperties}>
                 <Reassurance />
               </div>
             </div>
 
-            <div className="lg:pl-6">
-              <MenuDemo />
+            <div className="hero-in relative" style={{ '--d': '250ms' } as React.CSSProperties}>
+              <HeroFloatCard
+                icon="notifications_active"
+                title="Entró un pedido nuevo"
+                sub="#1043 · armado y completo"
+                className="-left-2 top-6 lg:-left-10"
+                delay="1.4s"
+              />
+              <HeroFloatCard
+                icon="savings"
+                title="$0 de comisión"
+                sub="El 100% del pedido es tuyo"
+                className="-right-2 bottom-10 lg:-right-6"
+                delay="-2.8s"
+              />
+
+              <div className="[perspective:1400px]">
+                <div className="transition-transform duration-700 ease-out lg:[transform:rotateY(-8deg)_rotateX(3deg)] lg:hover:[transform:rotateY(-2deg)_rotateX(0deg)]">
+                  <MenuDemo />
+                </div>
+              </div>
             </div>
           </div>
 
           <div aria-hidden className="landing-hairline mx-auto h-px max-w-5xl" />
         </section>
 
-        {/* Panel */}
-        <section className="bg-surface-container-low py-20 sm:py-28">
+        {/* ── Marquee de rubros ── */}
+        <RubroMarquee />
+
+        {/* ── Números reales del producto ── */}
+        <section className="bg-surface-container-low py-16 sm:py-20">
+          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-10 px-5 text-center sm:px-8 lg:grid-cols-4">
+            {STATS.map((s) => (
+              <div key={s.label} className="reveal">
+                <p className="text-gradient-brand font-[family-name:var(--font-heading)] text-5xl font-extrabold tracking-tight sm:text-6xl">
+                  {s.value}
+                </p>
+                <p className="mt-2 font-[family-name:var(--font-heading)] text-sm font-bold text-on-surface sm:text-base">
+                  {s.label}
+                </p>
+                <p className="mt-0.5 text-sm text-on-surface-variant">{s.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Panel ── */}
+        <section className="bg-surface-container-lowest py-20 sm:py-28">
           <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-8 lg:grid-cols-2">
             <div className="reveal">
               <SectionLabel>Tu panel</SectionLabel>
@@ -416,9 +689,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Prueba social real */}
-        <section className="landing-dark relative overflow-hidden border-b border-white/10">
-          <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+        {/* ── Prueba social real ── */}
+        <section className="landing-dark relative overflow-hidden border-y border-white/10">
+          <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.05]" />
+          <div className="relative mx-auto max-w-7xl px-5 py-10 sm:px-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="lg:max-w-xs">
                 <p className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
@@ -435,7 +709,7 @@ export default function LandingPage() {
                     href={`/${s.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-colors hover:border-primary/50"
+                    className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-white/[0.08]"
                   >
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-primary-fixed-dim">
                       <MaterialIcon name="storefront" size="sm" />
@@ -456,8 +730,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Cómo funciona */}
-        <section id="como-funciona" className="bg-surface-container-low py-20 sm:py-28">
+        {/* ── Cómo funciona ── */}
+        <section id="como-funciona" className="bg-surface-container-lowest py-20 sm:py-28">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="reveal mx-auto max-w-3xl text-center">
               <SectionLabel>Cómo funciona</SectionLabel>
@@ -472,20 +746,23 @@ export default function LandingPage() {
             <div className="relative mt-14">
               <div
                 aria-hidden
-                className="absolute left-0 right-0 top-9 hidden border-t-2 border-dashed border-outline-variant/60 md:block"
+                className="absolute left-[16%] right-[16%] top-10 hidden border-t-2 border-dashed border-outline-variant/60 md:block"
               />
-              <div className="relative grid gap-10 md:grid-cols-3 md:gap-8">
+              <div className="relative grid gap-6 md:grid-cols-3 md:gap-8">
                 {STEPS.map((s, i) => (
-                  <div key={s.title} className="reveal text-center md:text-left">
-                    <div className="flex justify-center md:justify-start">
-                      <div className="gradient-cta flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-3xl text-white shadow-lg shadow-primary/25 ring-8 ring-surface-container-lowest">
+                  <div
+                    key={s.title}
+                    className="reveal group relative rounded-3xl border border-outline-variant/50 bg-surface-container-low p-6 transition-all hover:-translate-y-1 hover:border-primary/40 hover:bg-surface-container-lowest hover:shadow-ambient-lg"
+                  >
+                    <div className="flex items-start justify-between">
+                      <span className="gradient-cta flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-lg shadow-primary/25">
                         <MaterialIcon name={s.icon} size="xl" />
-                      </div>
+                      </span>
+                      <span className="font-[family-name:var(--font-heading)] text-6xl font-extrabold leading-none text-primary/10 transition-colors group-hover:text-primary/20">
+                        {i + 1}
+                      </span>
                     </div>
-                    <p className="mt-5 font-[family-name:var(--font-heading)] text-sm font-bold uppercase tracking-wider text-primary">
-                      Paso {i + 1}
-                    </p>
-                    <h3 className="mt-1.5 font-[family-name:var(--font-heading)] text-xl font-extrabold sm:text-2xl">
+                    <h3 className="mt-5 font-[family-name:var(--font-heading)] text-xl font-extrabold sm:text-2xl">
                       {s.title}
                     </h3>
                     <p className="mt-2.5 leading-relaxed text-on-surface-variant">{s.text}</p>
@@ -500,10 +777,13 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Seguimiento */}
-        <section className="bg-surface-container-lowest py-20 sm:py-28">
-          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-8 lg:grid-cols-[1fr_0.85fr]">
-            <div className="reveal">
+        {/* ── Seguimiento ── */}
+        <section className="bg-surface-container-low py-20 sm:py-28">
+          <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-8 lg:grid-cols-[0.85fr_1fr]">
+            <div className="reveal order-last lg:order-first">
+              <WhatsAppMock />
+            </div>
+            <div className="reveal order-first lg:order-last">
               <SectionLabel>El detalle que te ahorra llamados</SectionLabel>
               <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl font-extrabold leading-tight tracking-tight text-balance sm:text-4xl">
                 Tus clientes dejan de llamar para preguntar dónde está el pedido
@@ -523,7 +803,7 @@ export default function LandingPage() {
                 ].map(([icon, t, d]) => (
                   <li
                     key={t}
-                    className="rounded-2xl border border-outline-variant/50 bg-surface p-4"
+                    className="rounded-2xl border border-outline-variant/50 bg-surface-container-lowest p-4"
                   >
                     <MaterialIcon name={icon} size="md" className="text-primary" />
                     <p className="mt-2 font-[family-name:var(--font-heading)] font-bold">{t}</p>
@@ -532,15 +812,11 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
-
-            <div className="reveal">
-              <WhatsAppMock />
-            </div>
           </div>
         </section>
 
-        {/* Funciones */}
-        <section id="funciones" className="bg-surface-container-low py-20 sm:py-28">
+        {/* ── Funciones (bento) ── */}
+        <section id="funciones" className="bg-surface-container-lowest py-20 sm:py-28">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="reveal mx-auto max-w-3xl text-center">
               <SectionLabel>Funciones</SectionLabel>
@@ -550,39 +826,41 @@ export default function LandingPage() {
             </div>
 
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((f) => (
-                <div
-                  key={f.title}
-                  className="reveal group relative rounded-3xl border border-outline-variant/50 bg-surface-container-lowest p-6 transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-ambient-lg"
-                >
-                  {f.pro && (
-                    <span className="absolute right-4 top-4 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
-                      PRO
-                    </span>
-                  )}
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <MaterialIcon name={f.icon} size="lg" />
-                  </span>
-                  <h3 className="mt-4 font-[family-name:var(--font-heading)] text-lg font-extrabold">
-                    {f.title}
-                  </h3>
-                  <p className="mt-2 leading-relaxed text-on-surface-variant">{f.text}</p>
-                </div>
-              ))}
+              {BENTO_FEATURES.map((f) => {
+                const Visual = f.visual;
+                return (
+                  <div
+                    key={f.title}
+                    className={`reveal relative rounded-3xl border border-outline-variant/50 bg-surface-container-low p-6 transition-all hover:-translate-y-1 hover:border-primary/40 hover:bg-surface-container-lowest hover:shadow-ambient-lg ${f.span}`}
+                  >
+                    {'pro' in f && f.pro && (
+                      <span className="absolute right-4 top-4 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
+                        PRO
+                      </span>
+                    )}
+                    <h3 className="max-w-sm font-[family-name:var(--font-heading)] text-lg font-extrabold">
+                      {f.title}
+                    </h3>
+                    <p className="mt-1.5 max-w-md leading-relaxed text-on-surface-variant">{f.text}</p>
+                    <Visual />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* Para quién */}
-        <section className="bg-surface-container-lowest py-20 sm:py-24">
+        {/* ── Para quién es ── */}
+        <section className="bg-surface-container-low py-20 sm:py-24">
           <div className="mx-auto max-w-5xl px-5 text-center sm:px-8">
             <div className="reveal">
               <SectionLabel>Para quién es</SectionLabel>
               <h2 className="mt-4 font-[family-name:var(--font-heading)] text-3xl font-extrabold leading-tight tracking-tight text-balance sm:text-4xl">
                 Hecho para locales como el tuyo
               </h2>
-              <p className="mt-4 text-lg text-on-surface-variant">
-                Da igual si recién arrancás o si ya vendés todos los días. Si tomás pedidos, esto te los
+              <p className="mt-4 text-lg text-on-surface-variant text-pretty">
+                Pizzerías, hamburgueserías, rotiserías, cafeterías, heladerías, panaderías, bares. Da
+                igual si recién arrancás o si ya vendés todos los días: si tomás pedidos, esto te los
                 ordena.
               </p>
             </div>
@@ -591,7 +869,7 @@ export default function LandingPage() {
               {SITUATIONS.map((s) => (
                 <div
                   key={s.title}
-                  className="rounded-3xl border border-outline-variant/50 bg-surface p-6"
+                  className="rounded-3xl border border-outline-variant/50 bg-surface-container-lowest p-6 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-ambient-lg"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <MaterialIcon name={s.icon} size="md" />
@@ -601,23 +879,11 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-
-            <div className="reveal mt-8 flex flex-wrap justify-center gap-3">
-              {BUSINESSES.map(([icon, label]) => (
-                <span
-                  key={label}
-                  className="flex items-center gap-2 rounded-2xl border border-outline-variant/50 bg-surface px-4 py-3 text-sm font-bold text-on-surface"
-                >
-                  <MaterialIcon name={icon} size="sm" className="text-primary" />
-                  {label}
-                </span>
-              ))}
-            </div>
           </div>
         </section>
 
-        {/* Precios */}
-        <section id="precios" className="bg-surface-container-low py-20 sm:py-28">
+        {/* ── Precios ── */}
+        <section id="precios" className="bg-surface-container-lowest py-20 sm:py-28">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="reveal mx-auto max-w-3xl text-center">
               <SectionLabel>Precios</SectionLabel>
@@ -631,7 +897,7 @@ export default function LandingPage() {
             </div>
 
             <div className="reveal mx-auto mt-12 grid max-w-4xl items-stretch gap-6 md:grid-cols-2">
-              <div className="flex flex-col rounded-3xl border border-outline-variant/50 bg-surface-container-lowest p-7 shadow-ambient sm:p-8">
+              <div className="flex flex-col rounded-3xl border border-outline-variant/50 bg-surface-container-low p-7 shadow-ambient sm:p-8">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-[family-name:var(--font-heading)] text-2xl font-extrabold">
@@ -639,7 +905,7 @@ export default function LandingPage() {
                     </h3>
                     <p className="text-sm text-on-surface-variant">Para arrancar sin riesgo</p>
                   </div>
-                  <span className="rounded-full bg-surface px-3 py-1 text-[11px] font-bold text-on-surface-variant">
+                  <span className="rounded-full bg-surface-container-lowest px-3 py-1 text-[11px] font-bold text-on-surface-variant">
                     SIN TARJETA
                   </span>
                 </div>
@@ -666,20 +932,16 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-5 flex items-start gap-1.5 text-xs text-on-surface-variant">
-                  <MaterialIcon name="info" size="xs" className="mt-0.5 shrink-0" />
-                  Tu menú lleva la marca &ldquo;Hecho con quiero.menu&rdquo;.
-                </p>
                 <Link
-                  href="/onboarding"
+                  href="/signup"
                   className="mt-6 rounded-2xl border-2 border-primary py-3.5 text-center font-bold text-primary transition-colors hover:bg-primary/5"
                 >
                   Empezar gratis
                 </Link>
               </div>
 
-              <div className="relative flex flex-col overflow-hidden rounded-3xl border-2 border-primary bg-surface-container-lowest p-7 shadow-ambient-lg sm:p-8">
-                <span className="gradient-cta absolute right-5 top-5 rounded-full px-2.5 py-1 text-[10px] font-bold text-white">
+              <div className="gradient-border-card relative flex flex-col overflow-visible rounded-3xl p-7 shadow-ambient-lg sm:p-8 lg:-my-3">
+                <span className="gradient-cta absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3.5 py-1 text-[11px] font-bold text-white shadow-lg shadow-primary/30">
                   RECOMENDADO
                 </span>
                 <div>
@@ -693,9 +955,12 @@ export default function LandingPage() {
                   <span className="text-on-surface-variant"> / mes</span>
                 </p>
                 <ul className="mt-6 flex-1 space-y-3 text-sm">
+                  <li className="flex items-start gap-3 font-bold text-on-surface">
+                    <MaterialIcon name="check" size="sm" className="mt-0.5 shrink-0 text-success" />
+                    <span>Todo lo del plan gratis</span>
+                  </li>
                   {[
                     'Pedidos ilimitados',
-                    'Todo lo del plan gratis',
                     'Sin marca de quiero.menu',
                     'Estadísticas y horas pico',
                     'Cupones y promociones',
@@ -708,15 +973,11 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-5 rounded-2xl bg-success-container p-3.5 text-xs font-semibold leading-relaxed text-on-success-container">
-                  Pro sale lo mismo que un pedido promedio. Todo lo demás que vendas en el mes queda
-                  entero para vos, sin comisión por pedido.
-                </p>
                 <Link
-                  href="/onboarding"
-                  className="gradient-cta mt-6 rounded-2xl py-3.5 text-center font-bold text-white transition-transform hover:scale-[1.02]"
+                  href="/signup"
+                  className="btn-shimmer gradient-cta relative mt-6 overflow-hidden rounded-2xl py-3.5 text-center font-bold text-white transition-transform hover:scale-[1.02]"
                 >
-                  Empezar con Pro
+                  <span className="relative">Empezar con Pro</span>
                 </Link>
               </div>
             </div>
@@ -727,8 +988,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="bg-surface-container-lowest py-20 sm:py-28">
+        {/* ── FAQ ── */}
+        <section className="bg-surface-container-low py-20 sm:py-28">
           <div className="mx-auto max-w-3xl px-5 sm:px-8">
             <div className="reveal text-center">
               <SectionLabel>Preguntas frecuentes</SectionLabel>
@@ -741,7 +1002,7 @@ export default function LandingPage() {
               {faqs.map((faq) => (
                 <details
                   key={faq.q}
-                  className="group rounded-2xl border border-outline-variant/50 bg-surface px-5 py-4 transition-colors hover:border-primary/40 [&_summary::-webkit-details-marker]:hidden"
+                  className="group rounded-2xl border border-outline-variant/50 bg-surface-container-lowest px-5 py-4 transition-colors hover:border-primary/40 [&_summary::-webkit-details-marker]:hidden"
                 >
                   <summary className="flex cursor-pointer items-center justify-between gap-4 font-[family-name:var(--font-heading)] font-bold">
                     {faq.q}
@@ -757,29 +1018,30 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA final */}
+        {/* ── CTA final ── */}
         <section className="px-5 py-20 sm:px-8 sm:py-24">
           <div className="landing-dark relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] px-6 py-16 text-center sm:px-14 sm:py-20">
-            <h2 className="font-[family-name:var(--font-heading)] text-3xl font-extrabold leading-tight tracking-tight text-white text-balance sm:text-5xl">
-              El próximo pedido, que te llegue armado
-            </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-white/70 text-pretty">
-              Tu menú digital gratis, listo en 5 minutos. Sin comisión por pedido, ni ahora ni nunca.
-            </p>
-            <Link
-              href="/onboarding"
-              className="gradient-cta mt-9 inline-flex items-center gap-2 rounded-2xl px-9 py-5 text-lg font-bold text-white transition-transform hover:scale-105 sm:text-xl"
-            >
-              Crear mi menú gratis
-              <MaterialIcon name="arrow_forward" size="md" />
-            </Link>
-            <div className="mt-7 flex justify-center">
-              <Reassurance tone="dark" />
+            <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.06]" />
+            <div
+              aria-hidden
+              className="animate-orb pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/25 blur-3xl"
+            />
+            <div className="relative">
+              <h2 className="font-[family-name:var(--font-heading)] text-3xl font-extrabold leading-tight tracking-tight text-white text-balance sm:text-5xl">
+                El próximo pedido, que te llegue armado
+              </h2>
+              <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-white/70 text-pretty">
+                Tu menú digital gratis, listo en 5 minutos. Sin comisión por pedido, ni ahora ni nunca.
+              </p>
+              <PrimaryCta className="mt-9" />
+              <div className="mt-7 flex justify-center">
+                <Reassurance tone="dark" />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* asis.chat */}
+        {/* ── asis.chat ── */}
         <section className="px-5 pb-16 sm:px-8">
           <div className="mx-auto flex max-w-5xl flex-col items-start gap-4 rounded-3xl border border-outline-variant/50 bg-surface-container-lowest px-6 py-6 shadow-ambient sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
@@ -832,7 +1094,7 @@ export default function LandingPage() {
             <div>
               <p className="font-[family-name:var(--font-heading)] text-sm font-bold">Empezar</p>
               <div className="mt-3 flex flex-col gap-2.5 text-sm text-on-surface-variant">
-                <Link className="hover:text-primary" href="/onboarding">Crear mi menú gratis</Link>
+                <Link className="hover:text-primary" href="/signup">Crear mi menú gratis</Link>
                 <Link className="hover:text-primary" href="/login">Entrar a mi panel</Link>
                 <Link className="hover:text-primary" href="/status">Estado del servicio</Link>
               </div>

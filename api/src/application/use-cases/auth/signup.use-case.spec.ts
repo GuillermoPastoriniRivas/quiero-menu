@@ -54,6 +54,7 @@ describe('SignupUseCase', () => {
       findByEmail: jest.fn().mockResolvedValue(null),
       updatePasswordHash: jest.fn(),
       updateEmailVerified: jest.fn(),
+      searchByEmail: jest.fn().mockResolvedValue([]),
       delete: jest.fn(),
     };
     const restaurantRepo: RestaurantRepository = {
@@ -91,6 +92,7 @@ describe('SignupUseCase', () => {
       findByCustomDomain: jest.fn().mockResolvedValue(null),
       listByCustomDomainState: jest.fn().mockResolvedValue([]),
       listStaleCustomDomainProvisioning: jest.fn().mockResolvedValue([]),
+      searchAdmin: jest.fn().mockResolvedValue([]),
       update: jest.fn(),
       delete: jest.fn(),
     };

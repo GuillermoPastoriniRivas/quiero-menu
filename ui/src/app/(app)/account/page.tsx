@@ -1,8 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth.store";
+import { useRestaurantStore } from "@/stores/restaurant.store";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,304 +13,189 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import type {
-  KitchenAccessToken,
-  DeliveryAccessToken,
-} from "@/types";
-import { toast } from "sonner";
-import { MaterialIcon } from "@/components/ui/material-icon";
 import {
-  subscribeStaffPush,
-  unsubscribePush,
-  isPushSupported,
-  isPushSubscribed,
-} from "@/lib/push";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MaterialIcon } from "@/components/ui/material-icon";
+import { toast } from "sonner";
 
 export default function AccountPage() {
-  return (
-    <Suspense fallback={null}>
-      <AccountPageInner />
-    </Suspense>
-  );
-}
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+  const restaurant = useRestaurantStore((s) => s.restaurant);
+  const fetchRestaurant = useRestaurantStore((s) => s.fetch);
 
-function AccountPageInner() {
-  const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<string>(
-    searchParams.get("tab") ?? "notifications",
-  );
-
-  // Notifications (web push)
-  const [pushSupported, setPushSupported] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [pushBusy, setPushBusy] = useState(false);
-
-  // Kitchen tokens
-  const [tokens, setTokens] = useState<KitchenAccessToken[]>([]);
-
-  // Delivery tokens
-  const [deliveryTokens, setDeliveryTokens] = useState<DeliveryAccessToken[]>(
-    [],
-  );
+  const [exporting, setExporting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const supported = await isPushSupported();
-      setPushSupported(supported);
-      if (supported) setPushEnabled(await isPushSubscribed());
-    })();
-  }, []);
+    fetchRestaurant();
+  }, [fetchRestaurant]);
 
-  useEffect(() => {
-    loadTokens();
-    loadDeliveryTokens();
-  }, []);
+  const displayName = user?.name || restaurant?.name || "";
+  const initials = displayName.slice(0, 2).toUpperCase();
 
-  const handleTogglePush = async (enabled: boolean) => {
-    setPushBusy(true);
+  const handleExport = async () => {
+    setExporting(true);
     try {
-      if (enabled) {
-        const token = api.getAccessToken();
-        if (!token) return;
-        const ok = await subscribeStaffPush(token);
-        if (!ok) {
-          toast.error("No se pudo activar. Revisá los permisos del navegador.");
-          return;
-        }
-        setPushEnabled(true);
-        toast.success("Notificaciones activadas");
-      } else {
-        await unsubscribePush();
-        setPushEnabled(false);
-        toast.success("Notificaciones desactivadas");
-      }
-    } catch {
-      toast.error("Error al cambiar notificaciones");
+      const data = await api.get<unknown>("/account/export");
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `quiero-menu-datos-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success("Datos descargados");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al exportar los datos");
     } finally {
-      setPushBusy(false);
+      setExporting(false);
     }
   };
 
-  const loadTokens = async () => {
-    const data = await api.get<KitchenAccessToken[]>("/kitchen/tokens");
-    setTokens(data);
-  };
-
-  const handleCreateToken = async () => {
-    const name = `Vista ${tokens.length + 1}`;
-    await api.post("/kitchen/tokens", { name });
-    loadTokens();
-    toast.success("Acceso creado");
-  };
-
-  const handleRevokeToken = async (id: string) => {
-    await api.delete(`/kitchen/tokens/${id}`);
-    loadTokens();
-    toast.success("Acceso eliminado");
-  };
-
-  const getKitchenUrl = (token: string) =>
-    `${window.location.origin}/kitchen/${token}`;
-
-  const copyKitchenLink = (token: string) => {
-    navigator.clipboard.writeText(getKitchenUrl(token));
-    toast.success("Link copiado");
-  };
-
-  const loadDeliveryTokens = async () => {
-    const data = await api.get<DeliveryAccessToken[]>("/delivery/tokens");
-    setDeliveryTokens(data);
-  };
-
-  const handleCreateDeliveryToken = async () => {
-    const name = `Delivery ${deliveryTokens.length + 1}`;
-    await api.post("/delivery/tokens", { name });
-    loadDeliveryTokens();
-    toast.success("Acceso delivery creado");
-  };
-
-  const handleRevokeDeliveryToken = async (id: string) => {
-    await api.delete(`/delivery/tokens/${id}`);
-    loadDeliveryTokens();
-    toast.success("Acceso delivery eliminado");
-  };
-
-  const getDeliveryUrl = (token: string) =>
-    `${window.location.origin}/delivery/${token}`;
-
-  const copyDeliveryLink = (token: string) => {
-    navigator.clipboard.writeText(getDeliveryUrl(token));
-    toast.success("Link copiado");
+  const handleDelete = async () => {
+    if (!deletePassword) return;
+    setDeleting(true);
+    try {
+      await api.delete("/account", { password: deletePassword });
+      toast.success("Cuenta eliminada. Gracias por haber usado quiero.menu.");
+      logout();
+      router.replace("/");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al eliminar la cuenta");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Cuenta</h1>
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h1 className="text-2xl font-bold">Cuenta</h1>
+        <p className="text-sm text-muted-foreground">
+          Tu perfil y el control de tus datos
+        </p>
+      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="overflow-x-auto overflow-y-hidden -mx-1 px-1">
-          <TabsList>
-            <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
-            <TabsTrigger value="access">Accesos</TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="notifications" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notificaciones</CardTitle>
-              <CardDescription>
-                Recibí un aviso en el celular cuando llegue un pedido nuevo
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!pushSupported ? (
-                <div className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
-                  Tu navegador no soporta notificaciones push. Probá con Chrome
-                  o Edge en el celular.
-                </div>
-              ) : (
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium">Notificaciones de pedidos</p>
-                    <p className="text-sm text-muted-foreground">
-                      {pushEnabled
-                        ? "Vas a recibir un aviso cuando entre un pedido nuevo"
-                        : "Activá para enterarte al instante cuando entra un pedido"}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={pushEnabled}
-                    disabled={pushBusy}
-                    onCheckedChange={handleTogglePush}
-                  />
-                </div>
+      {/* Perfil */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full gradient-cta flex items-center justify-center text-white font-bold text-lg shrink-0">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold truncate">{user?.name || "Mi cuenta"}</p>
+              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+              {restaurant?.name && (
+                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                  Restaurante: {restaurant.name}
+                </p>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="access" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Acceso Cocina</CardTitle>
-              <CardDescription>
-                Creá links para que cocina vea los pedidos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button onClick={handleCreateToken}>
-                <MaterialIcon name="add" size="sm" className="mr-1" />
-                Crear acceso
-              </Button>
-              {tokens.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between rounded-md border p-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">
-                      {t.name || `Vista ${tokens.indexOf(t) + 1}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-mono truncate">
-                      {getKitchenUrl(t.token)}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open(getKitchenUrl(t.token), "_blank")}
-                      title="Abrir cocina"
-                    >
-                      <MaterialIcon name="open_in_new" size="sm" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyKitchenLink(t.token)}
-                    >
-                      <MaterialIcon name="content_copy" size="sm" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRevokeToken(t.id)}
-                    >
-                      <MaterialIcon
-                        name="delete"
-                        size="sm"
-                        className="text-destructive"
-                      />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Datos */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tus datos</CardTitle>
+          <CardDescription>
+            Descargá todo lo que hay en tu cuenta o dale de baja
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-medium">Exportar mis datos</p>
+              <p className="text-sm text-muted-foreground">
+                Descargá un archivo con tu menú, pedidos y configuración
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleExport} disabled={exporting} className="shrink-0">
+              <MaterialIcon name="download" size="sm" className="mr-1" />
+              {exporting ? "Exportando..." : "Exportar"}
+            </Button>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Acceso Delivery</CardTitle>
-              <CardDescription>
-                Crea links para que los repartidores vean pedidos listos para
-                recoger
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button onClick={handleCreateDeliveryToken}>
-                <MaterialIcon name="add" size="sm" className="mr-1" />
-                Crear acceso
-              </Button>
-              {deliveryTokens.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between rounded-md border p-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">
-                      {t.name || `Delivery ${deliveryTokens.indexOf(t) + 1}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-mono truncate">
-                      {getDeliveryUrl(t.token)}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open(getDeliveryUrl(t.token), "_blank")}
-                      title="Abrir delivery"
-                    >
-                      <MaterialIcon name="open_in_new" size="sm" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyDeliveryLink(t.token)}
-                    >
-                      <MaterialIcon name="content_copy" size="sm" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRevokeDeliveryToken(t.id)}
-                    >
-                      <MaterialIcon
-                        name="delete"
-                        size="sm"
-                        className="text-destructive"
-                      />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <div className="flex items-center justify-between gap-4 border-t border-outline-variant/10 pt-4">
+            <div className="min-w-0">
+              <p className="font-medium text-destructive">Eliminar cuenta</p>
+              <p className="text-sm text-muted-foreground">
+                Borrá tu cuenta y todos tus datos de forma permanente
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="text-destructive shrink-0"
+              onClick={() => {
+                setDeletePassword("");
+                setDeleteOpen(true);
+              }}
+            >
+              <MaterialIcon name="delete_forever" size="sm" className="mr-1" />
+              Eliminar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sesión */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sesión</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" onClick={logout}>
+            <MaterialIcon name="logout" size="sm" className="mr-1" />
+            Cerrar sesión
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Delete dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar tu cuenta</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              Se borran tu menú, tus pedidos, tus clientes y tu suscripción. Esta
+              acción no se puede deshacer. Confirmá tu contraseña para continuar.
+            </p>
+            <div className="space-y-2">
+              <Label>Contraseña</Label>
+              <Input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Tu contraseña"
+                onKeyDown={(e) => e.key === "Enter" && handleDelete()}
+              />
+            </div>
+            <Button
+              variant="destructive"
+              className="w-full"
+              disabled={!deletePassword || deleting}
+              onClick={handleDelete}
+            >
+              {deleting ? "Eliminando..." : "Eliminar definitivamente"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils';
 const LINKS = [
   { href: '#como-funciona', label: 'Cómo funciona' },
   { href: '#funciones', label: 'Funciones' },
-  { href: '#calculadora', label: 'Comisiones' },
   { href: '#precios', label: 'Precios' },
 ];
 
@@ -67,7 +66,7 @@ export function LandingNav() {
             <span className="hidden sm:inline">Entrar</span>
           </Link>
           <Link
-            href="/onboarding"
+            href="/signup"
             className="gradient-cta hidden rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-transform hover:scale-[1.03] sm:inline-block"
           >
             Crear mi menú gratis
@@ -106,7 +105,7 @@ export function LandingNav() {
             </Link>
           </div>
           <Link
-            href="/onboarding"
+            href="/signup"
             onClick={() => setOpen(false)}
             className="gradient-cta mt-5 block rounded-2xl py-4 text-center text-base font-bold text-white"
           >

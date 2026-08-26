@@ -64,13 +64,15 @@ export function MobileUserMenu() {
                 Mi menú público
               </Link>
             )}
+            {user?.platformAdmin && (
+              <Link href="/admin/locales" onClick={() => setOpen(false)} className={cn(itemClass, 'text-primary')}>
+                <MaterialIcon name="admin_panel_settings" size="sm" className="text-primary" />
+                Panel interno
+              </Link>
+            )}
             <Link href="/account" onClick={() => setOpen(false)} className={itemClass}>
-              <MaterialIcon name="notifications" size="sm" className="text-on-surface-variant" />
-              Notificaciones
-            </Link>
-            <Link href="/account?tab=access" onClick={() => setOpen(false)} className={itemClass}>
-              <MaterialIcon name="key" size="sm" className="text-on-surface-variant" />
-              Accesos
+              <MaterialIcon name="person" size="sm" className="text-on-surface-variant" />
+              Cuenta
             </Link>
             <Link href="/billing" onClick={() => setOpen(false)} className={itemClass}>
               <MaterialIcon name="workspace_premium" size="sm" className="text-on-surface-variant" />

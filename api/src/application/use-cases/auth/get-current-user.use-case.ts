@@ -3,12 +3,14 @@ import { UserRestaurantRepository } from '../../../domain/repositories/user-rest
 import { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
 import { Result, ok, err } from '../../common/result.js';
 import { UserNotFoundError } from '../../../domain/errors/domain-errors.js';
+import { isPlatformAdminEmail } from '../../common/platform-admin.js';
 
 export interface CurrentUserOutput {
   id: string;
   name: string;
   email: string;
   restaurants: { id: string; slug: string; name: string; role: string }[];
+  platformAdmin?: boolean;
 }
 
 export class GetCurrentUserUseCase {
@@ -16,6 +18,7 @@ export class GetCurrentUserUseCase {
     private readonly userRepo: UserRepository,
     private readonly userRestaurantRepo: UserRestaurantRepository,
     private readonly restaurantRepo: RestaurantRepository,
+    private readonly platformAdminEmails: string[] = [],
   ) {}
 
   async execute(
@@ -37,6 +40,14 @@ export class GetCurrentUserUseCase {
       }),
     );
 
-    return ok({ id: user.id, name: user.name, email: user.email, restaurants });
+    return ok({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      restaurants,
+      ...(isPlatformAdminEmail(user.email, this.platformAdminEmails)
+        ? { platformAdmin: true }
+        : {}),
+    });
   }
 }

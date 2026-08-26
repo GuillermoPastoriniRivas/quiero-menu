@@ -35,7 +35,8 @@ export const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; lab
 interface RecentOrdersListProps {
   orders: OrderWithRedaction[];
   currency?: string;
-  onAdvance: (order: OrderWithRedaction) => void;
+  /** Si no se pasa, la lista es solo-lectura (la operacion vive en Pedidos) */
+  onAdvance?: (order: OrderWithRedaction) => void;
 }
 
 export function RecentOrdersList({ orders, currency, onAdvance }: RecentOrdersListProps) {
@@ -70,7 +71,7 @@ export function RecentOrdersList({ orders, currency, onAdvance }: RecentOrdersLi
                   <p className="font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
                     {formatCurrency(order.total, currency)}
                   </p>
-                  {next && (
+                  {next && onAdvance && (
                     <Button
                       size="xs"
                       variant="outline"

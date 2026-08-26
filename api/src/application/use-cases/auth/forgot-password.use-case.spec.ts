@@ -23,6 +23,7 @@ describe('ForgotPasswordUseCase', () => {
         ),
       updatePasswordHash: jest.fn(),
       updateEmailVerified: jest.fn(),
+      searchByEmail: jest.fn().mockResolvedValue([]),
       delete: jest.fn(),
     };
     const tokenRepo: VerificationTokenRepository = {

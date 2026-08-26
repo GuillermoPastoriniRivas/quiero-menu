@@ -80,7 +80,7 @@ export default function ImprimirPage() {
         </div>
         <div className="flex gap-3">
           <Link
-            href="/publicar"
+            href="/mi-menu?tab=compartir"
             className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 h-10 text-sm font-semibold hover:bg-muted hover:text-foreground"
           >
             <MaterialIcon name="arrow_back" size="sm" />

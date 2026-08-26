@@ -23,7 +23,14 @@ import { OrderDetailDialog } from '@/components/orders/order-detail-dialog';
 import { OrdersKpis } from '@/components/orders/orders-kpis';
 import { OrdersTable } from '@/components/orders/orders-table';
 import { OrdersMobileList } from '@/components/orders/orders-mobile-list';
+import { AccessManagerDialog } from '@/components/orders/access-manager-dialog';
 import { ACTIVE_STATUSES, isActiveStatus, NEXT_STATUS, STATUS_LABELS } from '@/components/orders/status';
+import {
+  subscribeStaffPush,
+  unsubscribePush,
+  isPushSupported,
+  isPushSubscribed,
+} from '@/lib/push';
 import { toast } from 'sonner';
 
 type Tab = 'all' | 'active' | OrderStatus.DELIVERED | OrderStatus.CANCELLED;
@@ -52,6 +59,10 @@ export default function OrdersPage() {
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [itemErrors, setItemErrors] = useState<Record<string, boolean>>({});
   const [selectedOrder, setSelectedOrder] = useState<OrderWithRedaction | null>(null);
+  const [accessOpen, setAccessOpen] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const inFlight = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -60,6 +71,39 @@ export default function OrdersPage() {
     connectRealtime();
     return () => disconnectRealtime();
   }, [fetchOrders, fetchRestaurant, connectRealtime, disconnectRealtime]);
+
+  useEffect(() => {
+    (async () => {
+      const supported = await isPushSupported();
+      setPushSupported(supported);
+      if (supported) setPushEnabled(await isPushSubscribed());
+    })();
+  }, []);
+
+  const handleTogglePush = async () => {
+    setPushBusy(true);
+    try {
+      if (!pushEnabled) {
+        const token = api.getAccessToken();
+        if (!token) return;
+        const ok = await subscribeStaffPush(token);
+        if (!ok) {
+          toast.error('No se pudo activar. Revisá los permisos del navegador.');
+          return;
+        }
+        setPushEnabled(true);
+        toast.success('Vas a recibir un aviso cuando entre un pedido');
+      } else {
+        await unsubscribePush();
+        setPushEnabled(false);
+        toast.success('Avisos de pedidos desactivados');
+      }
+    } catch {
+      toast.error('Error al cambiar las notificaciones');
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const loadItems = async (orderId: string) => {
     if (inFlight.current.has(orderId)) return;
@@ -95,7 +139,7 @@ export default function OrdersPage() {
     try {
       const tokens = await api.get<{ token: string }[]>(`/${type}/tokens`);
       if (tokens.length === 0) {
-        toast.error(`No hay accesos de ${type === 'kitchen' ? 'cocina' : 'delivery'} creados. Creá uno en Accesos (menu de usuario).`);
+        toast.error(`No hay accesos de ${type === 'kitchen' ? 'cocina' : 'delivery'}. Creá uno en Accesos.`);
         return;
       }
       window.open(`${window.location.origin}/${type}/${tokens[0].token}`, '_blank');
@@ -147,6 +191,30 @@ export default function OrdersPage() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => openBoard('delivery')}>
             <MaterialIcon name="delivery_dining" size="sm" className="mr-1" />Delivery
+          </Button>
+          {pushSupported && (
+            <Button
+              variant={pushEnabled ? 'default' : 'outline'}
+              size="sm"
+              disabled={pushBusy}
+              onClick={handleTogglePush}
+              title={
+                pushEnabled
+                  ? 'Avisos activados: te enterás al instante cuando entra un pedido'
+                  : 'Activar avisos cuando entre un pedido nuevo'
+              }
+            >
+              <MaterialIcon
+                name={pushEnabled ? 'notifications_active' : 'notifications_off'}
+                size="sm"
+                className="mr-1"
+                fill={pushEnabled}
+              />
+              Avisos
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} title="Accesos del equipo">
+            <MaterialIcon name="key" size="sm" className="mr-1" />Accesos
           </Button>
         </div>
       </div>
@@ -321,6 +389,9 @@ export default function OrdersPage() {
         onRetryItems={() => selectedOrder && loadItems(selectedOrder.id)}
         onStatusChange={handleStatusChange}
       />
+
+      {/* Team access dialog */}
+      <AccessManagerDialog open={accessOpen} onOpenChange={setAccessOpen} />
     </div>
   );
 }

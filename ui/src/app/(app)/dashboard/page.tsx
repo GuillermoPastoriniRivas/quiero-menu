@@ -7,10 +7,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useBillingStore } from '@/stores/billing.store';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Button } from '@/components/ui/button';
-import { RecentOrdersList, NEXT_STATUS, STATUS_LABELS } from '@/components/dashboard/recent-orders-list';
-import { WeeklySalesChart } from '@/components/dashboard/weekly-sales-chart';
+import { RecentOrdersList } from '@/components/dashboard/recent-orders-list';
 import { OrderStatus, PlanTier, StorefrontData } from '@/types';
-import type { AnalyticsOverview, OrderWithRedaction } from '@/types';
 import { formatCurrency } from '@/lib/format';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
@@ -36,12 +34,7 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const billing = useBillingStore();
   const fetchBilling = useBillingStore((s) => s.fetch);
-  const updateStatus = useOrderStore((s) => s.updateStatus);
   const [menuHasItems, setMenuHasItems] = useState(false);
-  const [analytics, setAnalytics] = useState<{ loading: boolean; data: AnalyticsOverview | null }>({
-    loading: true,
-    data: null,
-  });
 
   useEffect(() => {
     fetchOrders();
@@ -56,21 +49,6 @@ export default function DashboardPage() {
         .catch(() => setMenuHasItems(false));
     }
   }, [fetchOrders, fetchRestaurant, fetchBilling, fetchHours, user?.restaurantSlug]);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<AnalyticsOverview>('/analytics/overview?range=7')
-      .then((data) => {
-        if (!cancelled) setAnalytics({ loading: false, data });
-      })
-      .catch(() => {
-        if (!cancelled) setAnalytics({ loading: false, data: null });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const paymentMethods = restaurant?.paymentMethods;
   const paymentsConfigured = !!(
@@ -101,7 +79,7 @@ export default function DashboardPage() {
         ? 'Ya tenés un método de pago configurado.'
         : 'Elegí cómo querés cobrar: efectivo, tarjeta o transferencia.',
       icon: 'payments',
-      href: '/business/payments',
+      href: '/settings?tab=pagos',
       done: paymentsConfigured,
     },
     {
@@ -111,7 +89,7 @@ export default function DashboardPage() {
         ? 'Tus horarios están configurados.'
         : 'Indicá cuándo está abierto tu local para recibir pedidos.',
       icon: 'schedule',
-      href: '/business/hours',
+      href: '/settings?tab=horarios',
       done: hoursConfigured,
     },
   ];
@@ -133,21 +111,22 @@ export default function DashboardPage() {
   const avgTicket = deliveredToday > 0 ? todayRevenue / deliveredToday : 0;
 
   const recentOrders = orders.filter((o) => !o.redacted).slice(0, 5);
-  const hasSales = analytics.data ? analytics.data.summary.orders > 0 : orders.length > 0;
-  const salesLoading = analytics.loading && orders.length === 0;
+  const hasSales = orders.length > 0;
 
   const freeOrdersLimit = billing.info?.limits?.maxOrdersPerMonth ?? 100;
   const ordersThisMonth = billing.info?.usage?.ordersThisMonth ?? 0;
   const nearFreeLimit = billing.info?.plan === PlanTier.FREE && ordersThisMonth >= 80 && ordersThisMonth <= freeOrdersLimit;
 
-  const handleAdvance = async (order: OrderWithRedaction) => {
-    const next = NEXT_STATUS[order.status];
-    if (!next) return;
+  const openBoard = async (type: 'kitchen' | 'delivery') => {
     try {
-      await updateStatus(order.id, next.status);
-      toast.success(`${order.code} actualizado a ${STATUS_LABELS[next.status]}`);
+      const tokens = await api.get<{ token: string }[]>(`/${type}/tokens`);
+      if (tokens.length === 0) {
+        toast.error(`No hay accesos de ${type === 'kitchen' ? 'cocina' : 'delivery'}. Creá uno en Pedidos → Accesos.`);
+        return;
+      }
+      window.open(`${window.location.origin}/${type}/${tokens[0].token}`, '_blank');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Error al actualizar pedido');
+      toast.error(e instanceof Error ? e.message : 'Error al abrir el tablero');
     }
   };
 
@@ -236,7 +215,7 @@ export default function DashboardPage() {
             <p className="text-sm text-on-surface-variant">
               ¿Ya configuraste todo? Asegurate de que tu menú esté compartido para que tus clientes puedan verlo.
             </p>
-            <Link href="/publicar">
+            <Link href="/mi-menu?tab=compartir">
               <Button size="sm" className="gradient-cta text-white">
                 <MaterialIcon name="share" size="sm" className="mr-1" />Compartir mi menú
               </Button>
@@ -273,17 +252,13 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Ventas Recientes */}
+      {/* Pedidos recientes + operacion rapida */}
       <section className="space-y-4">
         <div className="px-2">
-          <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Ventas Recientes</h2>
+          <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Pedidos Recientes</h2>
         </div>
 
-        {salesLoading ? (
-          <div className="bg-white rounded-2xl p-8 min-h-[220px] flex items-center justify-center">
-            <MaterialIcon name="progress_activity" size="xl" className="animate-spin text-primary" />
-          </div>
-        ) : !hasSales ? (
+        {!hasSales ? (
           <div className="bg-white rounded-2xl p-8 min-h-[300px] flex flex-col items-center justify-center text-center space-y-6 border-2 border-dashed border-outline-variant/20">
             <div className="w-full max-w-lg opacity-10 flex items-end justify-between h-32 gap-4 px-8">
               <div className="flex-1 bg-on-surface-variant rounded-t-lg h-[20%]" />
@@ -299,10 +274,10 @@ export default function DashboardPage() {
                 <MaterialIcon name="analytics" size="xl" className="text-on-surface-variant/30" />
               </div>
               <h3 className="text-xl font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Esperando tus primeros pedidos</h3>
-              <p className="text-on-surface-variant">Una vez que tus clientes empiecen a pedir, aqui veras el crecimiento de tu restaurante en tiempo real.</p>
+              <p className="text-on-surface-variant">Una vez que tus clientes empiecen a pedir, aqui veras la actividad de tu restaurante en tiempo real.</p>
             </div>
             <Link
-              href="/publicar"
+              href="/mi-menu?tab=compartir"
               className="inline-flex items-center gap-2 gradient-cta text-white px-6 py-3 rounded-xl font-bold transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95"
             >
               <MaterialIcon name="rocket_launch" size="md" />
@@ -312,10 +287,41 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-outline-variant/10 lg:col-span-2">
-              <RecentOrdersList orders={recentOrders} currency={restaurant?.currency} onAdvance={handleAdvance} />
+              <RecentOrdersList orders={recentOrders} currency={restaurant?.currency} />
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-outline-variant/10">
-              <WeeklySalesChart data={analytics.data} loading={analytics.loading} currency={restaurant?.currency} />
+            <div className="space-y-4">
+              {activeOrders.length > 0 && (
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/10 space-y-3">
+                  <p className="text-sm font-bold text-on-surface">
+                    {activeOrders.length} pedido{activeOrders.length === 1 ? '' : 's'} en curso
+                  </p>
+                  <p className="text-xs text-on-surface-variant -mt-2">
+                    Operá en tiempo real desde los tableros
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button variant="outline" size="sm" onClick={() => openBoard('kitchen')}>
+                      <MaterialIcon name="restaurant" size="sm" className="mr-1" />Abrir Cocina
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => openBoard('delivery')}>
+                      <MaterialIcon name="delivery_dining" size="sm" className="mr-1" />Abrir Delivery
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <Link href="/analytics" className="block">
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/10 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <MaterialIcon name="insights" size="md" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">Análisis de ventas</p>
+                      <p className="text-xs text-on-surface-variant">Hoy, 7 y 30 días</p>
+                    </div>
+                  </div>
+                  <MaterialIcon name="chevron_right" size="md" className="text-on-surface-variant" />
+                </div>
+              </Link>
             </div>
           </div>
         )}

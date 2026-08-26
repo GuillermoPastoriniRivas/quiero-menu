@@ -10,6 +10,7 @@ import { RolesGuard } from './guards/roles.guard.js';
 
 // Controllers
 import { AuthController } from './controllers/auth.controller.js';
+import { AdminController } from './controllers/admin.controller.js';
 import { StorefrontController } from './controllers/storefront.controller.js';
 import { StorefrontsIndexController } from './controllers/storefronts-index.controller.js';
 import { RestaurantController } from './controllers/restaurant.controller.js';
@@ -31,11 +32,19 @@ import { CustomDomainController } from './controllers/custom-domain.controller.j
 import { InternalCustomDomainController } from './controllers/internal-custom-domain.controller.js';
 
 // Use Cases — Auth
+// Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
 import { SignupUseCase } from '../application/use-cases/auth/signup.use-case.js';
 import { RefreshTokenUseCase } from '../application/use-cases/auth/refresh-token.use-case.js';
 import { LogoutUseCase } from '../application/use-cases/auth/logout.use-case.js';
 import { AuditService } from './services/audit.service.js';
+
+// Use Cases — Admin
+import { SearchRestaurantsUseCase } from '../application/use-cases/admin/search-restaurants.use-case.js';
+import { GetRestaurantDetailUseCase } from '../application/use-cases/admin/get-restaurant-detail.use-case.js';
+import { CreateRestaurantAccountUseCase } from '../application/use-cases/admin/create-restaurant-account.use-case.js';
+import { ImpersonateRestaurantOwnerUseCase } from '../application/use-cases/admin/impersonate-restaurant-owner.use-case.js';
+import { ListAuditLogsUseCase } from '../application/use-cases/admin/list-audit-logs.use-case.js';
 import { GetAccountDataUseCase } from '../application/use-cases/account/get-account-data.use-case.js';
 import { DeleteAccountUseCase } from '../application/use-cases/account/delete-account.use-case.js';
 import { GetCurrentUserUseCase } from '../application/use-cases/auth/get-current-user.use-case.js';
@@ -140,6 +149,7 @@ const useCaseProviders = [
       restRepo: any,
       hasher: any,
       tokenProvider: any,
+      config: ConfigService,
     ) =>
       new LoginUseCase(
         userRepo,
@@ -148,6 +158,7 @@ const useCaseProviders = [
         restRepo,
         hasher,
         tokenProvider,
+        config.get<string[]>('platformAdmin.emails') ?? [],
       ),
     inject: [
       'UserRepository',
@@ -156,6 +167,7 @@ const useCaseProviders = [
       'RestaurantRepository',
       'PasswordHasherPort',
       'TokenProviderPort',
+      ConfigService,
     ],
   },
   {
@@ -183,6 +195,7 @@ const useCaseProviders = [
         vtRepo,
         emailService,
         config.get<string>('frontendUrl')!,
+        config.get<string[]>('platformAdmin.emails') ?? [],
       ),
     inject: [
       'UserRepository',
@@ -199,13 +212,22 @@ const useCaseProviders = [
   },
   {
     provide: 'RefreshTokenUseCase',
-    useFactory: (rtRepo: any, userRepo: any, urRepo: any, tokenProvider: any) =>
-      new RefreshTokenUseCase(rtRepo, userRepo, urRepo, tokenProvider),
+    useFactory: (
+      rtRepo: any,
+      userRepo: any,
+      urRepo: any,
+      tokenProvider: any,
+      config: ConfigService,
+    ) =>
+      new RefreshTokenUseCase(rtRepo, userRepo, urRepo, tokenProvider, [
+        ...(config.get<string[]>('platformAdmin.emails') ?? []),
+      ]),
     inject: [
       'RefreshTokenRepository',
       'UserRepository',
       'UserRestaurantRepository',
       'TokenProviderPort',
+      ConfigService,
     ],
   },
   {
@@ -215,13 +237,126 @@ const useCaseProviders = [
   },
   {
     provide: 'GetCurrentUserUseCase',
-    useFactory: (userRepo: any, urRepo: any, restRepo: any) =>
-      new GetCurrentUserUseCase(userRepo, urRepo, restRepo),
+    useFactory: (
+      userRepo: any,
+      urRepo: any,
+      restRepo: any,
+      config: ConfigService,
+    ) =>
+      new GetCurrentUserUseCase(userRepo, urRepo, restRepo, [
+        ...(config.get<string[]>('platformAdmin.emails') ?? []),
+      ]),
     inject: [
       'UserRepository',
       'UserRestaurantRepository',
       'RestaurantRepository',
+      ConfigService,
     ],
+  },
+
+  // Use Cases — Admin
+  {
+    provide: 'SearchRestaurantsUseCase',
+    useFactory: (restRepo: any, userRepo: any, urRepo: any, subRepo: any) =>
+      new SearchRestaurantsUseCase(restRepo, userRepo, urRepo, subRepo),
+    inject: [
+      'RestaurantRepository',
+      'UserRepository',
+      'UserRestaurantRepository',
+      'SubscriptionRepository',
+    ],
+  },
+  {
+    provide: 'GetRestaurantDetailUseCase',
+    useFactory: (
+      restRepo: any,
+      urRepo: any,
+      userRepo: any,
+      subRepo: any,
+      orderRepo: any,
+      catRepo: any,
+      itemRepo: any,
+    ) =>
+      new GetRestaurantDetailUseCase(
+        restRepo,
+        urRepo,
+        userRepo,
+        subRepo,
+        orderRepo,
+        catRepo,
+        itemRepo,
+      ),
+    inject: [
+      'RestaurantRepository',
+      'UserRestaurantRepository',
+      'UserRepository',
+      'SubscriptionRepository',
+      'OrderRepository',
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+    ],
+  },
+  {
+    provide: 'CreateRestaurantAccountUseCase',
+    useFactory: (
+      userRepo: any,
+      restRepo: any,
+      urRepo: any,
+      hasher: any,
+      subRepo: any,
+      vtRepo: any,
+      emailService: any,
+      config: ConfigService,
+    ) =>
+      new CreateRestaurantAccountUseCase(
+        userRepo,
+        restRepo,
+        urRepo,
+        hasher,
+        subRepo,
+        vtRepo,
+        emailService,
+        config.get<string>('frontendUrl')!,
+      ),
+    inject: [
+      'UserRepository',
+      'RestaurantRepository',
+      'UserRestaurantRepository',
+      'PasswordHasherPort',
+      'SubscriptionRepository',
+      'VerificationTokenRepository',
+      'EmailServicePort',
+      ConfigService,
+    ],
+  },
+  {
+    provide: 'ImpersonateRestaurantOwnerUseCase',
+    useFactory: (
+      restRepo: any,
+      urRepo: any,
+      userRepo: any,
+      rtRepo: any,
+      tokenProvider: any,
+    ) =>
+      new ImpersonateRestaurantOwnerUseCase(
+        restRepo,
+        urRepo,
+        userRepo,
+        rtRepo,
+        tokenProvider,
+      ),
+    inject: [
+      'RestaurantRepository',
+      'UserRestaurantRepository',
+      'UserRepository',
+      'RefreshTokenRepository',
+      'TokenProviderPort',
+    ],
+  },
+  {
+    provide: 'ListAuditLogsUseCase',
+    useFactory: (auditLogRepo: any) => new ListAuditLogsUseCase(auditLogRepo),
+    inject: ['AuditLogRepository'],
   },
 
   {
@@ -919,6 +1054,7 @@ const useCaseProviders = [
   controllers: [
     HealthController,
     AuthController,
+    AdminController,
     StorefrontController,
     StorefrontsIndexController,
     RestaurantController,

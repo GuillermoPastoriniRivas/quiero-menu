@@ -5,6 +5,7 @@ import { MobileUserMenu } from "@/components/layout/mobile-user-menu";
 import { OpenStatusProvider } from "@/components/layout/open-status-provider";
 import { OpenStatusBadge } from "@/components/layout/open-status-badge";
 import { PanelLogo } from "@/components/layout/panel-logo";
+import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="max-w-5xl mx-auto p-6">{children}</div>
           </main>
           <MobileBottomNav />
+          <ImpersonationBanner />
         </div>
       </OpenStatusProvider>
     </AuthProvider>
