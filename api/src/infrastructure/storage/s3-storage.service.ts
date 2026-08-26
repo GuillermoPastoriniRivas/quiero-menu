@@ -4,6 +4,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
@@ -11,6 +12,7 @@ import type {
   StoragePort,
   PresignedUrlRequest,
   PresignedUrlResponse,
+  StoredObject,
 } from '../../application/ports/storage.port.js';
 
 const EXTENSION_MAP: Record<string, string> = {
@@ -58,5 +60,23 @@ export class S3StorageService implements StoragePort {
     await this.client.send(
       new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
+  }
+
+  async getObject(key: string): Promise<StoredObject | null> {
+    try {
+      const result = await this.client.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      const bytes = await result.Body?.transformToByteArray();
+      if (!bytes) return null;
+      return {
+        body: Buffer.from(bytes),
+        contentType: result.ContentType ?? 'application/octet-stream',
+      };
+    } catch (error) {
+      const name = (error as { name?: string })?.name;
+      if (name === 'NoSuchKey') return null;
+      throw error;
+    }
   }
 }

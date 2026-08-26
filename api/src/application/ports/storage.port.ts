@@ -12,9 +12,15 @@ export interface PresignedUrlResponse {
   publicUrl: string;
 }
 
+export interface StoredObject {
+  body: Buffer;
+  contentType: string;
+}
+
 export interface StoragePort {
   generatePresignedUploadUrl(
     request: PresignedUrlRequest,
   ): Promise<PresignedUrlResponse>;
   deleteObject(key: string): Promise<void>;
+  getObject(key: string): Promise<StoredObject | null>;
 }
