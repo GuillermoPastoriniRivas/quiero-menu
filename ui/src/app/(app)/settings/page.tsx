@@ -47,7 +47,7 @@ function SettingsPageInner() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 w-full space-y-6 overflow-hidden">
       <div>
         <h1 className="text-2xl font-bold">Ajustes</h1>
         <p className="text-sm text-muted-foreground">

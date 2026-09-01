@@ -21,7 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <OpenStatusProvider>
         <div className="flex min-h-screen">
           <AdminSidebar />
-          <main className="flex-1 min-w-0 overflow-auto pb-24 lg:pb-8 bg-surface-container-low">
+          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden pb-24 lg:pb-8 bg-surface-container-low">
             {/* Mobile Top Bar */}
             <header className="lg:hidden flex justify-between items-center w-full px-4 h-16 bg-white/90 backdrop-blur-xl sticky top-0 z-40 border-b border-outline-variant/10">
               <div className="flex items-center gap-2">
@@ -30,7 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <OpenStatusBadge compact />
               <MobileUserMenu />
             </header>
-            <div className="max-w-5xl mx-auto p-6">{children}</div>
+            <div className="max-w-5xl mx-auto w-full min-w-0 overflow-x-hidden p-4 sm:p-6">{children}</div>
           </main>
           <MobileBottomNav />
           <ImpersonationBanner />

@@ -69,7 +69,8 @@ export class OperatingHoursPolicy {
     now: Date,
   ): OpenStatus {
     const today = getZonedParts(now, restaurant.timezone);
-    const todayHours = this.findDay(hours, today.dayOfWeek);
+    const todayEntries = this.findTodayEntries(hours, today.dayOfWeek);
+    const todayHours = todayEntries[0] ?? null;
 
     if (
       restaurant.status === RestaurantStatus.PAUSED ||
@@ -85,12 +86,13 @@ export class OperatingHoursPolicy {
     }
 
     if (restaurant.openOverride === 'open') {
+      const closesAtLabel = this.deriveClosesAtLabel(todayEntries, null);
       return {
         isOpen: true,
         dayOfWeek: today.dayOfWeek,
         localTime: today.localTime,
         todayHours,
-        closesAtLabel: todayHours?.closesAt ?? null,
+        closesAtLabel,
       };
     }
 
@@ -114,27 +116,26 @@ export class OperatingHoursPolicy {
       };
     }
 
-    if (!todayHours || todayHours.isClosed) {
+    if (todayEntries.length === 0 || todayEntries.some((e) => e.isClosed)) {
       return {
         isOpen: false,
         dayOfWeek: today.dayOfWeek,
         localTime: today.localTime,
-        todayHours: todayHours ?? null,
+        todayHours,
         closesAtLabel: null,
       };
     }
 
-    const open = isWithin(
-      today.localTime,
-      todayHours.opensAt,
-      todayHours.closesAt,
+    const matching = todayEntries.find((e) =>
+      isWithin(today.localTime, e.opensAt, e.closesAt),
     );
+    const open = !!matching;
     return {
       isOpen: open,
       dayOfWeek: today.dayOfWeek,
       localTime: today.localTime,
       todayHours,
-      closesAtLabel: todayHours.closesAt,
+      closesAtLabel: matching?.closesAt ?? null,
     };
   }
 
@@ -162,15 +163,37 @@ export class OperatingHoursPolicy {
   ): boolean {
     const today = getZonedParts(now, restaurant.timezone);
     if (hours.length === 0) return true;
-    const todayHours = this.findDay(hours, today.dayOfWeek);
-    if (!todayHours || todayHours.isClosed) return false;
-    return isWithin(today.localTime, todayHours.opensAt, todayHours.closesAt);
+    const todayEntries = this.findTodayEntries(hours, today.dayOfWeek);
+    if (todayEntries.length === 0 || todayEntries.some((e) => e.isClosed))
+      return false;
+    return todayEntries.some((e) =>
+      isWithin(today.localTime, e.opensAt, e.closesAt),
+    );
   }
 
   private findDay(
     hours: OperatingHours[],
     dayOfWeek: number,
   ): OperatingHours | null {
-    return hours.find((h) => h.dayOfWeek === dayOfWeek) ?? null;
+    return this.findTodayEntries(hours, dayOfWeek)[0] ?? null;
+  }
+
+  private findTodayEntries(
+    hours: OperatingHours[],
+    dayOfWeek: number,
+  ): OperatingHours[] {
+    return hours
+      .filter((h) => h.dayOfWeek === dayOfWeek)
+      .sort((a, b) => a.opensAt.localeCompare(b.opensAt));
+  }
+
+  private deriveClosesAtLabel(
+    todayEntries: OperatingHours[],
+    matching: OperatingHours | null | undefined,
+  ): string | null {
+    if (todayEntries.length === 0 || todayEntries.some((e) => e.isClosed))
+      return null;
+    if (matching) return matching.closesAt;
+    return todayEntries[0]?.closesAt ?? null;
   }
 }

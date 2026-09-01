@@ -92,14 +92,19 @@ export function StorefrontView({
       : `https://instagram.com/${instagramHandle}`
     : "";
 
-  // Hoy (calculado en el server con la timezone del local)
-  const todayHoursLabel = todayHours
-    ? todayHours.isClosed
-      ? isOpen
-        ? "Abierto hoy"
-        : "Cerrado hoy"
-      : `Hoy ${todayHours.opensAt} – ${todayHours.closesAt}`
-    : null;
+  // Hoy (calculado en el server con la timezone del local) — soporta múltiples rangos (ej 08-12 y 16-20)
+  const todayHoursLabel = useMemo(() => {
+    if (!todayHours) return null;
+    if (todayHours.isClosed) return isOpen ? "Abierto hoy" : "Cerrado hoy";
+    const day = todayHours.dayOfWeek;
+    const dayRanges = data.operatingHours
+      .filter((h) => h.dayOfWeek === day && !h.isClosed)
+      .sort((a, b) => a.opensAt.localeCompare(b.opensAt));
+    if (dayRanges.length <= 1) return `Hoy ${todayHours.opensAt} – ${todayHours.closesAt}`;
+    const parts = dayRanges.map((r) => `${r.opensAt}–${r.closesAt}`);
+    if (parts.length === 2) return `Hoy ${parts[0]} y ${parts[1]}`;
+    return `Hoy ${parts.join(", ")}`;
+  }, [todayHours, data.operatingHours, isOpen]);
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);

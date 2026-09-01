@@ -23,4 +23,5 @@ export class OperatingHoursModel {
 
 export const OperatingHoursSchema =
   SchemaFactory.createForClass(OperatingHoursModel);
-OperatingHoursSchema.index({ restaurantId: 1, dayOfWeek: 1 }, { unique: true });
+// Permite múltiples rangos por día (ej 8-12 y 16-20). No usar unique.
+OperatingHoursSchema.index({ restaurantId: 1, dayOfWeek: 1 });

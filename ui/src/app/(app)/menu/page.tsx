@@ -431,53 +431,55 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Menu</h1>
-        <div className="flex items-center gap-2">
+    <div className="min-w-0 w-full space-y-4 sm:space-y-6 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
+        <h1 className="text-xl sm:text-2xl font-bold shrink-0">Menu</h1>
+        <div className="flex flex-wrap items-center gap-2 ml-auto min-w-0 justify-end">
           <Link
             href="/onboarding?from=menu"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border bg-background px-3 h-8 text-[13px] font-semibold hover:bg-muted transition-colors"
           >
-            <MaterialIcon name="auto_awesome" size="sm" />
+            <MaterialIcon name="auto_awesome" size="xs" />
             Importar con IA
           </Link>
-          <Badge variant="secondary">{richCategories.length} categorias</Badge>
+          <Badge variant="secondary" className="shrink-0 text-xs">{richCategories.length} categorías</Badge>
         </div>
       </div>
 
-      {/* ---- add category (looks like a category) ---- */}
+      {/* ---- add category ---- */}
       <button
         type="button"
         onClick={openCatCreate}
-        className="flex w-full items-center gap-3 rounded-xl border-2 border-dashed border-border bg-muted/30 px-4 py-3 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted"
+        className="flex w-full min-w-0 items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-muted/30 px-4 py-3 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted"
       >
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted">
           <MaterialIcon name="category" size="sm" />
         </span>
-        <span className="font-medium">Agregar categoria</span>
-        <MaterialIcon name="add_circle" className="ml-auto text-foreground/60" />
+        <span className="font-medium text-sm sm:text-[15px] truncate">Agregar categoría</span>
+        <MaterialIcon name="add_circle" className="ml-auto shrink-0 text-foreground/60" size="sm" />
       </button>
 
       {/* ---- categories ---- */}
       {richCategories.map((cat) => {
         const catOpen = expandedCats.has(cat.id);
         return (
-          <Card key={cat.id}>
+          <Card key={cat.id} className="min-w-0 overflow-hidden">
             <CardHeader
-              className="flex flex-row items-center justify-between gap-2 flex-wrap cursor-pointer select-none"
+              className="flex flex-row items-center justify-between gap-3 cursor-pointer select-none min-w-0 py-4"
               onClick={() => toggleCat(cat.id)}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                {catOpen ? <MaterialIcon name="expand_more" size="sm" /> : <MaterialIcon name="chevron_right" size="sm" />}
-                <CardTitle className="text-lg truncate">{cat.name}</CardTitle>
-                <Badge variant="outline" className="ml-2 shrink-0">{cat.items.length} productos</Badge>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="shrink-0 text-muted-foreground">
+                  {catOpen ? <MaterialIcon name="expand_more" size="sm" /> : <MaterialIcon name="chevron_right" size="sm" />}
+                </span>
+                <CardTitle className="text-[15px] sm:text-lg truncate min-w-0 font-semibold">{cat.name}</CardTitle>
+                <Badge variant="outline" className="shrink-0 ml-1 sm:ml-2 text-[11px] font-medium px-2 py-0">{cat.items.length} productos</Badge>
               </div>
-              <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                <Button size="sm" variant="ghost" onClick={() => openCatEdit(cat)}>
+              <div className="flex gap-0.5 sm:gap-1 shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
+                <Button size="icon-sm" variant="ghost" className="h-8 w-8" onClick={() => openCatEdit(cat)} aria-label="Editar categoría">
                   <MaterialIcon name="edit" size="sm" />
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(cat.id)}>
+                <Button size="icon-sm" variant="ghost" className="h-8 w-8" onClick={() => handleDeleteCategory(cat.id)} aria-label="Eliminar categoría">
                   <MaterialIcon name="delete" size="sm" className="text-destructive" />
                 </Button>
               </div>
@@ -497,32 +499,34 @@ export default function MenuPage() {
                     <div key={item.id} className="border rounded-lg">
                       {/* item header */}
                       <div
-                        className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 py-3 cursor-pointer select-none sm:gap-3"
+                        className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-3 cursor-pointer select-none sm:gap-3 min-w-0"
                         onClick={() => toggleItem(item.id)}
                       >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          {hasExtras ? (
-                            itemOpen ? <MaterialIcon name="expand_more" size="sm" className="text-muted-foreground" /> : <MaterialIcon name="chevron_right" size="sm" className="text-muted-foreground" />
-                          ) : (
-                            <MaterialIcon name="inventory_2" size="sm" className="text-muted-foreground" />
-                          )}
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                          <span className="shrink-0 text-muted-foreground">
+                            {hasExtras ? (
+                              itemOpen ? <MaterialIcon name="expand_more" size="sm" /> : <MaterialIcon name="chevron_right" size="sm" />
+                            ) : (
+                              <MaterialIcon name="inventory_2" size="sm" />
+                            )}
+                          </span>
                           {item.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={item.imageUrl} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
+                            <img src={item.imageUrl} alt="" className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg object-cover shrink-0" />
                           ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted shrink-0">
+                            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-muted shrink-0">
                               <MaterialIcon name="restaurant" size="sm" className="text-muted-foreground" />
                             </div>
                           )}
-                          <div className="min-w-0">
-                            <span className="font-medium">{item.name}</span>
+                          <div className="min-w-0 flex-1">
+                            <span className="font-medium text-[14px] sm:text-[15px] truncate block">{item.name}</span>
                             {item.description && (
                               <p className="text-xs text-muted-foreground line-clamp-1">{item.description}</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1 sm:gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0 flex-wrap justify-end w-full sm:w-auto" onClick={(e) => e.stopPropagation()}>
                           {priceEdit?.kind === 'item' && priceEdit.id === item.id ? (
                             <MoneyInput
                               autoFocus

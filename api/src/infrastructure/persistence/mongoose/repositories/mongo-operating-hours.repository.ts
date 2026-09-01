@@ -19,7 +19,7 @@ export class MongoOperatingHoursRepository implements OperatingHoursRepository {
   async findByRestaurantId(restaurantId: string): Promise<OperatingHours[]> {
     const docs = await this.model
       .find({ restaurantId: new Types.ObjectId(restaurantId) })
-      .sort({ dayOfWeek: 1 });
+      .sort({ dayOfWeek: 1, opensAt: 1 });
     return docs.map(OperatingHoursMapper.toDomain);
   }
 
