@@ -8,7 +8,6 @@ import type { MenuItemOptionRepository } from '../../../domain/repositories/menu
 import { MenuItemType } from '../../../domain/enums/menu-item-type.enum.js';
 import { Result, ok } from '../../common/result.js';
 import { slugifyCity } from '../../common/slugify.js';
-import { RestaurantCategory } from '../../../domain/enums/restaurant-category.enum.js';
 
 export interface BulkImportResult {
   categories: number;

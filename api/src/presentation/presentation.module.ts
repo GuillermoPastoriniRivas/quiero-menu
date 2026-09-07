@@ -131,7 +131,9 @@ import { ListCustomerOrdersUseCase } from '../application/use-cases/customers/li
 
 // Use Cases — Analytics
 import { RecordStorefrontViewUseCase } from '../application/use-cases/analytics/record-storefront-view.use-case.js';
+import { RecordStorefrontEventUseCase } from '../application/use-cases/analytics/record-storefront-event.use-case.js';
 import { GetAnalyticsOverviewUseCase } from '../application/use-cases/analytics/get-analytics-overview.use-case.js';
+import { ListSearchTermsUseCase } from '../application/use-cases/analytics/list-search-terms.use-case.js';
 
 // Use Cases — Custom Domain
 import { SetCustomDomainUseCase } from '../application/use-cases/custom-domain/set-custom-domain.use-case.js';
@@ -584,13 +586,30 @@ const useCaseProviders = [
   },
   {
     provide: 'SearchStorefrontsUseCase',
-    useFactory: (restRepo: any, itemRepo: any, hoursRepo: any) =>
-      new SearchStorefrontsUseCase(restRepo, itemRepo, hoursRepo),
+    useFactory: (
+      restRepo: any,
+      itemRepo: any,
+      hoursRepo: any,
+      searchTermRepo: any,
+    ) =>
+      new SearchStorefrontsUseCase(
+        restRepo,
+        itemRepo,
+        hoursRepo,
+        searchTermRepo,
+      ),
     inject: [
       'RestaurantRepository',
       'MenuItemRepository',
       'OperatingHoursRepository',
+      'SearchTermRepository',
     ],
+  },
+  {
+    provide: 'ListSearchTermsUseCase',
+    useFactory: (searchTermRepo: any) =>
+      new ListSearchTermsUseCase(searchTermRepo),
+    inject: ['SearchTermRepository'],
   },
   {
     provide: 'BackfillDirectoryDataUseCase',
@@ -972,13 +991,30 @@ const useCaseProviders = [
     inject: ['RestaurantRepository', 'StorefrontViewRepository'],
   },
   {
+    provide: 'RecordStorefrontEventUseCase',
+    useFactory: (restRepo: any, eventRepo: any) =>
+      new RecordStorefrontEventUseCase(restRepo, eventRepo),
+    inject: ['RestaurantRepository', 'StorefrontEventRepository'],
+  },
+  {
     provide: 'GetAnalyticsOverviewUseCase',
-    useFactory: (analyticsRepo: any, viewRepo: any, restRepo: any) =>
-      new GetAnalyticsOverviewUseCase(analyticsRepo, viewRepo, restRepo),
+    useFactory: (
+      analyticsRepo: any,
+      viewRepo: any,
+      restRepo: any,
+      eventRepo: any,
+    ) =>
+      new GetAnalyticsOverviewUseCase(
+        analyticsRepo,
+        viewRepo,
+        restRepo,
+        eventRepo,
+      ),
     inject: [
       'AnalyticsRepository',
       'StorefrontViewRepository',
       'RestaurantRepository',
+      'StorefrontEventRepository',
     ],
   },
 

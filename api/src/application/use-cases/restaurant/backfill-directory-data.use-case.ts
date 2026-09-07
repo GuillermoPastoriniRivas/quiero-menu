@@ -15,7 +15,13 @@ const CATEGORY_KEYWORDS: {
 }[] = [
   {
     category: RestaurantCategory.PIZZERIA,
-    keywords: ['pizza', 'pizzas', 'pizzeta', 'faina', 'empanadas de jamon y queso'],
+    keywords: [
+      'pizza',
+      'pizzas',
+      'pizzeta',
+      'faina',
+      'empanadas de jamon y queso',
+    ],
   },
   {
     category: RestaurantCategory.HAMBURGUESERIA,
@@ -35,7 +41,14 @@ const CATEGORY_KEYWORDS: {
   },
   {
     category: RestaurantCategory.CAFE,
-    keywords: ['cafe con leche', 'capuchino', 'cappuccino', 'flat white', 'latte', 'medialunas'],
+    keywords: [
+      'cafe con leche',
+      'capuchino',
+      'cappuccino',
+      'flat white',
+      'latte',
+      'medialunas',
+    ],
   },
 ];
 

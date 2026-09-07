@@ -7,6 +7,7 @@ import { MenuItemType } from '../../../domain/enums/menu-item-type.enum.js';
 import type { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
 import type { MenuItemRepository } from '../../../domain/repositories/menu-item.repository.js';
 import type { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
+import type { SearchTermRepository } from '../../../domain/repositories/search-term.repository.js';
 
 function makeRestaurant(id: string, overrides: Partial<Restaurant> = {}) {
   return new Restaurant(
@@ -34,7 +35,7 @@ function makeRestaurant(id: string, overrides: Partial<Restaurant> = {}) {
     new Date(),
     overrides.category,
     overrides.citySlug ?? 'concepcion-del-uruguay',
-  ) as Restaurant;
+  );
 }
 
 function makeItem(
@@ -71,7 +72,20 @@ function makeRepoDeps(
   const hoursRepo: OperatingHoursRepository = {
     findByRestaurantIds: jest.fn().mockResolvedValue(hours),
   } as unknown as OperatingHoursRepository;
-  return { restaurantRepo, itemRepo, hoursRepo };
+  const searchTermRepo: SearchTermRepository = {
+    record: jest.fn().mockResolvedValue(undefined),
+    listTop: jest.fn().mockResolvedValue([]),
+  };
+  return { restaurantRepo, itemRepo, hoursRepo, searchTermRepo };
+}
+
+function makeUseCase(deps: ReturnType<typeof makeRepoDeps>) {
+  return new SearchStorefrontsUseCase(
+    deps.restaurantRepo,
+    deps.itemRepo,
+    deps.hoursRepo,
+    deps.searchTermRepo,
+  );
 }
 
 describe('SearchStorefrontsUseCase', () => {
@@ -87,11 +101,7 @@ describe('SearchStorefrontsUseCase', () => {
       ],
       [],
     );
-    const useCase = new SearchStorefrontsUseCase(
-      deps.restaurantRepo,
-      deps.itemRepo,
-      deps.hoursRepo,
-    );
+    const useCase = makeUseCase(deps);
 
     const out = await useCase.execute({ q: 'milanesa napolitana' });
 
@@ -109,11 +119,7 @@ describe('SearchStorefrontsUseCase', () => {
       [makeItem('1', 'Ñoquis'), makeItem('2', 'Milanesa con papas')],
       [],
     );
-    const useCase = new SearchStorefrontsUseCase(
-      deps.restaurantRepo,
-      deps.itemRepo,
-      deps.hoursRepo,
-    );
+    const useCase = makeUseCase(deps);
 
     const out = await useCase.execute({ q: 'milanesa' });
 
@@ -136,11 +142,7 @@ describe('SearchStorefrontsUseCase', () => {
       [makeItem('1', 'Pizza'), makeItem('2', 'Pizza'), makeItem('3', 'Pizza')],
       [],
     );
-    const useCase = new SearchStorefrontsUseCase(
-      deps.restaurantRepo,
-      deps.itemRepo,
-      deps.hoursRepo,
-    );
+    const useCase = makeUseCase(deps);
 
     const openOut = await useCase.execute({ openNow: true });
     expect(openOut.results.map((r) => r.slug).sort()).toEqual([
@@ -162,11 +164,7 @@ describe('SearchStorefrontsUseCase', () => {
       [makeItem('1', 'Tarta de jamón', { isVisible: false })],
       [],
     );
-    const useCase = new SearchStorefrontsUseCase(
-      deps.restaurantRepo,
-      deps.itemRepo,
-      deps.hoursRepo,
-    );
+    const useCase = makeUseCase(deps);
 
     const out = await useCase.execute({ q: 'tarta' });
     expect(out.total).toBe(0);
@@ -178,13 +176,27 @@ describe('SearchStorefrontsUseCase', () => {
   it('matchea el rubro de la taxonomia', async () => {
     const pizzeria = makeRestaurant('1', { category: 'pizzeria' as never });
     const deps = makeRepoDeps([pizzeria], [makeItem('1', 'Faina')], []);
-    const useCase = new SearchStorefrontsUseCase(
-      deps.restaurantRepo,
-      deps.itemRepo,
-      deps.hoursRepo,
-    );
+    const useCase = makeUseCase(deps);
 
     const out = await useCase.execute({ q: 'pizza' });
     expect(out.total).toBe(1);
+  });
+
+  it('loguea el termino buscado y marca los sin resultados', async () => {
+    const local = makeRestaurant('1', { name: 'La Rotisería' });
+    const deps = makeRepoDeps([local], [makeItem('1', 'Milanesa')], []);
+    const useCase = makeUseCase(deps);
+
+    await useCase.execute({ q: 'Milanesa' });
+    expect(deps.searchTermRepo.record).toHaveBeenCalledWith('milanesa', true);
+
+    await useCase.execute({ q: 'tartiflette' });
+    expect(deps.searchTermRepo.record).toHaveBeenCalledWith(
+      'tartiflette',
+      false,
+    );
+
+    await useCase.execute({});
+    expect(deps.searchTermRepo.record).toHaveBeenCalledTimes(2);
   });
 });

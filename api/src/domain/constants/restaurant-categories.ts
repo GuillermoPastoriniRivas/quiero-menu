@@ -76,5 +76,7 @@ export function getCategoryDef(
   value: string | null | undefined,
 ): RestaurantCategoryDef | null {
   if (!value) return null;
-  return RESTAURANT_CATEGORIES.find((c) => c.value === value) ?? null;
+  return (
+    RESTAURANT_CATEGORIES.find((c) => String(c.value) === String(value)) ?? null
+  );
 }

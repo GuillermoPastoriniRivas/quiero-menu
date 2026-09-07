@@ -553,6 +553,12 @@ export interface AnalyticsOverview {
   }[];
   byHour: { hour: number; orders: number; revenue: number }[];
   status: { status: string; count: number }[];
+  events: {
+    whatsapp: number;
+    maps: number;
+    instagram: number;
+    whatsappPrev: number;
+  };
   timings: {
     from: string;
     to: string;

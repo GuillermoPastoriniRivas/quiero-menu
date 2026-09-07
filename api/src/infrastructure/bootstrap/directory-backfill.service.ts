@@ -1,4 +1,9 @@
-import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import type { BackfillDirectoryDataUseCase } from '../../application/use-cases/restaurant/backfill-directory-data.use-case.js';
 
 /**

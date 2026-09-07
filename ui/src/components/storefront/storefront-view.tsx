@@ -93,6 +93,25 @@ export function StorefrontView({
       : `https://instagram.com/${instagramHandle}`
     : "";
 
+  /**
+   * Ping de contacto (WhatsApp/Maps/Instagram) con sendBeacon: text/plain
+   * sin preflight CORS y sobrevive la navegación a wa.me. El tipo viaja en
+   * query porque el body de sendBeacon llega como texto plano.
+   */
+  const trackContact = useMemo(() => {
+    if (typeof navigator === "undefined" || !navigator.sendBeacon) {
+      return () => {};
+    }
+    const base = getApiBase();
+    return (type: "whatsapp" | "maps" | "instagram") => {
+      try {
+        navigator.sendBeacon(`${base}/storefront/${slug}/events?type=${type}`);
+      } catch {
+        // El ping nunca debe romper la navegación del comensal.
+      }
+    };
+  }, [slug]);
+
   // Hoy (calculado en el server con la timezone del local) — soporta múltiples rangos (ej 08-12 y 16-20)
   const todayHoursLabel = useMemo(() => {
     if (!todayHours) return null;
@@ -600,6 +619,7 @@ export function StorefrontView({
               href={googleMapsUrl || undefined}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackContact("maps")}
               className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
             >
               <MaterialIcon
@@ -620,6 +640,7 @@ export function StorefrontView({
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackContact("whatsapp")}
                   className="flex-1 flex items-center justify-center gap-2 border border-green-600/20 bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-300 rounded-xl py-2.5 text-sm font-semibold transition-colors"
                 >
                   <WhatsAppIcon />
@@ -631,6 +652,7 @@ export function StorefrontView({
                   href={instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackContact("instagram")}
                   className="flex-1 flex items-center justify-center gap-2 border border-purple-600/20 bg-purple-600/10 text-purple-700 hover:bg-purple-600/20 dark:border-purple-400/20 dark:bg-purple-400/10 dark:text-purple-300 rounded-xl py-2.5 text-sm font-semibold transition-colors"
                 >
                   <InstagramIcon />
@@ -732,6 +754,7 @@ export function StorefrontView({
                         href={googleMapsUrl || undefined}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => trackContact("maps")}
                         className="flex items-start gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
                       >
                         <MaterialIcon
@@ -762,6 +785,7 @@ export function StorefrontView({
                             href={whatsappUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() => trackContact("whatsapp")}
                             className="w-full flex items-center justify-center gap-2 border border-green-600/20 bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:border-green-400/20 dark:bg-green-400/10 dark:text-green-300 rounded-xl py-2.5 text-sm font-semibold transition-colors"
                           >
                             <WhatsAppIcon />
@@ -773,6 +797,7 @@ export function StorefrontView({
                             href={instagramUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() => trackContact("instagram")}
                             className="w-full flex items-center justify-center gap-2 border border-purple-600/20 bg-purple-600/10 text-purple-700 hover:bg-purple-600/20 dark:border-purple-400/20 dark:bg-purple-400/10 dark:text-purple-300 rounded-xl py-2.5 text-sm font-semibold transition-colors"
                           >
                             <InstagramIcon />

@@ -4,6 +4,7 @@ import {
   StageTiming,
 } from '../../../domain/repositories/analytics.repository.js';
 import { StorefrontViewRepository } from '../../../domain/repositories/storefront-view.repository.js';
+import { StorefrontEventRepository } from '../../../domain/repositories/storefront-event.repository.js';
 
 export type AnalyticsRange = 'today' | '7' | '30';
 
@@ -73,6 +74,12 @@ export interface AnalyticsOverview {
   byHour: { hour: number; orders: number; revenue: number }[];
   status: { status: string; count: number }[];
   timings: StageTiming[];
+  events: {
+    whatsapp: number;
+    maps: number;
+    instagram: number;
+    whatsappPrev: number;
+  };
 }
 
 export class GetAnalyticsOverviewUseCase {
@@ -80,6 +87,7 @@ export class GetAnalyticsOverviewUseCase {
     private readonly analyticsRepo: AnalyticsRepository,
     private readonly viewRepo: StorefrontViewRepository,
     private readonly restaurantRepo: RestaurantRepository,
+    private readonly eventRepo: StorefrontEventRepository,
   ) {}
 
   async execute(
@@ -115,6 +123,8 @@ export class GetAnalyticsOverviewUseCase {
       byHour,
       status,
       timings,
+      events,
+      prevEvents,
     ] = await Promise.all([
       this.analyticsRepo.getSummary(restaurantId, since, now),
       this.analyticsRepo.getSummary(restaurantId, prevSince, since),
@@ -124,6 +134,8 @@ export class GetAnalyticsOverviewUseCase {
       this.analyticsRepo.getSalesByHour(restaurantId, since, now, timezone),
       this.analyticsRepo.getStatusDistribution(restaurantId, since, now),
       this.analyticsRepo.getStatusTimings(restaurantId, since, now),
+      this.eventRepo.countByType(restaurantId, since, now),
+      this.eventRepo.countByType(restaurantId, prevSince, since),
     ]);
 
     const conversionRate = views > 0 ? (summary.orders / views) * 100 : 0;
@@ -161,6 +173,12 @@ export class GetAnalyticsOverviewUseCase {
       byHour,
       status,
       timings,
+      events: {
+        whatsapp: events.whatsapp,
+        maps: events.maps,
+        instagram: events.instagram,
+        whatsappPrev: prevEvents.whatsapp,
+      },
     };
   }
 }

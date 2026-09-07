@@ -32,6 +32,12 @@ import type { CreateStorefrontOrderUseCase } from '../../application/use-cases/o
 import type { GetOrderTrackingUseCase } from '../../application/use-cases/order/get-order-tracking.use-case.js';
 import type { ValidateCouponUseCase } from '../../application/use-cases/coupons/validate-coupon.use-case.js';
 import type { RecordStorefrontViewUseCase } from '../../application/use-cases/analytics/record-storefront-view.use-case.js';
+import type { RecordStorefrontEventUseCase } from '../../application/use-cases/analytics/record-storefront-event.use-case.js';
+import {
+  RecordStorefrontEventRequestSchema,
+  RecordStorefrontEventRequestDto,
+} from '../request-dtos/storefront-event.dto.js';
+import { StorefrontEventType } from '../../domain/enums/storefront-event-type.enum.js';
 import type { GenerateUploadUrlUseCase } from '../../application/use-cases/upload/generate-upload-url.use-case.js';
 import type { NotifyReceiptUploadedUseCase } from '../../application/use-cases/order/notify-receipt-uploaded.use-case.js';
 import type { OrderRepository } from '../../domain/repositories/order.repository.js';
@@ -55,6 +61,8 @@ export class StorefrontController {
     private readonly validateCoupon: ValidateCouponUseCase,
     @Inject('RecordStorefrontViewUseCase')
     private readonly recordView: RecordStorefrontViewUseCase,
+    @Inject('RecordStorefrontEventUseCase')
+    private readonly recordEvent: RecordStorefrontEventUseCase,
     @Inject('NotifyReceiptUploadedUseCase')
     private readonly notifyReceipt: NotifyReceiptUploadedUseCase,
     @Inject('OrderRepository') private readonly orderRepo: OrderRepository,
@@ -131,6 +139,26 @@ export class StorefrontController {
   @Post(':slug/view')
   async recordStorefrontView(@Param('slug') slug: string) {
     const result = await this.recordView.execute(slug);
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    return result.value;
+  }
+
+  /**
+   * Click de contacto en el storefront (WhatsApp/Maps/Instagram). El tipo
+   * viaja en query para que la UI lo mande con sendBeacon (text/plain, sin
+   * preflight CORS).
+   */
+  @Public()
+  @Post(':slug/events')
+  async recordStorefrontEvent(
+    @Param('slug') slug: string,
+    @Query(new ZodValidationPipe(RecordStorefrontEventRequestSchema))
+    query: RecordStorefrontEventRequestDto,
+  ) {
+    const result = await this.recordEvent.execute(
+      slug,
+      query.type as StorefrontEventType,
+    );
     if (!result.ok) throw new NotFoundException(result.error.message);
     return result.value;
   }

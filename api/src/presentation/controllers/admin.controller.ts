@@ -25,12 +25,15 @@ import {
   AdminCreateRestaurantRequestDto,
   AdminAuditLogsRequestSchema,
   AdminAuditLogsRequestDto,
+  AdminSearchTermsRequestSchema,
+  AdminSearchTermsRequestDto,
 } from '../request-dtos/admin.dto.js';
 import type { SearchRestaurantsUseCase } from '../../application/use-cases/admin/search-restaurants.use-case.js';
 import type { GetRestaurantDetailUseCase } from '../../application/use-cases/admin/get-restaurant-detail.use-case.js';
 import type { CreateRestaurantAccountUseCase } from '../../application/use-cases/admin/create-restaurant-account.use-case.js';
 import type { ImpersonateRestaurantOwnerUseCase } from '../../application/use-cases/admin/impersonate-restaurant-owner.use-case.js';
 import type { ListAuditLogsUseCase } from '../../application/use-cases/admin/list-audit-logs.use-case.js';
+import type { ListSearchTermsUseCase } from '../../application/use-cases/analytics/list-search-terms.use-case.js';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -46,6 +49,8 @@ export class AdminController {
     private readonly impersonateUseCase: ImpersonateRestaurantOwnerUseCase,
     @Inject('ListAuditLogsUseCase')
     private readonly listAuditLogsUseCase: ListAuditLogsUseCase,
+    @Inject('ListSearchTermsUseCase')
+    private readonly listSearchTermsUseCase: ListSearchTermsUseCase,
     private readonly audit: AuditService,
   ) {}
 
@@ -116,5 +121,15 @@ export class AdminController {
   ) {
     const entries = await this.listAuditLogsUseCase.execute(query.limit);
     return { entries };
+  }
+
+  /** Qué buscan los comensales en el directorio (demanda insatisfecha). */
+  @Get('search-terms')
+  async searchTerms(
+    @Query(new ZodValidationPipe(AdminSearchTermsRequestSchema))
+    query: AdminSearchTermsRequestDto,
+  ) {
+    const terms = await this.listSearchTermsUseCase.execute(query.limit);
+    return { terms };
   }
 }

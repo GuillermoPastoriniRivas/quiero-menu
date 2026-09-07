@@ -61,9 +61,9 @@ function makeDeps(restaurants: Restaurant[], items: MenuItem[]) {
   const updates: { id: string; data: Record<string, string> }[] = [];
   const restaurantRepo = {
     findByStatus: jest.fn().mockResolvedValue(restaurants),
-    update: jest.fn(async (id: string, data: Record<string, string>) => {
+    update: jest.fn((id: string, data: Record<string, string>) => {
       updates.push({ id, data });
-      return null;
+      return Promise.resolve(null);
     }),
   } as unknown as RestaurantRepository;
   const itemRepo = {
@@ -78,7 +78,10 @@ describe('BackfillDirectoryDataUseCase', () => {
     const r2 = makeRestaurant('2', 'Paysandu');
     const { restaurantRepo, itemRepo, updates } = makeDeps(
       [r1, r2],
-      [makeItem('1', 'Pizza muzzarella'), makeItem('2', 'Hamburguesa completa')],
+      [
+        makeItem('1', 'Pizza muzzarella'),
+        makeItem('2', 'Hamburguesa completa'),
+      ],
     );
     const useCase = new BackfillDirectoryDataUseCase(restaurantRepo, itemRepo);
 
@@ -105,9 +108,10 @@ describe('BackfillDirectoryDataUseCase', () => {
       'concepcion-del-uruguay',
       RestaurantCategory.CAFE,
     );
-    const { restaurantRepo, itemRepo, updates } = makeDeps([r], [
-      makeItem('1', 'Pizza'),
-    ]);
+    const { restaurantRepo, itemRepo, updates } = makeDeps(
+      [r],
+      [makeItem('1', 'Pizza')],
+    );
     const useCase = new BackfillDirectoryDataUseCase(restaurantRepo, itemRepo);
 
     const out = await useCase.execute();
@@ -119,10 +123,13 @@ describe('BackfillDirectoryDataUseCase', () => {
 
   it('sin señal fuerte de platos deja la categoria vacia', async () => {
     const r = makeRestaurant('1', 'Concepción del Uruguay');
-    const { restaurantRepo, itemRepo } = makeDeps([r], [
-      makeItem('1', 'Ravioles con estofado'),
-      makeItem('1', 'Tarta oculta', false),
-    ]);
+    const { restaurantRepo, itemRepo } = makeDeps(
+      [r],
+      [
+        makeItem('1', 'Ravioles con estofado'),
+        makeItem('1', 'Tarta oculta', false),
+      ],
+    );
     const useCase = new BackfillDirectoryDataUseCase(restaurantRepo, itemRepo);
 
     const out = await useCase.execute();

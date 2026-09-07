@@ -86,7 +86,8 @@ export class CreateRestaurantAccountUseCase {
       address: '',
       city: input.city ?? '',
       citySlug: slugifyCity(input.city ?? ''),
-      category: (input.category as RestaurantCategory) ?? RestaurantCategory.NONE,
+      category:
+        (input.category as RestaurantCategory) ?? RestaurantCategory.NONE,
       country: 'AR',
       coordinates: null,
       phone: '',

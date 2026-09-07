@@ -115,7 +115,7 @@ export default function AnalyticsPage() {
       ) : (
         <>
           {/* Summary cards */}
-          <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <Card size="sm" className="shadow-sm border border-outline-variant/10">
               <CardContent className="px-4 py-3 space-y-1">
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ingresos</p>
@@ -141,6 +141,20 @@ export default function AnalyticsPage() {
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Conversión</p>
                 <p className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}>{data.summary.conversionRate.toFixed(1)}%</p>
                 <p className="text-xs text-on-surface-variant">{data.summary.views} vistas al menú</p>
+              </CardContent>
+            </Card>
+            <Card size="sm" className="shadow-sm border border-outline-variant/10">
+              <CardContent className="px-4 py-3 space-y-1">
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Te escribieron</p>
+                <p className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}>{data.events.whatsapp}</p>
+                <p className="text-xs text-on-surface-variant">
+                  contactos por WhatsApp
+                  {(() => {
+                    const prev = data.events.whatsappPrev;
+                    const delta = prev > 0 ? ((data.events.whatsapp - prev) / prev) * 100 : data.events.whatsapp > 0 ? 100 : 0;
+                    return <> · {deltaBadge(delta)}</>;
+                  })()}
+                </p>
               </CardContent>
             </Card>
             <Card size="sm" className="shadow-sm border border-outline-variant/10">

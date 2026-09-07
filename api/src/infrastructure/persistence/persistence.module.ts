@@ -75,6 +75,14 @@ import {
   StorefrontViewModel,
   StorefrontViewSchema,
 } from './mongoose/schemas/storefront-view.schema.js';
+import {
+  StorefrontEventModel,
+  StorefrontEventSchema,
+} from './mongoose/schemas/storefront-event.schema.js';
+import {
+  SearchTermModel,
+  SearchTermSchema,
+} from './mongoose/schemas/search-term.schema.js';
 
 import { MongoRestaurantRepository } from './mongoose/repositories/mongo-restaurant.repository.js';
 import { MongoOperatingHoursRepository } from './mongoose/repositories/mongo-operating-hours.repository.js';
@@ -97,6 +105,8 @@ import { MongoAuditLogRepository } from './mongoose/repositories/mongo-audit-log
 import { MongoCouponRepository } from './mongoose/repositories/mongo-coupon.repository.js';
 import { MongoStorefrontViewRepository } from './mongoose/repositories/mongo-storefront-view.repository.js';
 import { MongoAnalyticsRepository } from './mongoose/repositories/mongo-analytics.repository.js';
+import { MongoStorefrontEventRepository } from './mongoose/repositories/mongo-storefront-event.repository.js';
+import { MongoSearchTermRepository } from './mongoose/repositories/mongo-search-term.repository.js';
 
 const schemas = MongooseModule.forFeature([
   { name: RestaurantModel.name, schema: RestaurantSchema },
@@ -120,6 +130,8 @@ const schemas = MongooseModule.forFeature([
   { name: AuditLogModel.name, schema: AuditLogSchema },
   { name: CouponModel.name, schema: CouponSchema },
   { name: StorefrontViewModel.name, schema: StorefrontViewSchema },
+  { name: StorefrontEventModel.name, schema: StorefrontEventSchema },
+  { name: SearchTermModel.name, schema: SearchTermSchema },
 ]);
 
 const repositories = [
@@ -173,6 +185,11 @@ const repositories = [
     provide: 'StorefrontViewRepository',
     useClass: MongoStorefrontViewRepository,
   },
+  {
+    provide: 'StorefrontEventRepository',
+    useClass: MongoStorefrontEventRepository,
+  },
+  { provide: 'SearchTermRepository', useClass: MongoSearchTermRepository },
   { provide: 'AnalyticsRepository', useClass: MongoAnalyticsRepository },
 ];
 

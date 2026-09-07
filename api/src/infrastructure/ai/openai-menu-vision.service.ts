@@ -43,14 +43,7 @@ const JSON_SCHEMA = {
     properties: {
       restaurant: {
         type: 'object',
-        required: [
-          'name',
-          'phone',
-          'address',
-          'city',
-          'currency',
-          'category',
-        ],
+        required: ['name', 'phone', 'address', 'city', 'currency', 'category'],
         additionalProperties: false,
         properties: {
           name: { type: ['string', 'null'] },

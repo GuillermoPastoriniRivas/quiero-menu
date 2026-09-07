@@ -1,6 +1,7 @@
 import { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
 import { MenuItemRepository } from '../../../domain/repositories/menu-item.repository.js';
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
+import { SearchTermRepository } from '../../../domain/repositories/search-term.repository.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
 import { OperatingHoursPolicy } from '../../../domain/services/operating-hours-policy.js';
 import { getCategoryDef } from '../../../domain/constants/restaurant-categories.js';
@@ -64,6 +65,7 @@ export class SearchStorefrontsUseCase {
     private readonly restaurantRepo: RestaurantRepository,
     private readonly itemRepo: MenuItemRepository,
     private readonly hoursRepo: OperatingHoursRepository,
+    private readonly searchTermRepo?: SearchTermRepository,
   ) {}
 
   async execute(input: StorefrontSearchInput): Promise<StorefrontSearchOutput> {
@@ -107,7 +109,8 @@ export class SearchStorefrontsUseCase {
         const descMatch =
           descN.length > 0 && tokens.every((t) => descN.includes(t));
 
-        const dishMatches: { match: StorefrontSearchMatch; index: number }[] = [];
+        const dishMatches: { match: StorefrontSearchMatch; index: number }[] =
+          [];
         const items = index.itemsByRestaurant.get(restaurant.id) ?? [];
         for (let i = 0; i < items.length; i++) {
           const itemN = normalize(items[i].name);
@@ -143,6 +146,13 @@ export class SearchStorefrontsUseCase {
       if (b.score !== a.score) return b.score - a.score;
       return a.name.localeCompare(b.name);
     });
+
+    // Inteligencia de demanda: qué buscan los comensales y qué no encuentran.
+    // Fire-and-forget: nunca bloquea ni rompe la búsqueda.
+    if (tokens.length > 0 && this.searchTermRepo) {
+      const total = results.length;
+      void this.searchTermRepo.record(q, total > 0).catch(() => {});
+    }
 
     return { results: results.slice(0, limit), total: results.length };
   }

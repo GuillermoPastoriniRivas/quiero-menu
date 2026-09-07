@@ -35,3 +35,10 @@ export const AdminAuditLogsRequestSchema = z.object({
 export type AdminAuditLogsRequestDto = z.infer<
   typeof AdminAuditLogsRequestSchema
 >;
+
+export const AdminSearchTermsRequestSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).optional().default(50),
+});
+export type AdminSearchTermsRequestDto = z.infer<
+  typeof AdminSearchTermsRequestSchema
+>;

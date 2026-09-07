@@ -23,11 +23,15 @@ export class MongoOperatingHoursRepository implements OperatingHoursRepository {
     return docs.map(OperatingHoursMapper.toDomain);
   }
 
-  async findByRestaurantIds(restaurantIds: string[]): Promise<OperatingHours[]> {
+  async findByRestaurantIds(
+    restaurantIds: string[],
+  ): Promise<OperatingHours[]> {
     if (restaurantIds.length === 0) return [];
     const docs = await this.model
       .find({
-        restaurantId: { $in: restaurantIds.map((id) => new Types.ObjectId(id)) },
+        restaurantId: {
+          $in: restaurantIds.map((id) => new Types.ObjectId(id)),
+        },
       })
       .sort({ dayOfWeek: 1, opensAt: 1 });
     return docs.map(OperatingHoursMapper.toDomain);

@@ -8,7 +8,7 @@ import { useBillingStore } from '@/stores/billing.store';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Button } from '@/components/ui/button';
 import { RecentOrdersList } from '@/components/dashboard/recent-orders-list';
-import { OrderStatus, PlanTier, StorefrontData } from '@/types';
+import { OrderStatus, PlanTier, StorefrontData, AnalyticsOverview } from '@/types';
 import { formatCurrency } from '@/lib/format';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
@@ -35,12 +35,18 @@ export default function DashboardPage() {
   const billing = useBillingStore();
   const fetchBilling = useBillingStore((s) => s.fetch);
   const [menuHasItems, setMenuHasItems] = useState(false);
+  const [contactsToday, setContactsToday] = useState<number | null>(null);
 
   useEffect(() => {
     fetchOrders();
     fetchRestaurant();
     fetchBilling();
     fetchHours();
+
+    api
+      .get<AnalyticsOverview>('/analytics/overview?range=today')
+      .then((data) => setContactsToday(data.events?.whatsapp ?? 0))
+      .catch(() => setContactsToday(null));
 
     if (user?.restaurantSlug) {
       api
@@ -225,7 +231,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Stats Row */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white p-4 rounded-xl border border-outline-variant/10 shadow-sm">
           <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Pedidos Hoy</p>
           <p className="text-2xl font-extrabold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -250,6 +256,13 @@ export default function DashboardPage() {
             {avgTicket > 0 ? formatCurrency(avgTicket, restaurant?.currency) : <span className="text-on-surface-variant/30">$0</span>}
           </p>
         </div>
+        <Link href="/analytics" className="bg-white p-4 rounded-xl border border-green-600/20 shadow-sm hover:border-green-600/40 transition-colors">
+          <p className="text-xs font-bold text-green-700 uppercase tracking-wider mb-1">Te escribieron hoy</p>
+          <p className="text-2xl font-extrabold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
+            {contactsToday === null ? <span className="text-on-surface-variant/30">–</span> : contactsToday}
+          </p>
+          <p className="text-[11px] text-on-surface-variant mt-0.5">por WhatsApp desde tu menú</p>
+        </Link>
       </section>
 
       {/* Pedidos recientes + operacion rapida */}
