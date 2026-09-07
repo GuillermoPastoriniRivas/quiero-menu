@@ -10,6 +10,7 @@ export class OrderMapper {
       doc._id.toHexString(),
       doc.restaurantId.toHexString(),
       doc.code,
+      doc.trackingToken ?? '',
       doc.status as OrderStatus,
       doc.customerName,
       doc.customerPhone,

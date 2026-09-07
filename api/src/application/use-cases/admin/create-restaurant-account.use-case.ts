@@ -18,6 +18,8 @@ import { SubscriptionStatus } from '../../../domain/enums/subscription-status.en
 import { PaymentProvider } from '../../../domain/enums/payment-provider.enum.js';
 import { welcomeTemplate } from '../../../infrastructure/email/templates/welcome.template.js';
 import { verifyEmailTemplate } from '../../../infrastructure/email/templates/verify-email.template.js';
+import { RestaurantCategory } from '../../../domain/enums/restaurant-category.enum.js';
+import { slugifyCity } from '../../common/slugify.js';
 
 export interface CreateRestaurantAccountInput {
   ownerName: string;
@@ -26,6 +28,7 @@ export interface CreateRestaurantAccountInput {
   restaurantName: string;
   restaurantSlug: string;
   city?: string;
+  category?: string;
   currency?: string;
   timezone?: string;
   sendOwnerEmails?: boolean;
@@ -82,6 +85,8 @@ export class CreateRestaurantAccountUseCase {
       bannerUrl: '',
       address: '',
       city: input.city ?? '',
+      citySlug: slugifyCity(input.city ?? ''),
+      category: (input.category as RestaurantCategory) ?? RestaurantCategory.NONE,
       country: 'AR',
       coordinates: null,
       phone: '',

@@ -16,8 +16,8 @@ export type SubscribeStaffRequestDto = z.infer<
 >;
 
 export const SubscribeOrderRequestSchema = z.object({
-  orderCode: z.string().min(1),
-  slug: z.string().min(1),
+  orderToken: z.string().min(1),
+  slug: z.string().min(1).optional(),
   subscription: PushSubscriptionSchema,
 });
 export type SubscribeOrderRequestDto = z.infer<

@@ -76,6 +76,7 @@ export class GetOrderUseCase {
       order.id,
       order.restaurantId,
       order.code,
+      order.trackingToken,
       order.status,
       '***',
       '***',

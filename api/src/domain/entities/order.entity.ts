@@ -12,6 +12,7 @@ export class Order {
     public readonly id: string,
     public readonly restaurantId: string,
     public readonly code: string,
+    public readonly trackingToken: string,
     public readonly status: OrderStatus,
     public readonly customerName: string,
     public readonly customerPhone: string,

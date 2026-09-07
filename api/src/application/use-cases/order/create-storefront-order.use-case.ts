@@ -31,6 +31,10 @@ import {
   computeCouponDiscount,
 } from '../../common/coupon-discount.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
+import {
+  generateTrackingToken,
+  normalizeTrackingToken,
+} from '../../common/generate-tracking-token.js';
 
 interface OrderItemInput {
   menuItemId: string;
@@ -174,9 +178,15 @@ export class CreateStorefrontOrderUseCase {
     const total = subtotal + deliveryFee - discount;
     const code = await this.orderRepo.generateNextCode(restaurant.id);
 
+    let trackingToken = generateTrackingToken();
+    while (await this.orderRepo.findByTrackingToken(trackingToken)) {
+      trackingToken = generateTrackingToken();
+    }
+
     const order = await this.orderRepo.create({
       restaurantId: restaurant.id,
       code,
+      trackingToken: normalizeTrackingToken(trackingToken),
       status: OrderStatus.NEW,
       customerName: input.customerName,
       customerPhone: input.customerPhone,

@@ -27,6 +27,7 @@ export interface MenuVisionOutput {
     address?: string;
     city?: string;
     currency?: string;
+    category?: string;
   };
   operatingHours?: {
     dayOfWeek: number;

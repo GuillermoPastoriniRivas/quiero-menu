@@ -57,6 +57,11 @@ export class MongoOrderRepository implements OrderRepository {
     return doc ? OrderMapper.toDomain(doc) : null;
   }
 
+  async findByTrackingToken(token: string): Promise<Order | null> {
+    const doc = await this.model.findOne({ trackingToken: token });
+    return doc ? OrderMapper.toDomain(doc) : null;
+  }
+
   async findByFilters(filters: OrderFilters): Promise<PaginatedResult<Order>> {
     const query: Record<string, unknown> = {
       restaurantId: new Types.ObjectId(filters.restaurantId),

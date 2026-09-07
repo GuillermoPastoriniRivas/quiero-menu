@@ -17,6 +17,9 @@ export class OrderModel {
   @Prop({ required: true })
   code: string;
 
+  @Prop({ type: String })
+  trackingToken: string;
+
   @Prop({ required: true, enum: OrderStatus, default: OrderStatus.NEW })
   status: string;
 
@@ -90,4 +93,5 @@ export class OrderModel {
 
 export const OrderSchema = SchemaFactory.createForClass(OrderModel);
 OrderSchema.index({ restaurantId: 1, code: 1 }, { unique: true });
+OrderSchema.index({ trackingToken: 1 }, { unique: true, sparse: true });
 OrderSchema.index({ restaurantId: 1, status: 1 });

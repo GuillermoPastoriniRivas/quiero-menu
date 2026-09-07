@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RestaurantCategory } from '../../domain/enums/restaurant-category.enum.js';
 
 export const AdminSearchRequestSchema = z.object({
   q: z.string().max(120).optional().default(''),
@@ -19,6 +20,7 @@ export const AdminCreateRestaurantRequestSchema = z.object({
       'Slug must be lowercase alphanumeric with hyphens',
     ),
   city: z.string().max(80).optional(),
+  category: z.nativeEnum(RestaurantCategory).optional(),
   currency: z.string().length(3).optional(),
   timezone: z.string().max(60).optional(),
   sendOwnerEmails: z.boolean().optional(),

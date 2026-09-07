@@ -13,11 +13,10 @@ export interface PushServicePort {
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
   ): Promise<void>;
   subscribeOrder(
-    orderCode: string,
-    slug: string,
+    orderToken: string,
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
   ): Promise<void>;
   unsubscribe(endpoint: string): Promise<void>;
   sendToRestaurant(restaurantId: string, payload: PushPayload): Promise<void>;
-  sendToOrder(orderCode: string, payload: PushPayload): Promise<void>;
+  sendToOrder(orderToken: string, payload: PushPayload): Promise<void>;
 }

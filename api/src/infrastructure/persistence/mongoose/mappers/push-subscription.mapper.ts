@@ -10,6 +10,7 @@ export class PushSubscriptionMapper {
       doc.userId ? doc.userId.toHexString() : null,
       doc.restaurantId ? doc.restaurantId.toHexString() : null,
       doc.orderCode ?? null,
+      doc.orderToken ?? null,
       doc.orderSlug ?? null,
       doc.createdAt,
     );

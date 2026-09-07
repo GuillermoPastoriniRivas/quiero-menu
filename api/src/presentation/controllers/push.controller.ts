@@ -23,15 +23,12 @@ import {
 } from '../request-dtos/push.dto.js';
 import type { PushServicePort } from '../../application/ports/push-service.port.js';
 import type { OrderRepository } from '../../domain/repositories/order.repository.js';
-import type { RestaurantRepository } from '../../domain/repositories/restaurant.repository.js';
 
 @Controller('push')
 export class PushController {
   constructor(
     @Inject('PushServicePort') private readonly pushService: PushServicePort,
     @Inject('OrderRepository') private readonly orderRepo: OrderRepository,
-    @Inject('RestaurantRepository')
-    private readonly restaurantRepo: RestaurantRepository,
   ) {}
 
   @Public()
@@ -62,18 +59,15 @@ export class PushController {
     @Body(new ZodValidationPipe(SubscribeOrderRequestSchema))
     body: SubscribeOrderRequestDto,
   ) {
-    const restaurant = await this.restaurantRepo.findBySlug(body.slug);
-    if (!restaurant) throw new BadRequestException('Restaurante no encontrado');
-    const order = await this.orderRepo.findByCode(
-      restaurant.id,
-      body.orderCode,
+    const order = await this.orderRepo.findByTrackingToken(
+      body.orderToken.toUpperCase(),
     );
-    if (!order) throw new BadRequestException('Pedido no encontrado');
-    await this.pushService.subscribeOrder(
-      order.code,
-      body.slug,
-      body.subscription,
-    );
+    if (!order || !order.trackingToken)
+      throw new BadRequestException('Pedido no encontrado');
+    await this.pushService.subscribeOrder(order.trackingToken, {
+      endpoint: body.subscription.endpoint,
+      keys: body.subscription.keys,
+    });
     return { ok: true };
   }
 

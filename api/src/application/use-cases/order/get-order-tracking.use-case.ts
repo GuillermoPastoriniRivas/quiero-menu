@@ -1,11 +1,14 @@
 import { OrderRepository } from '../../../domain/repositories/order.repository.js';
 import { OrderItemRepository } from '../../../domain/repositories/order-item.repository.js';
 import { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
+import { Order } from '../../../domain/entities/order.entity.js';
+import { Restaurant } from '../../../domain/entities/restaurant.entity.js';
 import { OrderItem } from '../../../domain/entities/order-item.entity.js';
 import { OrderStatus } from '../../../domain/enums/order-status.enum.js';
 import { DeliveryType } from '../../../domain/enums/delivery-type.enum.js';
 import { PaymentMethodsConfig } from '../../../domain/entities/restaurant.entity.js';
 import { Result, ok, err } from '../../common/result.js';
+import { normalizeTrackingToken } from '../../common/generate-tracking-token.js';
 import {
   RestaurantNotFoundError,
   OrderNotFoundError,
@@ -15,6 +18,7 @@ export interface OrderTrackingOutput {
   order: {
     id: string;
     code: string;
+    trackingToken: string;
     status: OrderStatus;
     deliveryType: DeliveryType;
     subtotal: number;
@@ -61,12 +65,33 @@ export class GetOrderTrackingUseCase {
     const order = await this.orderRepo.findByCode(restaurant.id, code);
     if (!order) return err(new OrderNotFoundError());
 
+    return this.buildOutput(order, restaurant);
+  }
+
+  async executeByToken(
+    rawToken: string,
+  ): Promise<Result<OrderTrackingOutput, OrderNotFoundError>> {
+    const token = normalizeTrackingToken(rawToken);
+    const order = await this.orderRepo.findByTrackingToken(token);
+    if (!order || !order.trackingToken) return err(new OrderNotFoundError());
+
+    const restaurant = await this.restaurantRepo.findById(order.restaurantId);
+    if (!restaurant) return err(new OrderNotFoundError());
+
+    return this.buildOutput(order, restaurant);
+  }
+
+  private async buildOutput(
+    order: Order,
+    restaurant: Restaurant,
+  ): Promise<Result<OrderTrackingOutput, OrderNotFoundError>> {
     const items = await this.orderItemRepo.findByOrderId(order.id);
 
     return ok({
       order: {
         id: order.id,
         code: order.code,
+        trackingToken: order.trackingToken,
         status: order.status,
         deliveryType: order.deliveryType,
         subtotal: order.subtotal,

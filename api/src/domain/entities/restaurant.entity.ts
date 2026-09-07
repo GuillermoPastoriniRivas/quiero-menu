@@ -1,4 +1,5 @@
 import { RestaurantStatus } from '../enums/restaurant-status.enum.js';
+import { RestaurantCategory } from '../enums/restaurant-category.enum.js';
 
 export interface PaymentMethodsConfig {
   cashEnabled: boolean;
@@ -58,5 +59,9 @@ export class Restaurant {
     public readonly theme: StorefrontTheme,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    /** Rubro para el directorio (pizzeria, cafe, ...). undefined = sin clasificar. */
+    public readonly category?: RestaurantCategory,
+    /** Slug normalizado de la ciudad: join key de las páginas de directorio. */
+    public readonly citySlug?: string,
   ) {}
 }

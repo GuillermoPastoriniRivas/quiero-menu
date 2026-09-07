@@ -28,6 +28,7 @@ export class MongoPushSubscriptionRepository implements PushSubscriptionReposito
         ? new Types.ObjectId(data.restaurantId)
         : null,
       orderCode: data.orderCode,
+      orderToken: data.orderToken,
       orderSlug: data.orderSlug,
     });
     return PushSubscriptionMapper.toDomain(doc);
@@ -52,6 +53,11 @@ export class MongoPushSubscriptionRepository implements PushSubscriptionReposito
 
   async findByOrderCode(orderCode: string): Promise<PushSubscription[]> {
     const docs = await this.model.find({ orderCode });
+    return docs.map(PushSubscriptionMapper.toDomain);
+  }
+
+  async findByOrderToken(orderToken: string): Promise<PushSubscription[]> {
+    const docs = await this.model.find({ orderToken });
     return docs.map(PushSubscriptionMapper.toDomain);
   }
   async deleteManyByRestaurantId(restaurantId: string): Promise<void> {

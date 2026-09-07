@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { RESTAURANT_CATEGORIES } from '@/lib/restaurant-categories';
 
 const deriveSlug = (name: string) =>
   name
@@ -38,6 +39,7 @@ export default function AdminNuevoLocalPage() {
   const [slug, setSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [city, setCity] = useState('Concepción del Uruguay');
+  const [category, setCategory] = useState('');
   const [sendEmails, setSendEmails] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,6 +61,7 @@ export default function AdminNuevoLocalPage() {
           restaurantName,
           restaurantSlug: effectiveSlug,
           city: city || undefined,
+          category: category || undefined,
           currency: 'ARS',
           timezone: 'America/Argentina/Buenos_Aires',
           sendOwnerEmails: sendEmails,
@@ -178,6 +181,24 @@ export default function AdminNuevoLocalPage() {
               Ciudad
             </Label>
             <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="category" className="text-xs font-bold text-on-surface-variant ml-1">
+              Rubro
+            </Label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="h-11 w-full rounded-xl border-none bg-surface-container-low px-4 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <option value="">Sin clasificar</option>
+              {RESTAURANT_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

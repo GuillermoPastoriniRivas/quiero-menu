@@ -6,6 +6,7 @@ export interface CreatePushSubscriptionData {
   userId: string | null;
   restaurantId: string | null;
   orderCode: string | null;
+  orderToken: string | null;
   orderSlug: string | null;
 }
 
@@ -15,6 +16,7 @@ export interface PushSubscriptionRepository {
   deleteByEndpoint(endpoint: string): Promise<boolean>;
   findByRestaurantId(restaurantId: string): Promise<PushSubscription[]>;
   findByOrderCode(orderCode: string): Promise<PushSubscription[]>;
+  findByOrderToken(orderToken: string): Promise<PushSubscription[]>;
   deleteManyByRestaurantId(restaurantId: string): Promise<void>;
   deleteManyByUserId(userId: string): Promise<void>;
 }

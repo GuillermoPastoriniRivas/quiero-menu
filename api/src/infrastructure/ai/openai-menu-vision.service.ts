@@ -10,7 +10,9 @@ const SYSTEM_PROMPT = `You are a restaurant menu data extraction assistant. Anal
 
 Extract the following:
 
-1. RESTAURANT INFO: name, phone number, address, city if visible on the menu.
+0. BUSINESS CATEGORY: classify the business type as exactly one of: "pizzeria", "hamburgueseria", "rotiseria", "empanaderia", "cafe", "heladeria", "sushi", "bar", "otro". Use the menu content to decide (pizzas => pizzeria, burgers => hamburgueseria, etc.). If unclear, use "otro".
+
+1. RESTAURANT INFO: name, phone number, address, city if visible on the menu, category.
 
 2. OPERATING HOURS: if visible, extract as array of { dayOfWeek (0=Sunday, 1=Monday...6=Saturday), opensAt (HH:mm), closesAt (HH:mm), isClosed: false }. Only include days you can see.
 
@@ -41,7 +43,14 @@ const JSON_SCHEMA = {
     properties: {
       restaurant: {
         type: 'object',
-        required: ['name', 'phone', 'address', 'city', 'currency'],
+        required: [
+          'name',
+          'phone',
+          'address',
+          'city',
+          'currency',
+          'category',
+        ],
         additionalProperties: false,
         properties: {
           name: { type: ['string', 'null'] },
@@ -49,6 +58,21 @@ const JSON_SCHEMA = {
           address: { type: ['string', 'null'] },
           city: { type: ['string', 'null'] },
           currency: { type: ['string', 'null'] },
+          category: {
+            type: ['string', 'null'],
+            enum: [
+              'pizzeria',
+              'hamburgueseria',
+              'rotiseria',
+              'empanaderia',
+              'cafe',
+              'heladeria',
+              'sushi',
+              'bar',
+              'otro',
+              null,
+            ],
+          },
         },
       },
       operatingHours: {
@@ -196,6 +220,7 @@ export class OpenAiMenuVisionService implements MenuVisionPort {
       address: parsed.restaurant.address ?? undefined,
       city: parsed.restaurant.city ?? undefined,
       currency: parsed.restaurant.currency ?? undefined,
+      category: parsed.restaurant.category ?? undefined,
     };
     parsed.operatingHours = parsed.operatingHours ?? undefined;
     for (const cat of parsed.categories) {

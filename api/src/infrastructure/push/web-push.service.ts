@@ -45,13 +45,13 @@ export class WebPushService implements PushServicePort {
       userId,
       restaurantId,
       orderCode: null,
+      orderToken: null,
       orderSlug: null,
     });
   }
 
   async subscribeOrder(
-    orderCode: string,
-    slug: string,
+    orderToken: string,
     subscription: RawSubscription,
   ): Promise<void> {
     await this.subRepo.deleteByEndpoint(subscription.endpoint);
@@ -60,8 +60,9 @@ export class WebPushService implements PushServicePort {
       keys: subscription.keys,
       userId: null,
       restaurantId: null,
-      orderCode,
-      orderSlug: slug,
+      orderCode: null,
+      orderToken,
+      orderSlug: null,
     });
   }
 
@@ -77,14 +78,13 @@ export class WebPushService implements PushServicePort {
     await this.sendToMany(subs, payload);
   }
 
-  async sendToOrder(orderCode: string, payload: PushPayload): Promise<void> {
-    const subs = await this.subRepo.findByOrderCode(orderCode);
+  async sendToOrder(orderToken: string, payload: PushPayload): Promise<void> {
+    const subs = await this.subRepo.findByOrderToken(orderToken);
     await Promise.all(
       subs.map((sub) =>
         this.sendOne(sub, {
           ...payload,
-          url:
-            payload.url ?? `/tracking/${orderCode}?slug=${sub.orderSlug ?? ''}`,
+          url: payload.url ?? `/tracking/${orderToken}`,
         }),
       ),
     );

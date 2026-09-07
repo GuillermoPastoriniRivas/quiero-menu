@@ -11,6 +11,7 @@ export class PushSubscription {
     public readonly userId: string | null,
     public readonly restaurantId: string | null,
     public readonly orderCode: string | null,
+    public readonly orderToken: string | null,
     public readonly orderSlug: string | null,
     public readonly createdAt: Date,
   ) {}

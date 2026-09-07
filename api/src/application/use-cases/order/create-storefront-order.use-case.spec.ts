@@ -60,6 +60,7 @@ function makeOrder(): Order {
     'o1',
     'r1',
     'A1',
+    'K4MNPQ7X',
     OrderStatus.NEW,
     'Juan',
     '5491100000000',
@@ -106,11 +107,13 @@ describe('CreateStorefrontOrderUseCase — guard de horarios', () => {
     };
 
     const stub = () => jest.fn();
+    const orderRepo = {
+      create: jest.fn().mockResolvedValue(makeOrder()),
+      generateNextCode: jest.fn().mockResolvedValue('A1'),
+      findByTrackingToken: jest.fn().mockResolvedValue(null),
+    };
     const useCase = new CreateStorefrontOrderUseCase(
-      {
-        create: jest.fn().mockResolvedValue(makeOrder()),
-        generateNextCode: jest.fn().mockResolvedValue('A1'),
-      } as any,
+      orderRepo as any,
       { createBulk: jest.fn().mockResolvedValue([]) } as any,
       restaurantRepo as any,
       hoursRepo as any,
@@ -122,7 +125,7 @@ describe('CreateStorefrontOrderUseCase — guard de horarios', () => {
       { sendToRestaurant: jest.fn().mockResolvedValue(undefined) } as any,
     );
 
-    return { useCase, restaurantRepo, hoursRepo };
+    return { useCase, orderRepo, restaurantRepo, hoursRepo };
   }
 
   const input = {
@@ -178,6 +181,23 @@ describe('CreateStorefrontOrderUseCase — guard de horarios', () => {
       // Sin items no debería llegar a crear nada, pero el guard de horarios no debe bloquear.
       expect(result.ok).toBe(true);
       expect(restaurantRepo.findBySlug).toHaveBeenCalledWith('mi-resto');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('genera un trackingToken único al crear el pedido', async () => {
+    const { useCase, orderRepo } = buildUseCase({
+      hours: makeHours([{ dayOfWeek: 4, opensAt: '09:00', closesAt: '22:00' }]),
+    });
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-20T14:00:00.000Z'));
+    try {
+      await useCase.execute('mi-resto', input);
+      expect(orderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trackingToken: expect.stringMatching(/^[0-9A-HJKMNP-TV-Z]{8}$/),
+        }),
+      );
     } finally {
       jest.useRealTimers();
     }

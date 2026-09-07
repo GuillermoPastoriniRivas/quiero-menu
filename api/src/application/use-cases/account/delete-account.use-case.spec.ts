@@ -129,6 +129,7 @@ describe('DeleteAccountUseCase', () => {
       create: jest.fn(),
       findById: jest.fn(),
       findByCode: jest.fn(),
+      findByTrackingToken: jest.fn(),
       findByFilters: jest
         .fn()
         .mockResolvedValue({ data: [], meta: { total: 0, page: 1, pages: 0 } }),
@@ -149,6 +150,7 @@ describe('DeleteAccountUseCase', () => {
     };
     const operatingHoursRepo: OperatingHoursRepository = {
       findByRestaurantId: jest.fn(),
+      findByRestaurantIds: jest.fn().mockResolvedValue([]),
       upsertBulk: jest.fn(),
       deleteByRestaurantId: jest.fn().mockResolvedValue(undefined),
     };
@@ -189,6 +191,7 @@ describe('DeleteAccountUseCase', () => {
       deleteByEndpoint: jest.fn(),
       findByRestaurantId: jest.fn(),
       findByOrderCode: jest.fn(),
+      findByOrderToken: jest.fn(),
       deleteManyByRestaurantId: jest.fn().mockResolvedValue(undefined),
       deleteManyByUserId: jest.fn().mockResolvedValue(undefined),
     };

@@ -7,6 +7,8 @@ import type { MenuItemVariantRepository } from '../../../domain/repositories/men
 import type { MenuItemOptionRepository } from '../../../domain/repositories/menu-item-option.repository.js';
 import { MenuItemType } from '../../../domain/enums/menu-item-type.enum.js';
 import { Result, ok } from '../../common/result.js';
+import { slugifyCity } from '../../common/slugify.js';
+import { RestaurantCategory } from '../../../domain/enums/restaurant-category.enum.js';
 
 export interface BulkImportResult {
   categories: number;
@@ -41,7 +43,13 @@ export class BulkImportMenuUseCase {
     if (data.restaurant.name) restUpdate.name = data.restaurant.name;
     if (data.restaurant.phone) restUpdate.phone = data.restaurant.phone;
     if (data.restaurant.address) restUpdate.address = data.restaurant.address;
-    if (data.restaurant.city) restUpdate.city = data.restaurant.city;
+    if (data.restaurant.city) {
+      restUpdate.city = data.restaurant.city;
+      restUpdate.citySlug = slugifyCity(data.restaurant.city);
+    }
+    if (data.restaurant.category) {
+      restUpdate.category = data.restaurant.category;
+    }
     if (data.restaurant.currency)
       restUpdate.currency = data.restaurant.currency;
     if (Object.keys(restUpdate).length > 0) {

@@ -2,6 +2,7 @@ import { OperatingHours } from '../entities/operating-hours.entity.js';
 
 export interface OperatingHoursRepository {
   findByRestaurantId(restaurantId: string): Promise<OperatingHours[]>;
+  findByRestaurantIds(restaurantIds: string[]): Promise<OperatingHours[]>;
   upsertBulk(
     restaurantId: string,
     hours: Omit<OperatingHours, 'id' | 'restaurantId'>[],

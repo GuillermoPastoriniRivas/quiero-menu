@@ -56,9 +56,14 @@ export default function TrackingPage() {
   }, []);
 
   const fetchTracking = useCallback(async () => {
-    if (!code || !slug) return;
+    if (!code) return;
     try {
-      const res = await fetch(`${getApiBase()}/storefront/${encodeURIComponent(slug)}/orders/by-code/${encodeURIComponent(code)}`);
+      // Legacy: /tracking/PED-0001?slug=... (por code, scoped al local).
+      // Nuevo: /tracking/TOKEN (token global sin slug).
+      const url = slug
+        ? `${getApiBase()}/storefront/${encodeURIComponent(slug)}/orders/by-code/${encodeURIComponent(code)}`
+        : `${getApiBase()}/tracking/${encodeURIComponent(code)}`;
+      const res = await fetch(url);
       if (!res.ok) {
         setInvalid(true);
         return;
@@ -74,26 +79,26 @@ export default function TrackingPage() {
   }, [code, slug]);
 
   useEffect(() => {
-    if (!code || !slug) return;
+    if (!code) return;
     fetchTracking();
     const interval = setInterval(fetchTracking, 10000);
     return () => clearInterval(interval);
   }, [code, slug, fetchTracking]);
 
   useEffect(() => {
-    if (!code || !slug) return;
+    if (!code) return;
     (async () => {
       if (await isPushSupported()) {
         if (await isPushSubscribed()) setPushState('on');
       }
     })();
-  }, [code, slug]);
+  }, [code]);
 
   const handleEnablePush = async () => {
     if (!data) return;
     setPushState('busy');
     try {
-      const ok = await subscribeOrderPush(slug, code);
+      const ok = await subscribeOrderPush(data.order.trackingToken);
       if (ok) setPushState('on');
     } finally {
       setPushState((s) => (s === 'busy' ? 'idle' : s));
@@ -101,9 +106,10 @@ export default function TrackingPage() {
   };
 
   const restaurantId = data?.restaurant.id;
+  const orderCode = data?.order.code;
   useEffect(() => {
-    if (!restaurantId || !code) return;
-    const room = `order:${restaurantId}:${code}`;
+    if (!restaurantId || !orderCode) return;
+    const room = `order:${restaurantId}:${orderCode}`;
     const socket = getRoomSocket(room);
     const handler = () => fetchTracking();
     socket.on('order.updated', handler);
@@ -112,7 +118,7 @@ export default function TrackingPage() {
       socket.off('order.updated', handler);
       socket.disconnect();
     };
-  }, [restaurantId, code, fetchTracking]);
+  }, [restaurantId, orderCode, fetchTracking]);
 
   // Título de pestaña: solo el nombre del local. Favicon: el logo del local.
   useEffect(() => {
@@ -131,9 +137,10 @@ export default function TrackingPage() {
 
   const handleReceiptUpload = async (file: File) => {
     if (!data) return;
+    const slugForRestaurant = data.restaurant.slug;
     setUploadingReceipt(true);
     try {
-      const res = await fetch(`${getApiBase()}/storefront/${slug}/receipt-upload`, {
+      const res = await fetch(`${getApiBase()}/storefront/${encodeURIComponent(slugForRestaurant)}/receipt-upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'receipt', contentType: file.type }),
@@ -146,7 +153,7 @@ export default function TrackingPage() {
         body: file,
       });
       if (!uploadRes.ok) throw new Error('Error al subir comprobante');
-      await fetch(`${getApiBase()}/storefront/${slug}/orders/${data.order.id}/receipt`, {
+      await fetch(`${getApiBase()}/storefront/${encodeURIComponent(slugForRestaurant)}/orders/${data.order.id}/receipt`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ receiptUrl: publicUrl }),
@@ -367,7 +374,7 @@ export default function TrackingPage() {
         </section>
 
         {/* Back to menu */}
-        <Button className="w-full" variant="outline" onClick={() => (window.location.href = `/${slug}`)}>
+        <Button className="w-full" variant="outline" onClick={() => (window.location.href = `/${restaurant.slug}`)}>
           Volver al menú del local
         </Button>
       </main>

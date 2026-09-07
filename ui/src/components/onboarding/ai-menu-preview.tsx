@@ -11,6 +11,7 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { OnboardingSteps } from '@/components/onboarding/onboarding-steps';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { RESTAURANT_CATEGORIES } from '@/lib/restaurant-categories';
 import type { MenuVisionOutput, MenuVisionCategory, MenuVisionItem } from '@/types';
 
 interface AiMenuPreviewProps {
@@ -173,6 +174,21 @@ export function AiMenuPreview({
                 onChange={(e) => updateRestaurant('city', e.target.value)}
                 className="rounded-xl bg-surface-container-lowest"
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-on-surface-variant">Rubro</Label>
+              <select
+                value={result.restaurant.category || ''}
+                onChange={(e) => updateRestaurant('category', e.target.value)}
+                className="h-10 w-full rounded-xl bg-surface-container-lowest px-3 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30"
+              >
+                <option value="">Sin clasificar</option>
+                {RESTAURANT_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-on-surface-variant">Moneda</Label>

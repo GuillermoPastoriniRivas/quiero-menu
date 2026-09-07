@@ -14,6 +14,10 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { RESTAURANT_CATEGORIES } from "@/lib/restaurant-categories";
+
+const SELECT_CLASSES =
+  "h-11 w-full rounded-xl border-none bg-surface-container-low px-4 py-2 text-base outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 md:text-sm dark:bg-surface-container";
 
 export function RestaurantDataSettings() {
   const { restaurant, fetch: fetchRestaurant, update } = useRestaurantStore();
@@ -22,6 +26,7 @@ export function RestaurantDataSettings() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
+  const [category, setCategory] = useState("");
   const [currency, setCurrency] = useState("");
   const [instagram, setInstagram] = useState("");
   const [saving, setSaving] = useState(false);
@@ -37,6 +42,7 @@ export function RestaurantDataSettings() {
       setPhone(restaurant.phone);
       setAddress(restaurant.address);
       setCity(restaurant.city);
+      setCategory(restaurant.category || "");
       setCurrency(restaurant.currency);
       setInstagram(restaurant.socialLinks?.instagram || "");
     }
@@ -51,6 +57,7 @@ export function RestaurantDataSettings() {
         phone,
         address,
         city,
+        category: (category || undefined) as never,
         currency,
         socialLinks: { instagram: instagram || undefined },
       });
@@ -100,6 +107,27 @@ export function RestaurantDataSettings() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Rubro</Label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={SELECT_CLASSES}
+            >
+              <option value="">Sin clasificar</option>
+              {RESTAURANT_CATEGORIES.filter((c) => c.value !== "otro").map(
+                (c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ),
+              )}
+              <option value="otro">Otro</option>
+            </select>
+            <p className="text-xs text-on-surface-variant">
+              Ayuda a que te encuentren en el directorio de tu ciudad.
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Moneda</Label>

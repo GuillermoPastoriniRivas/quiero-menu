@@ -1,5 +1,6 @@
 import { Restaurant } from '../../../../domain/entities/restaurant.entity.js';
 import { RestaurantStatus } from '../../../../domain/enums/restaurant-status.enum.js';
+import { RestaurantCategory } from '../../../../domain/enums/restaurant-category.enum.js';
 import { RestaurantDocument } from '../schemas/restaurant.schema.js';
 
 export class RestaurantMapper {
@@ -31,6 +32,8 @@ export class RestaurantMapper {
       doc.theme ?? { primaryColor: '#E8532C' },
       doc.createdAt,
       doc.updatedAt,
+      (doc.category as RestaurantCategory) ?? RestaurantCategory.NONE,
+      doc.citySlug ?? '',
     );
   }
 }

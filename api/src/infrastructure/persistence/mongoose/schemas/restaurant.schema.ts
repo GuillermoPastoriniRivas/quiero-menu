@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { RestaurantStatus } from '../../../../domain/enums/restaurant-status.enum.js';
+import { RestaurantCategory } from '../../../../domain/enums/restaurant-category.enum.js';
 import {
   StorefrontTheme,
   CustomDomainStatus,
@@ -30,6 +31,12 @@ export class RestaurantModel {
 
   @Prop({ default: '' })
   city: string;
+
+  @Prop({ type: String, enum: RestaurantCategory, default: '' })
+  category: string;
+
+  @Prop({ default: '' })
+  citySlug: string;
 
   @Prop({ default: '' })
   country: string;

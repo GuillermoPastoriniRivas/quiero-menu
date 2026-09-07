@@ -44,6 +44,7 @@ export interface OrderRepository {
   ): Promise<Order>;
   findById(id: string): Promise<Order | null>;
   findByCode(restaurantId: string, code: string): Promise<Order | null>;
+  findByTrackingToken(token: string): Promise<Order | null>;
   findByFilters(filters: OrderFilters): Promise<PaginatedResult<Order>>;
   updateStatus(
     id: string,

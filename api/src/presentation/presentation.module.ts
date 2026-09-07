@@ -12,6 +12,7 @@ import { RolesGuard } from './guards/roles.guard.js';
 import { AuthController } from './controllers/auth.controller.js';
 import { AdminController } from './controllers/admin.controller.js';
 import { StorefrontController } from './controllers/storefront.controller.js';
+import { TrackingController } from './controllers/tracking.controller.js';
 import { StorefrontsIndexController } from './controllers/storefronts-index.controller.js';
 import { RestaurantController } from './controllers/restaurant.controller.js';
 import { MenuController } from './controllers/menu.controller.js';
@@ -57,6 +58,9 @@ import { ResetPasswordUseCase } from '../application/use-cases/auth/reset-passwo
 import { GetRestaurantUseCase } from '../application/use-cases/restaurant/get-restaurant.use-case.js';
 import { GetRestaurantBySlugUseCase } from '../application/use-cases/restaurant/get-restaurant-by-slug.use-case.js';
 import { ListActiveStorefrontsUseCase } from '../application/use-cases/restaurant/list-active-storefronts.use-case.js';
+import { SearchStorefrontsUseCase } from '../application/use-cases/restaurant/search-storefronts.use-case.js';
+import { BackfillDirectoryDataUseCase } from '../application/use-cases/restaurant/backfill-directory-data.use-case.js';
+import { DirectoryBackfillService } from '../infrastructure/bootstrap/directory-backfill.service.js';
 import { UpdateRestaurantUseCase } from '../application/use-cases/restaurant/update-restaurant.use-case.js';
 import { UpdateOperatingHoursUseCase } from '../application/use-cases/restaurant/update-operating-hours.use-case.js';
 import { GetRestaurantOperatingHoursUseCase } from '../application/use-cases/restaurant/get-restaurant-operating-hours.use-case.js';
@@ -569,14 +573,32 @@ const useCaseProviders = [
   },
   {
     provide: 'ListActiveStorefrontsUseCase',
-    useFactory: (restRepo: any, catRepo: any, itemRepo: any) =>
-      new ListActiveStorefrontsUseCase(restRepo, catRepo, itemRepo),
+    useFactory: (restRepo: any, catRepo: any, itemRepo: any, hoursRepo: any) =>
+      new ListActiveStorefrontsUseCase(restRepo, catRepo, itemRepo, hoursRepo),
     inject: [
       'RestaurantRepository',
       'MenuCategoryRepository',
       'MenuItemRepository',
+      'OperatingHoursRepository',
     ],
   },
+  {
+    provide: 'SearchStorefrontsUseCase',
+    useFactory: (restRepo: any, itemRepo: any, hoursRepo: any) =>
+      new SearchStorefrontsUseCase(restRepo, itemRepo, hoursRepo),
+    inject: [
+      'RestaurantRepository',
+      'MenuItemRepository',
+      'OperatingHoursRepository',
+    ],
+  },
+  {
+    provide: 'BackfillDirectoryDataUseCase',
+    useFactory: (restRepo: any, itemRepo: any) =>
+      new BackfillDirectoryDataUseCase(restRepo, itemRepo),
+    inject: ['RestaurantRepository', 'MenuItemRepository'],
+  },
+  DirectoryBackfillService,
   {
     provide: 'UpdateRestaurantUseCase',
     useFactory: (restRepo: any) => new UpdateRestaurantUseCase(restRepo),
@@ -1056,6 +1078,7 @@ const useCaseProviders = [
     AuthController,
     AdminController,
     StorefrontController,
+    TrackingController,
     StorefrontsIndexController,
     RestaurantController,
     MenuController,

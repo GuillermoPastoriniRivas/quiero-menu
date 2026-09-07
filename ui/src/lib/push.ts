@@ -58,14 +58,14 @@ export async function subscribeStaffPush(token: string): Promise<boolean> {
 }
 
 /** Customer (tracking page): subscribe for status updates on an order. */
-export async function subscribeOrderPush(slug: string, orderCode: string): Promise<boolean> {
+export async function subscribeOrderPush(orderToken: string): Promise<boolean> {
   const sub = await getOrCreateSubscription();
   if (!sub) return false;
 
   const res = await fetch(`${getApiBase()}/push/subscribe-order`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ orderCode, slug, subscription: sub.toJSON() }),
+    body: JSON.stringify({ orderToken, subscription: sub.toJSON() }),
   });
   return res.ok;
 }

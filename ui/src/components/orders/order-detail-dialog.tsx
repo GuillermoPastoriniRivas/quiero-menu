@@ -38,7 +38,9 @@ export function OrderDetailDialog({
   const nextAction = order ? NEXT_STATUS[order.status] : undefined;
   const trackingHref =
     order && restaurant
-      ? `/tracking/${order.code}?slug=${restaurant.slug}`
+      ? order.trackingToken
+        ? `/tracking/${order.trackingToken}`
+        : `/tracking/${order.code}?slug=${restaurant.slug}`
       : undefined;
   const mapsHref =
     order &&

@@ -60,6 +60,8 @@ export interface Restaurant {
   bannerUrl: string;
   address: string;
   city: string;
+  category?: string;
+  citySlug?: string;
   country: string;
   coordinates: { lat: number; lng: number } | null;
   phone: string;
@@ -152,6 +154,7 @@ export interface Order {
   id: string;
   restaurantId: string;
   code: string;
+  trackingToken: string;
   status: OrderStatus;
   customerName: string;
   customerPhone: string;
@@ -237,6 +240,7 @@ export interface MenuVisionOutput {
     address?: string;
     city?: string;
     currency?: string;
+    category?: string;
   };
   operatingHours?: {
     dayOfWeek: number;
@@ -421,9 +425,13 @@ export interface StorefrontIndexEntry {
   slug: string;
   name: string;
   city: string;
+  citySlug: string;
+  category: string;
   description: string;
   logoUrl: string;
   bannerUrl: string;
+  phone: string;
+  isOpen: boolean;
   updatedAt: string;
 }
 
@@ -458,6 +466,7 @@ export interface StorefrontOrderResponse {
 export interface TrackingOrder {
   id: string;
   code: string;
+  trackingToken: string;
   status: OrderStatus;
   deliveryType: DeliveryType;
   subtotal: number;

@@ -79,6 +79,7 @@ export class AdminController {
       restaurantName: body.restaurantName,
       restaurantSlug: body.restaurantSlug,
       city: body.city,
+      category: body.category,
       currency: body.currency,
       timezone: body.timezone,
       sendOwnerEmails: body.sendOwnerEmails,

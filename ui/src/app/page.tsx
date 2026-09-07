@@ -8,6 +8,7 @@ import { LandingNav } from '@/components/landing/landing-nav';
 import { MenuDemo } from '@/components/landing/menu-demo';
 import { PanelMock } from '@/components/landing/panel-mock';
 import { StickyCta } from '@/components/landing/sticky-cta';
+import { getStorefrontIndex } from '@/lib/storefront-index';
 
 export const metadata: Metadata = {
   title: { absolute: 'Menú Digital Gratis | Creá tu menú online en 5 minutos' },
@@ -56,6 +57,21 @@ const LIVE_STORES = [
   { slug: 'la-famosa', name: 'La Famosa', place: 'Paysandú, UY' },
   { slug: 'pizza-libre', name: 'Pizza Quir', place: 'Zipaquirá, CO' },
 ];
+
+// Fallback si el índice del API no responde: los 3 locales históricos.
+async function getLiveStores() {
+  try {
+    const index = await getStorefrontIndex();
+    if (index.length > 0) {
+      return index
+        .slice(0, 3)
+        .map((e) => ({ slug: e.slug, name: e.name, place: e.city || '' }));
+    }
+  } catch {
+    // Fallback abajo
+  }
+  return LIVE_STORES;
+}
 
 const STEPS = [
   {
@@ -526,7 +542,8 @@ function WhatsAppMock() {
   );
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const liveStores = await getLiveStores();
   return (
     <div className="overflow-x-clip bg-surface text-on-surface">
       <CookielessAnalytics />
@@ -699,11 +716,17 @@ export default function LandingPage() {
                   Menús publicados, funcionando hoy
                 </p>
                 <p className="mt-1 text-sm text-white/70">
-                  Locales reales en Argentina, Uruguay y Colombia. Abrilos y mirá cómo queda el tuyo.
+                  Locales reales con su carta online. Abrilos y mirá cómo queda el tuyo.
                 </p>
+                <Link
+                  href="/locales"
+                  className="mt-3 inline-block text-sm font-bold text-primary-fixed-dim hover:underline"
+                >
+                  Ver todos los locales →
+                </Link>
               </div>
               <div className="grid gap-3 sm:grid-cols-3 lg:flex-1">
-                {LIVE_STORES.map((s) => (
+                {liveStores.map((s) => (
                   <a
                     key={s.slug}
                     href={`/${s.slug}`}
@@ -1096,13 +1119,14 @@ export default function LandingPage() {
               <div className="mt-3 flex flex-col gap-2.5 text-sm text-on-surface-variant">
                 <Link className="hover:text-primary" href="/signup">Crear mi menú gratis</Link>
                 <Link className="hover:text-primary" href="/login">Entrar a mi panel</Link>
+                <Link className="hover:text-primary" href="/locales">Directorio de locales</Link>
                 <Link className="hover:text-primary" href="/status">Estado del servicio</Link>
               </div>
             </div>
             <div>
-              <p className="font-[family-name:var(--font-heading)] text-sm font-bold">Menús de ejemplo</p>
+              <p className="font-[family-name:var(--font-heading)] text-sm font-bold">Menús publicados</p>
               <div className="mt-3 flex flex-col gap-2.5 text-sm text-on-surface-variant">
-                {LIVE_STORES.map((s) => (
+                {liveStores.map((s) => (
                   <a
                     key={s.slug}
                     className="hover:text-primary"

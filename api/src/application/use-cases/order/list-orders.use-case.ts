@@ -33,6 +33,7 @@ function redactOrder(order: Order): Order {
     order.id,
     order.restaurantId,
     order.code,
+    order.trackingToken,
     order.status,
     '***',
     '***',

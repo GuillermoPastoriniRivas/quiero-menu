@@ -35,6 +35,7 @@ import {
   LastOrder,
 } from "@/lib/repeat-order";
 import { getApiBase } from "@/lib/storefront-context";
+import { formatUpdatedDate } from "@/lib/restaurant-categories";
 
 type FullMenuItem = MenuItem & {
   variants: MenuItemVariant[];
@@ -479,9 +480,7 @@ export function StorefrontView({
         savedAt: new Date().toISOString(),
       });
       cart.clear();
-      router.push(
-        `/tracking/${encodeURIComponent(result.order.code)}?slug=${encodeURIComponent(slug)}`,
-      );
+      router.push(`/tracking/${encodeURIComponent(result.order.trackingToken)}`);
     } catch (e) {
       const message =
         e instanceof Error
@@ -911,6 +910,18 @@ export function StorefrontView({
           </div>
         </div>
       </main>
+
+      {/* ── Frescura del menú (señal para el comensal y para Google) ── */}
+      {(() => {
+        const updatedLabel = formatUpdatedDate(restaurant.updatedAt);
+        return updatedLabel ? (
+          <div className="mx-auto max-w-7xl px-4">
+            <p className="pb-2 pt-4 text-center text-[11px] text-on-surface-variant/70">
+              Menú actualizado el {updatedLabel}
+            </p>
+          </div>
+        ) : null;
+      })()}
 
       {/* ── Powered by footer ── */}
       {showPoweredByFooter && (

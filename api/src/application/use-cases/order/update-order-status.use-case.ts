@@ -81,7 +81,7 @@ export class UpdateOrderStatusUseCase {
     const msg = STATUS_MESSAGES[newStatus];
     if (msg) {
       this.pushService
-        .sendToOrder(order.code, {
+        .sendToOrder(order.trackingToken, {
           title: `Pedido #${order.code}`,
           body: msg,
           tag: `order-${order.id}`,

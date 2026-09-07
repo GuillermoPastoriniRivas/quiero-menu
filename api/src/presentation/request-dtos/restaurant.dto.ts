@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { RestaurantStatus } from '../../domain/enums/restaurant-status.enum.js';
+import { RestaurantCategory } from '../../domain/enums/restaurant-category.enum.js';
 
 export const UpdateRestaurantRequestSchema = z.object({
   name: z.string().min(1).optional(),
@@ -17,6 +18,7 @@ export const UpdateRestaurantRequestSchema = z.object({
   bannerUrl: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
+  category: z.nativeEnum(RestaurantCategory).optional(),
   country: z.string().optional(),
   coordinates: z
     .object({ lat: z.number(), lng: z.number() })

@@ -24,6 +24,9 @@ export class PushSubscriptionModel {
   orderCode: string | null;
 
   @Prop({ type: String, default: null })
+  orderToken: string | null;
+
+  @Prop({ type: String, default: null })
   orderSlug: string | null;
 
   createdAt: Date;
@@ -34,3 +37,4 @@ export const PushSubscriptionSchema = SchemaFactory.createForClass(
 );
 PushSubscriptionSchema.index({ restaurantId: 1 });
 PushSubscriptionSchema.index({ orderCode: 1 });
+PushSubscriptionSchema.index({ orderToken: 1 });

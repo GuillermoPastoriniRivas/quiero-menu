@@ -1,6 +1,7 @@
 import { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
 import { Restaurant } from '../../../domain/entities/restaurant.entity.js';
 import { Result, ok, err } from '../../common/result.js';
+import { slugifyCity } from '../../common/slugify.js';
 import {
   RestaurantNotFoundError,
   SlugAlreadyExistsError,
@@ -20,7 +21,12 @@ export class UpdateRestaurantUseCase {
       if (existing && existing.id !== id)
         return err(new SlugAlreadyExistsError());
     }
-    const updated = await this.restaurantRepo.update(id, data);
+    // La ciudad cambia => el slug de ciudad se recalcula siempre acá.
+    const payload =
+      data.city !== undefined
+        ? { ...data, citySlug: slugifyCity(data.city) }
+        : data;
+    const updated = await this.restaurantRepo.update(id, payload);
     if (!updated) return err(new RestaurantNotFoundError());
     return ok(updated);
   }
