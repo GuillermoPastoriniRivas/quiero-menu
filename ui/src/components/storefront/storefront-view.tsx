@@ -661,8 +661,9 @@ export function StorefrontView({
                   ¿Pedís lo de siempre?
                 </p>
                 <p className="text-xs text-on-surface-variant">
-                  {repeatOrder.items.reduce((s, it) => s + it.quantity, 0)}{" "}
-                  ítems de tu último pedido
+                  {!isOpen
+                    ? "Volvé cuando abramos para pedirlo de nuevo"
+                    : `${repeatOrder.items.reduce((s, it) => s + it.quantity, 0)} ítems de tu último pedido`}
                   {repeatOrder.customerName
                     ? ` · ${repeatOrder.customerName}`
                     : ""}
@@ -670,7 +671,10 @@ export function StorefrontView({
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleRepeatOrder}>
+              <Button
+              size="sm"
+              onClick={handleRepeatOrder}
+              disabled={!isOpen}>
                 <MaterialIcon name="replay" size="sm" className="mr-1" />
                 Repetir pedido
               </Button>
@@ -793,6 +797,12 @@ export function StorefrontView({
               {/* Categories nav */}
               {categories.length > 1 && (
                 <div className="sticky top-16 z-30 -mx-4 sm:-mx-6 lg:mx-0 bg-surface/90 backdrop-blur-md px-4 sm:px-6 lg:px-0 py-3">
+                  {!isOpen && (
+                    <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm">
+                      <MaterialIcon name="cancel" size="xs" fill />
+                      Cerrado ahora · fuera de horario
+                    </div>
+                  )}
                   <div className="flex gap-2 overflow-x-auto hide-scrollbar">
                     {categories.map((cat) => (
                       <button
@@ -1183,8 +1193,52 @@ export function StorefrontView({
         </SheetContent>
       </Sheet>
 
+      {/* ── Floating closed bar: visible aunque el carrito esté vacío ── */}
+      {!isOpen && !checkoutOpen && !selectedItem && (
+        <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-4">
+          <div className="mx-auto w-full max-w-md">
+            <button
+              onClick={() =>
+                cart.items.length > 0 && setCheckoutOpen(true)
+              }
+              disabled={cart.items.length === 0}
+              className={`w-full py-4 px-5 rounded-2xl shadow-xl flex items-center gap-3 text-left transition-all active:scale-[0.98] ${
+                cart.items.length > 0
+                  ? "bg-on-surface text-white"
+                  : "bg-on-surface text-white cursor-default"
+              }`}
+              aria-label="Local cerrado fuera de horario"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-600">
+                <MaterialIcon name="cancel" size="md" fill />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-extrabold uppercase tracking-wider">
+                  Cerrado ahora
+                </span>
+                <span className="block truncate text-xs text-white/80">
+                  Fuera de horario
+                  {todayHoursLabel ? ` · ${todayHoursLabel}` : ""}
+                  {cart.items.length > 0
+                    ? ` · Tenés ${cart.items.length} ítem${cart.items.length > 1 ? "s" : ""}`
+                    : ""}
+                </span>
+              </span>
+              {cart.items.length > 0 && (
+                <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-white/80">
+                  Ver
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Floating cart bar ── */}
-      {cart.items.length > 0 && !checkoutOpen && !selectedItem && (
+      {isOpen &&
+        cart.items.length > 0 &&
+        !checkoutOpen &&
+        !selectedItem && (
         <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-4">
           <div className="mx-auto w-full max-w-md">
             <button
@@ -1220,6 +1274,25 @@ export function StorefrontView({
             <SheetTitle>Tu pedido</SheetTitle>
           </SheetHeader>
           <div className="p-6 space-y-4">
+            {!isOpen && (
+              <div className="flex items-start gap-3 rounded-2xl border border-red-600/20 bg-red-600/10 p-4">
+                <MaterialIcon
+                  name="cancel"
+                  size="md"
+                  fill
+                  className="shrink-0 text-red-600"
+                />
+                <div>
+                  <p className="text-sm font-extrabold uppercase tracking-wider text-red-700">
+                    Cerrado ahora · fuera de horario
+                  </p>
+                  <p className="mt-0.5 text-xs text-red-700/80">
+                    Podés ver el menú pero no confirmar pedidos
+                    {todayHoursLabel ? ` · ${todayHoursLabel}` : ""}.
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Cart items */}
             {cart.items.map((item, i) => (
               <div
