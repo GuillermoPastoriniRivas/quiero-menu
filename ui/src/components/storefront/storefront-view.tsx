@@ -608,6 +608,33 @@ export function StorefrontView({
         </div>
       )}
 
+      {/* ── Claim banner (solo locales cargados como inventario) ── */}
+      {restaurant.claimed === false && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-2">
+          <a
+            href={`https://quiero.menu/${slug}/reclamar`}
+            className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 transition-colors hover:bg-primary/10"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <MaterialIcon name="storefront" size="sm" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-on-surface">
+                ¿Este local es tuyo?
+              </span>
+              <span className="block truncate text-xs text-on-surface-variant">
+                Reclamá tu menú gratis y editalo vos desde el celular
+              </span>
+            </span>
+            <MaterialIcon
+              name="arrow_forward"
+              size="sm"
+              className="shrink-0 text-primary"
+            />
+          </a>
+        </div>
+      )}
+
       {/* ── Business Info Strip (mobile) ── */}
       {(restaurant.address ||
         restaurant.description ||

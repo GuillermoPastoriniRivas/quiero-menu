@@ -63,5 +63,11 @@ export class Restaurant {
     public readonly category?: RestaurantCategory,
     /** Slug normalizado de la ciudad: join key de las páginas de directorio. */
     public readonly citySlug?: string,
+    /**
+     * true = el local ya tiene dueño (creado por signup o por admin con
+     * cuenta). false = cargado como inventario, reclamable desde el
+     * storefront. undefined (docs viejos) se lee como true.
+     */
+    public readonly claimed?: boolean,
   ) {}
 }

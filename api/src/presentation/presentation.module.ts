@@ -44,6 +44,11 @@ import { AuditService } from './services/audit.service.js';
 import { SearchRestaurantsUseCase } from '../application/use-cases/admin/search-restaurants.use-case.js';
 import { GetRestaurantDetailUseCase } from '../application/use-cases/admin/get-restaurant-detail.use-case.js';
 import { CreateRestaurantAccountUseCase } from '../application/use-cases/admin/create-restaurant-account.use-case.js';
+import { RequestStoreClaimUseCase } from '../application/use-cases/claims/request-store-claim.use-case.js';
+import { ListStoreClaimsUseCase } from '../application/use-cases/claims/list-store-claims.use-case.js';
+import { ApproveStoreClaimUseCase } from '../application/use-cases/claims/approve-store-claim.use-case.js';
+import { RejectStoreClaimUseCase } from '../application/use-cases/claims/reject-store-claim.use-case.js';
+import { CreateUnclaimedRestaurantUseCase } from '../application/use-cases/claims/create-unclaimed-restaurant.use-case.js';
 import { ImpersonateRestaurantOwnerUseCase } from '../application/use-cases/admin/impersonate-restaurant-owner.use-case.js';
 import { ListAuditLogsUseCase } from '../application/use-cases/admin/list-audit-logs.use-case.js';
 import { GetAccountDataUseCase } from '../application/use-cases/account/get-account-data.use-case.js';
@@ -334,6 +339,70 @@ const useCaseProviders = [
       'EmailServicePort',
       ConfigService,
     ],
+  },
+  {
+    provide: 'RequestStoreClaimUseCase',
+    useFactory: (restRepo: any, claimRepo: any) =>
+      new RequestStoreClaimUseCase(restRepo, claimRepo),
+    inject: ['RestaurantRepository', 'StoreClaimRepository'],
+  },
+  {
+    provide: 'ListStoreClaimsUseCase',
+    useFactory: (claimRepo: any, restRepo: any, urRepo: any, userRepo: any) =>
+      new ListStoreClaimsUseCase(claimRepo, restRepo, urRepo, userRepo),
+    inject: [
+      'StoreClaimRepository',
+      'RestaurantRepository',
+      'UserRestaurantRepository',
+      'UserRepository',
+    ],
+  },
+  {
+    provide: 'ApproveStoreClaimUseCase',
+    useFactory: (
+      claimRepo: any,
+      restRepo: any,
+      userRepo: any,
+      urRepo: any,
+      subRepo: any,
+      vtRepo: any,
+      hasher: any,
+      emailService: any,
+      config: ConfigService,
+    ) =>
+      new ApproveStoreClaimUseCase(
+        claimRepo,
+        restRepo,
+        userRepo,
+        urRepo,
+        subRepo,
+        vtRepo,
+        hasher,
+        emailService,
+        config.get<string>('frontendUrl')!,
+      ),
+    inject: [
+      'StoreClaimRepository',
+      'RestaurantRepository',
+      'UserRepository',
+      'UserRestaurantRepository',
+      'SubscriptionRepository',
+      'VerificationTokenRepository',
+      'PasswordHasherPort',
+      'EmailServicePort',
+      ConfigService,
+    ],
+  },
+  {
+    provide: 'RejectStoreClaimUseCase',
+    useFactory: (claimRepo: any) => new RejectStoreClaimUseCase(claimRepo),
+    inject: ['StoreClaimRepository'],
+  },
+  {
+    provide: 'CreateUnclaimedRestaurantUseCase',
+    useFactory: (restRepo: any, subRepo: any) =>
+      new CreateUnclaimedRestaurantUseCase(restRepo, subRepo),
+    inject: ['RestaurantRepository', 'SubscriptionRepository'],
   },
   {
     provide: 'ImpersonateRestaurantOwnerUseCase',

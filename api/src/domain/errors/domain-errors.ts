@@ -184,3 +184,18 @@ export class CustomDomainNotConfiguredError extends DomainError {
     );
   }
 }
+
+export class StoreAlreadyClaimedError extends DomainError {
+  constructor() {
+    super(
+      'STORE_ALREADY_CLAIMED',
+      'Este local ya tiene dueño. Si sos el dueño, escribinos.',
+    );
+  }
+}
+
+export class ClaimNotPendingError extends DomainError {
+  constructor() {
+    super('CLAIM_NOT_PENDING', 'Esta solicitud ya fue revisada.');
+  }
+}

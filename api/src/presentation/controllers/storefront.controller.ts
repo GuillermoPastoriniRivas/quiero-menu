@@ -9,9 +9,11 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../decorators/public.decorator.js';
 import { ZodValidationPipe } from '../pipes/zod-validation.pipe.js';
 import {
@@ -42,7 +44,15 @@ import type { GenerateUploadUrlUseCase } from '../../application/use-cases/uploa
 import type { NotifyReceiptUploadedUseCase } from '../../application/use-cases/order/notify-receipt-uploaded.use-case.js';
 import type { OrderRepository } from '../../domain/repositories/order.repository.js';
 import { DeliveryType } from '../../domain/enums/delivery-type.enum.js';
-import { RestaurantClosedError } from '../../domain/errors/domain-errors.js';
+import {
+  RestaurantClosedError,
+  StoreAlreadyClaimedError,
+} from '../../domain/errors/domain-errors.js';
+import {
+  RequestStoreClaimRequestSchema,
+  RequestStoreClaimRequestDto,
+} from '../request-dtos/store-claim.dto.js';
+import type { RequestStoreClaimUseCase } from '../../application/use-cases/claims/request-store-claim.use-case.js';
 
 @Controller('storefront')
 export class StorefrontController {
@@ -63,6 +73,8 @@ export class StorefrontController {
     private readonly recordView: RecordStorefrontViewUseCase,
     @Inject('RecordStorefrontEventUseCase')
     private readonly recordEvent: RecordStorefrontEventUseCase,
+    @Inject('RequestStoreClaimUseCase')
+    private readonly requestClaim: RequestStoreClaimUseCase,
     @Inject('NotifyReceiptUploadedUseCase')
     private readonly notifyReceipt: NotifyReceiptUploadedUseCase,
     @Inject('OrderRepository') private readonly orderRepo: OrderRepository,
@@ -194,5 +206,27 @@ export class StorefrontController {
     this.notifyReceipt.execute(id, body.receiptUrl).catch(() => {});
 
     return { ok: true };
+  }
+
+  /**
+   * Pedido de cuenta de un local cargado como inventario. Solo locales con
+   * claimed === false. Throttle estricto: es un endpoint público de escritura.
+   */
+  @Throttle({ short: { limit: 5, ttl: 60_000 } })
+  @Public()
+  @Post(':slug/claim')
+  async submitClaim(
+    @Param('slug') slug: string,
+    @Body(new ZodValidationPipe(RequestStoreClaimRequestSchema))
+    body: RequestStoreClaimRequestDto,
+  ) {
+    const result = await this.requestClaim.execute(slug, body);
+    if (!result.ok) {
+      if (result.error instanceof StoreAlreadyClaimedError) {
+        throw new ConflictException(result.error.message);
+      }
+      throw new NotFoundException(result.error.message);
+    }
+    return result.value;
   }
 }

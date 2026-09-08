@@ -38,6 +38,13 @@ export class RestaurantModel {
   @Prop({ default: '' })
   citySlug: string;
 
+  /**
+   * false = cargado como inventario por el equipo, reclamable desde el
+   * storefront. Los docs viejos no tienen el campo y se leen como true.
+   */
+  @Prop({ type: Boolean, default: true })
+  claimed: boolean;
+
   @Prop({ default: '' })
   country: string;
 

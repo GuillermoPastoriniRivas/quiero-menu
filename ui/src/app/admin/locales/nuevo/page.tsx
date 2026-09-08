@@ -41,6 +41,7 @@ export default function AdminNuevoLocalPage() {
   const [city, setCity] = useState('Concepción del Uruguay');
   const [category, setCategory] = useState('');
   const [sendEmails, setSendEmails] = useState(true);
+  const [isInventory, setIsInventory] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -52,6 +53,23 @@ export default function AdminNuevoLocalPage() {
     setError('');
     setLoading(true);
     try {
+      if (isInventory) {
+        // Alta de inventario: sin dueño ni emails. El local queda
+        // reclamable (claimed=false) hasta que el dueño pida la cuenta.
+        const created = await api.post<{ restaurantId: string; slug: string }>(
+          '/admin/restaurants/unclaimed',
+          {
+            restaurantName,
+            restaurantSlug: effectiveSlug,
+            city: city || undefined,
+            category: category || undefined,
+            currency: 'ARS',
+            timezone: 'America/Argentina/Buenos_Aires',
+          },
+        );
+        router.push(`/admin/locales/${created.restaurantId}`);
+        return;
+      }
       const created = await api.post<AdminCreateRestaurantResponse>(
         '/admin/restaurants',
         {
@@ -87,10 +105,21 @@ export default function AdminNuevoLocalPage() {
       <h1 className="text-2xl font-bold text-on-surface mb-1">
         Nuevo local
       </h1>
-      <p className="text-sm text-on-surface-variant mb-8">
+      <p className="text-sm text-on-surface-variant mb-6">
         Alta manual de una cuenta. Compartile la contraseña al dueño por un canal
         seguro; va a poder cambiarla después.
       </p>
+
+      <div className="bg-white rounded-2xl border border-outline-variant/40 p-6 flex items-center justify-between gap-4 mb-5">
+        <div>
+          <p className="font-semibold text-on-surface text-sm">Inventario (sin dueño)</p>
+          <p className="text-xs text-on-surface-variant mt-0.5">
+            Para cargar el directorio: el local queda reclamable hasta que el
+            dueño pida la cuenta
+          </p>
+        </div>
+        <Switch checked={isInventory} onCheckedChange={setIsInventory} />
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
@@ -99,6 +128,7 @@ export default function AdminNuevoLocalPage() {
           </div>
         )}
 
+        {!isInventory && (
         <div className="bg-white rounded-2xl border border-outline-variant/40 p-6 space-y-4">
           <h2 className="font-bold text-on-surface text-sm uppercase tracking-wide text-on-surface-variant">
             Dueño
@@ -140,6 +170,7 @@ export default function AdminNuevoLocalPage() {
             </div>
           </div>
         </div>
+        )}
 
         <div className="bg-white rounded-2xl border border-outline-variant/40 p-6 space-y-4">
           <h2 className="font-bold text-on-surface text-sm uppercase tracking-wide text-on-surface-variant">
@@ -202,6 +233,7 @@ export default function AdminNuevoLocalPage() {
           </div>
         </div>
 
+        {!isInventory && (
         <div className="bg-white rounded-2xl border border-outline-variant/40 p-6 flex items-center justify-between gap-4">
           <div>
             <p className="font-semibold text-on-surface text-sm">Enviar emails de bienvenida</p>
@@ -211,9 +243,10 @@ export default function AdminNuevoLocalPage() {
           </div>
           <Switch checked={sendEmails} onCheckedChange={setSendEmails} />
         </div>
+        )}
 
         <Button type="submit" size="lg" disabled={loading} className="w-full sm:w-auto">
-          {loading ? 'Creando...' : 'Crear cuenta'}
+          {loading ? 'Creando...' : isInventory ? 'Crear local' : 'Crear cuenta'}
         </Button>
       </form>
     </div>

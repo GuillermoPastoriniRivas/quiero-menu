@@ -42,3 +42,30 @@ export const AdminSearchTermsRequestSchema = z.object({
 export type AdminSearchTermsRequestDto = z.infer<
   typeof AdminSearchTermsRequestSchema
 >;
+
+export const AdminApproveClaimRequestSchema = z.object({
+  ownerName: z.string().min(1).max(120),
+  email: z.string().email(),
+});
+export type AdminApproveClaimRequestDto = z.infer<
+  typeof AdminApproveClaimRequestSchema
+>;
+
+export const AdminCreateUnclaimedRestaurantRequestSchema = z.object({
+  restaurantName: z.string().min(1).max(120),
+  restaurantSlug: z
+    .string()
+    .min(2)
+    .max(60)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      'Slug must be lowercase alphanumeric with hyphens',
+    ),
+  city: z.string().max(80).optional(),
+  category: z.nativeEnum(RestaurantCategory).optional(),
+  currency: z.string().length(3).optional(),
+  timezone: z.string().max(60).optional(),
+});
+export type AdminCreateUnclaimedRestaurantRequestDto = z.infer<
+  typeof AdminCreateUnclaimedRestaurantRequestSchema
+>;

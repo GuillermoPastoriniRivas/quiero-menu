@@ -62,6 +62,8 @@ export interface Restaurant {
   city: string;
   category?: string;
   citySlug?: string;
+  /** false = cargado como inventario, reclamable. undefined (API vieja) = con dueño. */
+  claimed?: boolean;
   country: string;
   coordinates: { lat: number; lng: number } | null;
   phone: string;
@@ -396,6 +398,25 @@ export interface AdminAuditLogEntry {
   restaurantId: string | null;
   metadata: Record<string, unknown> | null;
   createdAt: string;
+}
+
+export type StoreClaimStatus = 'pending' | 'approved' | 'rejected';
+
+export interface StoreClaimListItem {
+  id: string;
+  status: StoreClaimStatus;
+  createdAt: string;
+  reviewedAt: string | null;
+  claimant: { name: string; phone: string; email: string; message: string };
+  restaurant: {
+    id: string;
+    slug: string;
+    name: string;
+    city: string;
+    phone: string;
+    claimed: boolean;
+  } | null;
+  owners: { name: string; email: string }[];
 }
 
 export interface AdminCreateRestaurantResponse {
