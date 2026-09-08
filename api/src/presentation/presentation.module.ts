@@ -92,6 +92,7 @@ import { DeleteMenuItemOptionUseCase } from '../application/use-cases/menu/delet
 // Use Cases — Order
 import { CreateStorefrontOrderUseCase } from '../application/use-cases/order/create-storefront-order.use-case.js';
 import { GetOrderTrackingUseCase } from '../application/use-cases/order/get-order-tracking.use-case.js';
+import { ConfirmDeliveryUseCase } from '../application/use-cases/order/confirm-delivery.use-case.js';
 import { ListOrdersUseCase } from '../application/use-cases/order/list-orders.use-case.js';
 import { GetOrderUseCase } from '../application/use-cases/order/get-order.use-case.js';
 import { UpdateOrderStatusUseCase } from '../application/use-cases/order/update-order-status.use-case.js';
@@ -863,9 +864,24 @@ const useCaseProviders = [
   },
   {
     provide: 'GetOrderTrackingUseCase',
-    useFactory: (orderRepo: any, orderItemRepo: any, restRepo: any) =>
-      new GetOrderTrackingUseCase(orderRepo, orderItemRepo, restRepo),
-    inject: ['OrderRepository', 'OrderItemRepository', 'RestaurantRepository'],
+    useFactory: (
+      orderRepo: any,
+      orderItemRepo: any,
+      restRepo: any,
+      feedbackRepo: any,
+    ) =>
+      new GetOrderTrackingUseCase(
+        orderRepo,
+        orderItemRepo,
+        restRepo,
+        feedbackRepo,
+      ),
+    inject: [
+      'OrderRepository',
+      'OrderItemRepository',
+      'RestaurantRepository',
+      'OrderFeedbackRepository',
+    ],
   },
   {
     provide: 'ListOrdersUseCase',
@@ -879,12 +895,17 @@ const useCaseProviders = [
   },
   {
     provide: 'GetOrderUseCase',
-    useFactory: (orderRepo: any, orderItemRepo: any, subRepo: any) =>
-      new GetOrderUseCase(orderRepo, orderItemRepo, subRepo),
+    useFactory: (
+      orderRepo: any,
+      orderItemRepo: any,
+      subRepo: any,
+      feedbackRepo: any,
+    ) => new GetOrderUseCase(orderRepo, orderItemRepo, subRepo, feedbackRepo),
     inject: [
       'OrderRepository',
       'OrderItemRepository',
       'SubscriptionRepository',
+      'OrderFeedbackRepository',
     ],
   },
   {
@@ -892,6 +913,30 @@ const useCaseProviders = [
     useFactory: (orderRepo: any, gateway: any, pushService: any) =>
       new UpdateOrderStatusUseCase(orderRepo, gateway, pushService),
     inject: ['OrderRepository', 'RealtimeGatewayPort', 'PushServicePort'],
+  },
+  {
+    provide: 'ConfirmDeliveryUseCase',
+    useFactory: (
+      orderRepo: any,
+      feedbackRepo: any,
+      couponRepo: any,
+      gateway: any,
+      pushService: any,
+    ) =>
+      new ConfirmDeliveryUseCase(
+        orderRepo,
+        feedbackRepo,
+        couponRepo,
+        gateway,
+        pushService,
+      ),
+    inject: [
+      'OrderRepository',
+      'OrderFeedbackRepository',
+      'CouponRepository',
+      'RealtimeGatewayPort',
+      'PushServicePort',
+    ],
   },
   {
     provide: 'NotifyReceiptUploadedUseCase',

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { OrderStatus, DeliveryType } from '@/types';
-import type { OrderItem, OrderWithRedaction, Restaurant } from '@/types';
+import type { OrderItem, OrderWithRedaction, Restaurant, OrderFeedbackInfo } from '@/types';
 import { formatCurrency, formatDate, formatMinutes, formatRelativeTime } from '@/lib/format';
 import { waMeUrl } from '@/lib/utils';
 import { NEXT_STATUS, STATUS_BADGE_VARIANT, STATUS_LABELS } from './status';
@@ -19,6 +19,7 @@ interface OrderDetailDialogProps {
   order: OrderWithRedaction | null;
   items?: OrderItem[];
   itemsError?: boolean;
+  feedback?: OrderFeedbackInfo | null;
   restaurant: Restaurant | null;
   onOpenChange: (open: boolean) => void;
   onRetryItems: () => void;
@@ -29,6 +30,7 @@ export function OrderDetailDialog({
   order,
   items,
   itemsError = false,
+  feedback = null,
   restaurant,
   onOpenChange,
   onRetryItems,
@@ -262,6 +264,27 @@ export function OrderDetailDialog({
                   <div className="bg-yellow-100 border border-yellow-200 p-3 rounded-xl flex items-start gap-2">
                     <MaterialIcon name="warning" size="sm" className="text-yellow-700 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-yellow-900 font-bold italic">&ldquo;{order.notes}&rdquo;</p>
+                  </div>
+                )}
+
+                {/* Confirmación del comensal (oráculo) */}
+                {feedback?.confirmedAt && (
+                  <div className="bg-green-600/10 border border-green-600/20 p-3 rounded-xl flex items-start gap-2">
+                    <MaterialIcon name="verified" size="sm" className="text-green-700 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-bold text-green-800">
+                        Confirmado por el cliente
+                        {feedback.rating === 'up' && ' · 👍'}
+                        {feedback.rating === 'down' && ' · 👎'}
+                        {feedback.onTime === true && ' · a tiempo'}
+                        {feedback.onTime === false && ' · tarde'}
+                      </p>
+                      {feedback.couponCode && (
+                        <p className="text-xs text-green-700 mt-0.5">
+                          Cupón entregado: <span className="font-mono font-bold">{feedback.couponCode}</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 

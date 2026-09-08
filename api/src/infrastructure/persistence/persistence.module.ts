@@ -87,6 +87,10 @@ import {
   StoreClaimModel,
   StoreClaimSchema,
 } from './mongoose/schemas/store-claim.schema.js';
+import {
+  OrderFeedbackModel,
+  OrderFeedbackSchema,
+} from './mongoose/schemas/order-feedback.schema.js';
 
 import { MongoRestaurantRepository } from './mongoose/repositories/mongo-restaurant.repository.js';
 import { MongoOperatingHoursRepository } from './mongoose/repositories/mongo-operating-hours.repository.js';
@@ -112,6 +116,7 @@ import { MongoAnalyticsRepository } from './mongoose/repositories/mongo-analytic
 import { MongoStorefrontEventRepository } from './mongoose/repositories/mongo-storefront-event.repository.js';
 import { MongoSearchTermRepository } from './mongoose/repositories/mongo-search-term.repository.js';
 import { MongoStoreClaimRepository } from './mongoose/repositories/mongo-store-claim.repository.js';
+import { MongoOrderFeedbackRepository } from './mongoose/repositories/mongo-order-feedback.repository.js';
 
 const schemas = MongooseModule.forFeature([
   { name: RestaurantModel.name, schema: RestaurantSchema },
@@ -138,6 +143,7 @@ const schemas = MongooseModule.forFeature([
   { name: StorefrontEventModel.name, schema: StorefrontEventSchema },
   { name: SearchTermModel.name, schema: SearchTermSchema },
   { name: StoreClaimModel.name, schema: StoreClaimSchema },
+  { name: OrderFeedbackModel.name, schema: OrderFeedbackSchema },
 ]);
 
 const repositories = [
@@ -197,6 +203,10 @@ const repositories = [
   },
   { provide: 'SearchTermRepository', useClass: MongoSearchTermRepository },
   { provide: 'StoreClaimRepository', useClass: MongoStoreClaimRepository },
+  {
+    provide: 'OrderFeedbackRepository',
+    useClass: MongoOrderFeedbackRepository,
+  },
   { provide: 'AnalyticsRepository', useClass: MongoAnalyticsRepository },
 ];
 

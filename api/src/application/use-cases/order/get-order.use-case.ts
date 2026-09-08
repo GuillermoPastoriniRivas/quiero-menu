@@ -1,6 +1,8 @@
 import { OrderRepository } from '../../../domain/repositories/order.repository.js';
 import { OrderItemRepository } from '../../../domain/repositories/order-item.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
+import { OrderFeedbackRepository } from '../../../domain/repositories/order-feedback.repository.js';
+import { OrderFeedbackRating } from '../../../domain/entities/order-feedback.entity.js';
 import { Order } from '../../../domain/entities/order.entity.js';
 import { OrderItem } from '../../../domain/entities/order-item.entity.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
@@ -16,6 +18,12 @@ export interface GetOrderOutput {
   order: Order;
   items: OrderItem[];
   redacted: boolean;
+  feedback: {
+    confirmedAt: Date;
+    rating: OrderFeedbackRating | null;
+    onTime: boolean | null;
+    couponCode: string | null;
+  } | null;
 }
 
 export class GetOrderUseCase {
@@ -23,6 +31,7 @@ export class GetOrderUseCase {
     private readonly orderRepo: OrderRepository,
     private readonly orderItemRepo: OrderItemRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
+    private readonly feedbackRepo?: OrderFeedbackRepository,
   ) {}
 
   async execute(
@@ -45,10 +54,19 @@ export class GetOrderUseCase {
     const limits = PLAN_LIMITS[plan];
 
     const items = await this.orderItemRepo.findByOrderId(order.id);
+    const fb = await this.feedbackRepo?.findByOrderId(order.id);
+    const feedback = fb
+      ? {
+          confirmedAt: fb.confirmedAt,
+          rating: fb.rating,
+          onTime: fb.onTime,
+          couponCode: fb.couponCode,
+        }
+      : null;
 
     // PRO or unlimited — return everything
     if (limits.maxOrdersPerMonth === -1) {
-      return ok({ order, items, redacted: false });
+      return ok({ order, items, redacted: false, feedback });
     }
 
     // Check if this order falls within the monthly limit
@@ -58,7 +76,7 @@ export class GetOrderUseCase {
 
     // Only redact orders from the current month
     if (order.createdAt < monthStart) {
-      return ok({ order, items, redacted: false });
+      return ok({ order, items, redacted: false, feedback });
     }
 
     const cutoffDate = await this.orderRepo.findNthOrderCreatedAt(
@@ -68,7 +86,7 @@ export class GetOrderUseCase {
     );
 
     if (!cutoffDate || order.createdAt <= cutoffDate) {
-      return ok({ order, items, redacted: false });
+      return ok({ order, items, redacted: false, feedback });
     }
 
     // This order is beyond the limit — redact sensitive data
@@ -100,6 +118,6 @@ export class GetOrderUseCase {
       order.statusHistory,
     );
 
-    return ok({ order: redactedOrder, items: [], redacted: true });
+    return ok({ order: redactedOrder, items: [], redacted: true, feedback });
   }
 }

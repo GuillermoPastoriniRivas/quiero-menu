@@ -504,6 +504,23 @@ export interface TrackingOrder {
   deliveredAt: string | null;
 }
 
+export interface OrderFeedbackInfo {
+  confirmedAt: string;
+  rating: 'up' | 'down' | null;
+  onTime: boolean | null;
+  couponCode: string | null;
+}
+
+export interface ConfirmDeliveryResponse {
+  orderId: string;
+  code: string;
+  status: OrderStatus;
+  confirmedAt: string;
+  couponCode: string;
+  rating: 'up' | 'down' | null;
+  onTime: boolean | null;
+}
+
 export interface TrackingResponse {
   order: TrackingOrder;
   items: OrderItem[];
@@ -516,6 +533,7 @@ export interface TrackingResponse {
     paymentMethods: PaymentMethodsConfig;
     phone: string;
   };
+  feedback: OrderFeedbackInfo | null;
 }
 
 // Coupons

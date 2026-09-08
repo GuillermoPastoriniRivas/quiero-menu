@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, usePathname } from 'next/navigation';
-import type { TrackingResponse } from '@/types';
+import type { TrackingResponse, ConfirmDeliveryResponse } from '@/types';
 import { OrderStatus, DeliveryType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -49,6 +49,11 @@ export default function TrackingPage() {
   const [invalid, setInvalid] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [pushState, setPushState] = useState<'idle' | 'busy' | 'on'>('idle');
+  const [rating, setRating] = useState<'up' | 'down' | null>(null);
+  const [onTime, setOnTime] = useState<boolean | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -102,6 +107,46 @@ export default function TrackingPage() {
       if (ok) setPushState('on');
     } finally {
       setPushState((s) => (s === 'busy' ? 'idle' : s));
+    }
+  };
+
+  const handleConfirmDelivery = async () => {
+    if (!data || confirming) return;
+    setConfirming(true);
+    setConfirmError('');
+    try {
+      const res = await fetch(
+        `${getApiBase()}/tracking/${encodeURIComponent(data.order.trackingToken)}/confirm`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating, onTime }),
+        },
+      );
+      if (res.status === 409) {
+        setConfirmError('Este pedido todavía no fue entregado.');
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const out: ConfirmDeliveryResponse = await res.json();
+      if (out.rating) setRating(out.rating);
+      if (out.onTime !== null && out.onTime !== undefined)
+        setOnTime(out.onTime);
+      await fetchTracking();
+    } catch {
+      setConfirmError('No pudimos registrar tu confirmación. Probá de nuevo.');
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const handleCopyCoupon = async (couponCode: string) => {
+    try {
+      await navigator.clipboard.writeText(couponCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Portapapeles no disponible: el código igual queda visible.
     }
   };
 
@@ -272,6 +317,124 @@ export default function TrackingPage() {
             <MaterialIcon name="chat" size="sm" />
             Confirmar por WhatsApp
           </a>
+        )}
+
+        {/* Delivery confirmation by the comensal (el oráculo) */}
+        {!cancelled &&
+          (order.status === OrderStatus.DELIVERING ||
+            order.status === OrderStatus.DELIVERED) &&
+          !data.feedback?.confirmedAt && (
+            <section className="bg-white rounded-3xl shadow-ambient p-6 space-y-4">
+              <div className="text-center">
+                <h3
+                  className="text-xl font-extrabold"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  ¿Recibiste tu pedido?
+                </h3>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  Confirmalo y te regalamos un 10% off para tu próximo pedido
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  aria-pressed={rating === 'up'}
+                  onClick={() => setRating((r) => (r === 'up' ? null : 'up'))}
+                  className={`flex h-14 w-14 items-center justify-center rounded-2xl border-2 transition-all active:scale-95 ${
+                    rating === 'up'
+                      ? 'border-green-600 bg-green-600/10 text-green-700'
+                      : 'border-outline-variant/40 text-on-surface-variant hover:border-green-600/40'
+                  }`}
+                >
+                  <MaterialIcon name="thumb_up" size="md" />
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={rating === 'down'}
+                  onClick={() =>
+                    setRating((r) => (r === 'down' ? null : 'down'))
+                  }
+                  className={`flex h-14 w-14 items-center justify-center rounded-2xl border-2 transition-all active:scale-95 ${
+                    rating === 'down'
+                      ? 'border-error bg-error/10 text-error'
+                      : 'border-outline-variant/40 text-on-surface-variant hover:border-error/40'
+                  }`}
+                >
+                  <MaterialIcon name="thumb_down" size="md" />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-sm text-on-surface-variant">
+                  ¿Llegó a tiempo?
+                </span>
+                {([true, false] as const).map((v) => (
+                  <button
+                    key={String(v)}
+                    type="button"
+                    aria-pressed={onTime === v}
+                    onClick={() => setOnTime((o) => (o === v ? null : v))}
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                      onTime === v
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                    }`}
+                  >
+                    {v ? 'Sí' : 'No'}
+                  </button>
+                ))}
+              </div>
+
+              {confirmError && (
+                <p className="text-center text-sm text-error">{confirmError}</p>
+              )}
+
+              <Button
+                className="w-full"
+                size="lg"
+                disabled={confirming}
+                onClick={handleConfirmDelivery}
+              >
+                {confirming ? 'Confirmando...' : 'Confirmar entrega'}
+              </Button>
+            </section>
+          )}
+
+        {/* Loyalty coupon unlocked by confirming */}
+        {data.feedback?.confirmedAt && data.feedback.couponCode && (
+          <section className="rounded-3xl shadow-ambient p-6 space-y-3 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <MaterialIcon name="confirmation_number" size="lg" />
+            </div>
+            <h3
+              className="text-xl font-extrabold"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              ¡Gracias por confirmar! Tenés 10% off
+            </h3>
+            <p className="text-sm text-on-surface-variant">
+              Usá este código en tu próximo pedido en {restaurant.name}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                data.feedback?.couponCode &&
+                handleCopyCoupon(data.feedback.couponCode)
+              }
+              className="mx-auto flex items-center gap-2 rounded-2xl border-2 border-dashed border-primary/40 bg-surface-container-lowest px-6 py-3 font-mono text-2xl font-extrabold tracking-widest text-primary transition-colors hover:border-primary"
+            >
+              {data.feedback.couponCode}
+              <MaterialIcon
+                name={copied ? 'check' : 'content_copy'}
+                size="sm"
+              />
+            </button>
+            <p className="text-xs text-on-surface-variant">
+              {copied ? '¡Copiado!' : 'Tocá para copiar'} · Válido por 30 días
+            </p>
+          </section>
         )}
 
         {/* Push notifications */}

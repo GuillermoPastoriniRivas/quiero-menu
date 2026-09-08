@@ -199,3 +199,9 @@ export class ClaimNotPendingError extends DomainError {
     super('CLAIM_NOT_PENDING', 'Esta solicitud ya fue revisada.');
   }
 }
+
+export class OrderNotDeliveredError extends DomainError {
+  constructor() {
+    super('ORDER_NOT_DELIVERED', 'Este pedido todavía no fue entregado.');
+  }
+}

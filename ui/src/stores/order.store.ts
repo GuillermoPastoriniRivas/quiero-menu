@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
 import { connectSocket, disconnectSocket, getSocket } from '@/lib/socket';
-import type { Order, OrderItem, OrderWithRedaction, OrderListResponse, PlanInfo, OrderStatus } from '@/types';
+import type { Order, OrderItem, OrderWithRedaction, OrderListResponse, PlanInfo, OrderStatus, OrderFeedbackInfo } from '@/types';
 
 interface OrderState {
   orders: OrderWithRedaction[];
@@ -15,7 +15,7 @@ interface OrderState {
 
   fetch: (params?: { page?: number; status?: OrderStatus }) => Promise<void>;
   loadMore: () => Promise<void>;
-  getOrder: (id: string) => Promise<{ order: Order; items: OrderItem[]; redacted: boolean }>;
+  getOrder: (id: string) => Promise<{ order: Order; items: OrderItem[]; redacted: boolean; feedback: OrderFeedbackInfo | null }>;
   updateStatus: (id: string, status: OrderStatus) => Promise<void>;
   connectRealtime: () => void;
   disconnectRealtime: () => void;
@@ -71,7 +71,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   getOrder: async (id) => {
-    return api.get<{ order: Order; items: OrderItem[]; redacted: boolean }>(`/orders/${id}`);
+    return api.get<{
+      order: Order;
+      items: OrderItem[];
+      redacted: boolean;
+      feedback: OrderFeedbackInfo | null;
+    }>(`/orders/${id}`);
   },
 
   updateStatus: async (id, status) => {

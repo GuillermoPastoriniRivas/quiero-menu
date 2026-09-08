@@ -1,6 +1,8 @@
 import { OrderRepository } from '../../../domain/repositories/order.repository.js';
 import { OrderItemRepository } from '../../../domain/repositories/order-item.repository.js';
 import { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
+import { OrderFeedbackRepository } from '../../../domain/repositories/order-feedback.repository.js';
+import { OrderFeedbackRating } from '../../../domain/entities/order-feedback.entity.js';
 import { Order } from '../../../domain/entities/order.entity.js';
 import { Restaurant } from '../../../domain/entities/restaurant.entity.js';
 import { OrderItem } from '../../../domain/entities/order-item.entity.js';
@@ -44,6 +46,12 @@ export interface OrderTrackingOutput {
     paymentMethods: PaymentMethodsConfig;
     phone: string;
   };
+  feedback: {
+    confirmedAt: Date;
+    rating: OrderFeedbackRating | null;
+    onTime: boolean | null;
+    couponCode: string | null;
+  } | null;
 }
 
 export class GetOrderTrackingUseCase {
@@ -51,6 +59,7 @@ export class GetOrderTrackingUseCase {
     private readonly orderRepo: OrderRepository,
     private readonly orderItemRepo: OrderItemRepository,
     private readonly restaurantRepo: RestaurantRepository,
+    private readonly feedbackRepo?: OrderFeedbackRepository,
   ) {}
 
   async execute(
@@ -86,6 +95,7 @@ export class GetOrderTrackingUseCase {
     restaurant: Restaurant,
   ): Promise<Result<OrderTrackingOutput, OrderNotFoundError>> {
     const items = await this.orderItemRepo.findByOrderId(order.id);
+    const feedback = await this.feedbackRepo?.findByOrderId(order.id);
 
     return ok({
       order: {
@@ -117,6 +127,14 @@ export class GetOrderTrackingUseCase {
         paymentMethods: restaurant.paymentMethods,
         phone: restaurant.phone,
       },
+      feedback: feedback
+        ? {
+            confirmedAt: feedback.confirmedAt,
+            rating: feedback.rating,
+            onTime: feedback.onTime,
+            couponCode: feedback.couponCode,
+          }
+        : null,
     });
   }
 }

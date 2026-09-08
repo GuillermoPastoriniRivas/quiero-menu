@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { OrderStatus, PlanTier } from '@/types';
-import type { OrderItem, OrderWithRedaction } from '@/types';
+import type { OrderItem, OrderWithRedaction, OrderFeedbackInfo } from '@/types';
 import { OrderDetailDialog } from '@/components/orders/order-detail-dialog';
 import { OrdersKpis } from '@/components/orders/orders-kpis';
 import { OrdersTable } from '@/components/orders/orders-table';
@@ -59,6 +59,7 @@ export default function OrdersPage() {
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [itemErrors, setItemErrors] = useState<Record<string, boolean>>({});
   const [selectedOrder, setSelectedOrder] = useState<OrderWithRedaction | null>(null);
+  const [orderFeedback, setOrderFeedback] = useState<Record<string, OrderFeedbackInfo | null>>({});
   const [accessOpen, setAccessOpen] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -112,6 +113,7 @@ export default function OrdersPage() {
     try {
       const data = await getOrder(orderId);
       setOrderItems((prev) => ({ ...prev, [orderId]: data.items }));
+      setOrderFeedback((prev) => ({ ...prev, [orderId]: data.feedback ?? null }));
     } catch {
       setItemErrors((prev) => ({ ...prev, [orderId]: true }));
     } finally {
@@ -384,6 +386,7 @@ export default function OrdersPage() {
         order={selectedOrder}
         items={selectedOrder ? (selectedOrder.items ?? orderItems[selectedOrder.id]) : undefined}
         itemsError={selectedOrder ? !!itemErrors[selectedOrder.id] : false}
+        feedback={selectedOrder ? (orderFeedback[selectedOrder.id] ?? null) : null}
         restaurant={restaurant}
         onOpenChange={(open) => !open && setSelectedOrder(null)}
         onRetryItems={() => selectedOrder && loadItems(selectedOrder.id)}
