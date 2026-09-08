@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 const NAV_ITEMS = [
   { href: '/admin/locales', label: 'Locales', icon: 'storefront' },
   { href: '/admin/reclamos', label: 'Reclamos', icon: 'mark_email_unread' },
+  { href: '/admin/destacados', label: 'Destacados', icon: 'star' },
   { href: '/admin/activity', label: 'Actividad', icon: 'history' },
 ];
 

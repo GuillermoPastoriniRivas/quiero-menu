@@ -25,6 +25,8 @@ import {
   AdminCreateRestaurantRequestDto,
   AdminCreateUnclaimedRestaurantRequestSchema,
   AdminCreateUnclaimedRestaurantRequestDto,
+  AdminAssignFeaturedRequestSchema,
+  AdminAssignFeaturedRequestDto,
   AdminApproveClaimRequestSchema,
   AdminApproveClaimRequestDto,
   AdminAuditLogsRequestSchema,
@@ -40,6 +42,10 @@ import type { ImpersonateRestaurantOwnerUseCase } from '../../application/use-ca
 import type { ListAuditLogsUseCase } from '../../application/use-cases/admin/list-audit-logs.use-case.js';
 import type { ListSearchTermsUseCase } from '../../application/use-cases/analytics/list-search-terms.use-case.js';
 import type { ListStoreClaimsUseCase } from '../../application/use-cases/claims/list-store-claims.use-case.js';
+import type { AssignFeaturedSlotUseCase } from '../../application/use-cases/featured/assign-featured-slot.use-case.js';
+import type { ListFeaturedSlotsUseCase } from '../../application/use-cases/featured/list-featured-slots.use-case.js';
+import type { DeactivateFeaturedSlotUseCase } from '../../application/use-cases/featured/deactivate-featured-slot.use-case.js';
+import { FeaturedSlotFullError } from '../../domain/errors/domain-errors.js';
 import type { ApproveStoreClaimUseCase } from '../../application/use-cases/claims/approve-store-claim.use-case.js';
 import type { RejectStoreClaimUseCase } from '../../application/use-cases/claims/reject-store-claim.use-case.js';
 import type { StoreClaimStatus } from '../../domain/entities/store-claim.entity.js';
@@ -68,6 +74,12 @@ export class AdminController {
     private readonly rejectStoreClaimUseCase: RejectStoreClaimUseCase,
     @Inject('CreateUnclaimedRestaurantUseCase')
     private readonly createUnclaimedRestaurantUseCase: CreateUnclaimedRestaurantUseCase,
+    @Inject('AssignFeaturedSlotUseCase')
+    private readonly assignFeaturedSlotUseCase: AssignFeaturedSlotUseCase,
+    @Inject('ListFeaturedSlotsUseCase')
+    private readonly listFeaturedSlotsUseCase: ListFeaturedSlotsUseCase,
+    @Inject('DeactivateFeaturedSlotUseCase')
+    private readonly deactivateFeaturedSlotUseCase: DeactivateFeaturedSlotUseCase,
     private readonly audit: AuditService,
   ) {}
 
@@ -221,6 +233,51 @@ export class AdminController {
     const result = await this.rejectStoreClaimUseCase.execute(id);
     if (!result.ok) throw new NotFoundException(result.error.message);
     this.audit.log('admin.claim_rejected', admin._id, id, { claimId: id });
+    return result.value;
+  }
+
+  /** Destacados vigentes (lo que cobra visibilidad). */
+  @Get('featured')
+  async featured() {
+    const slots = await this.listFeaturedSlotsUseCase.execute();
+    return { slots };
+  }
+
+  @Throttle({ short: { limit: 10, ttl: 60_000 } })
+  @Post('featured')
+  async assignFeatured(
+    @CurrentUser() admin: RequestUser,
+    @Body(new ZodValidationPipe(AdminAssignFeaturedRequestSchema))
+    body: AdminAssignFeaturedRequestDto,
+  ) {
+    const result = await this.assignFeaturedSlotUseCase.execute({
+      restaurantId: body.restaurantId,
+      scope: body.scope,
+      days: body.days,
+    });
+    if (!result.ok) {
+      if (result.error instanceof FeaturedSlotFullError) {
+        throw new ConflictException(result.error.message);
+      }
+      throw new NotFoundException(result.error.message);
+    }
+    this.audit.log('admin.featured_assigned', admin._id, body.restaurantId, {
+      scope: body.scope,
+      days: body.days,
+    });
+    return result.value;
+  }
+
+  @Post('featured/:id/deactivate')
+  async deactivateFeatured(
+    @CurrentUser() admin: RequestUser,
+    @Param('id') id: string,
+  ) {
+    const result = await this.deactivateFeaturedSlotUseCase.execute(id);
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    this.audit.log('admin.featured_deactivated', admin._id, id, {
+      slotId: id,
+    });
     return result.value;
   }
 }

@@ -11,6 +11,7 @@ import {
   getDirectoryCategoryByPlural,
   slugifyCity,
 } from "@/lib/restaurant-categories";
+import { isFeatured, sortFeaturedFirst } from "@/lib/featured";
 
 const BASE_URL = "https://quiero.menu";
 
@@ -122,8 +123,18 @@ export default async function CityCategoryDirectoryPage({
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {entries.map((entry) => (
-            <StoreCard key={entry.slug} entry={entry} />
+          {sortFeaturedFirst(entries, {
+            citySlug,
+            category: categoryDef.value,
+          }).map((entry) => (
+            <StoreCard
+              key={entry.slug}
+              entry={entry}
+              featured={isFeatured(entry, {
+                citySlug,
+                category: categoryDef.value,
+              })}
+            />
           ))}
         </div>
 

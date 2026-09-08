@@ -49,6 +49,9 @@ import { ListStoreClaimsUseCase } from '../application/use-cases/claims/list-sto
 import { ApproveStoreClaimUseCase } from '../application/use-cases/claims/approve-store-claim.use-case.js';
 import { RejectStoreClaimUseCase } from '../application/use-cases/claims/reject-store-claim.use-case.js';
 import { CreateUnclaimedRestaurantUseCase } from '../application/use-cases/claims/create-unclaimed-restaurant.use-case.js';
+import { AssignFeaturedSlotUseCase } from '../application/use-cases/featured/assign-featured-slot.use-case.js';
+import { ListFeaturedSlotsUseCase } from '../application/use-cases/featured/list-featured-slots.use-case.js';
+import { DeactivateFeaturedSlotUseCase } from '../application/use-cases/featured/deactivate-featured-slot.use-case.js';
 import { ImpersonateRestaurantOwnerUseCase } from '../application/use-cases/admin/impersonate-restaurant-owner.use-case.js';
 import { ListAuditLogsUseCase } from '../application/use-cases/admin/list-audit-logs.use-case.js';
 import { GetAccountDataUseCase } from '../application/use-cases/account/get-account-data.use-case.js';
@@ -276,6 +279,30 @@ const useCaseProviders = [
       'UserRepository',
       'UserRestaurantRepository',
       'SubscriptionRepository',
+    ],
+  },
+  {
+    provide: 'SearchStorefrontsUseCase',
+    useFactory: (
+      restRepo: any,
+      itemRepo: any,
+      hoursRepo: any,
+      searchTermRepo: any,
+      featuredRepo: any,
+    ) =>
+      new SearchStorefrontsUseCase(
+        restRepo,
+        itemRepo,
+        hoursRepo,
+        searchTermRepo,
+        featuredRepo,
+      ),
+    inject: [
+      'RestaurantRepository',
+      'MenuItemRepository',
+      'OperatingHoursRepository',
+      'SearchTermRepository',
+      'FeaturedSlotRepository',
     ],
   },
   {
@@ -645,14 +672,44 @@ const useCaseProviders = [
   },
   {
     provide: 'ListActiveStorefrontsUseCase',
-    useFactory: (restRepo: any, catRepo: any, itemRepo: any, hoursRepo: any) =>
-      new ListActiveStorefrontsUseCase(restRepo, catRepo, itemRepo, hoursRepo),
+    useFactory: (
+      restRepo: any,
+      catRepo: any,
+      itemRepo: any,
+      hoursRepo: any,
+      featuredRepo: any,
+    ) =>
+      new ListActiveStorefrontsUseCase(
+        restRepo,
+        catRepo,
+        itemRepo,
+        hoursRepo,
+        featuredRepo,
+      ),
     inject: [
       'RestaurantRepository',
       'MenuCategoryRepository',
       'MenuItemRepository',
       'OperatingHoursRepository',
+      'FeaturedSlotRepository',
     ],
+  },
+  {
+    provide: 'AssignFeaturedSlotUseCase',
+    useFactory: (restRepo: any, slotRepo: any) =>
+      new AssignFeaturedSlotUseCase(restRepo, slotRepo),
+    inject: ['RestaurantRepository', 'FeaturedSlotRepository'],
+  },
+  {
+    provide: 'ListFeaturedSlotsUseCase',
+    useFactory: (slotRepo: any, restRepo: any) =>
+      new ListFeaturedSlotsUseCase(slotRepo, restRepo),
+    inject: ['FeaturedSlotRepository', 'RestaurantRepository'],
+  },
+  {
+    provide: 'DeactivateFeaturedSlotUseCase',
+    useFactory: (slotRepo: any) => new DeactivateFeaturedSlotUseCase(slotRepo),
+    inject: ['FeaturedSlotRepository'],
   },
   {
     provide: 'SearchStorefrontsUseCase',

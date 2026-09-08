@@ -21,10 +21,12 @@ export function StoreCard({
   entry,
   matchedItems,
   currency,
+  featured = false,
 }: {
   entry: StorefrontIndexEntry;
   matchedItems?: StorefrontSearchMatch[];
   currency?: string;
+  featured?: boolean;
 }) {
   const categoryDef = getCategoryDef(entry.category);
   const updated = formatUpdatedDate(entry.updatedAt);
@@ -65,14 +67,22 @@ export function StoreCard({
           >
             {entry.name}
           </Link>
-          <span
-            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-              entry.isOpen
-                ? "bg-green-100 text-green-800"
-                : "bg-surface-container-high text-on-surface-variant"
-            }`}
-          >
-            {entry.isOpen ? "Abierto ahora" : "Cerrado ahora"}
+          <span className="flex shrink-0 items-center gap-1.5">
+            {featured ? (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-400/20 px-2 py-0.5 text-[11px] font-bold text-amber-800">
+                <MaterialIcon name="star" size="xs" fill />
+                Destacado
+              </span>
+            ) : null}
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                entry.isOpen
+                  ? "bg-green-100 text-green-800"
+                  : "bg-surface-container-high text-on-surface-variant"
+              }`}
+            >
+              {entry.isOpen ? "Abierto ahora" : "Cerrado ahora"}
+            </span>
           </span>
         </div>
 

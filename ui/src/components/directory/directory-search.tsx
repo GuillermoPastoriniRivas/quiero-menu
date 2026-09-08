@@ -9,6 +9,7 @@ import {
   filterIndexLocally,
   type StorefrontSearchResult,
 } from "@/lib/storefront-search";
+import { isFeatured } from "@/lib/featured";
 
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_MS = 250;
@@ -160,6 +161,9 @@ export function DirectorySearch({
                   entry={r}
                   matchedItems={r.matchedItems}
                   currency={r.currency}
+                  featured={isFeatured(r, {
+                    citySlug: r.citySlug || citySlug || "",
+                  })}
                 />
               ))}
             </div>

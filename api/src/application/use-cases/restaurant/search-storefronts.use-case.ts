@@ -2,12 +2,16 @@ import { RestaurantRepository } from '../../../domain/repositories/restaurant.re
 import { MenuItemRepository } from '../../../domain/repositories/menu-item.repository.js';
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
 import { SearchTermRepository } from '../../../domain/repositories/search-term.repository.js';
+import { FeaturedSlotRepository } from '../../../domain/repositories/featured-slot.repository.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
 import { OperatingHoursPolicy } from '../../../domain/services/operating-hours-policy.js';
 import { getCategoryDef } from '../../../domain/constants/restaurant-categories.js';
 import type { Restaurant } from '../../../domain/entities/restaurant.entity.js';
 import type { OperatingHours } from '../../../domain/entities/operating-hours.entity.js';
-import type { ActiveStorefrontSummary } from './list-active-storefronts.use-case.js';
+import type {
+  ActiveStorefrontSummary,
+  FeaturedSlotRef,
+} from './list-active-storefronts.use-case.js';
 
 export interface StorefrontSearchMatch {
   name: string;
@@ -66,6 +70,7 @@ export class SearchStorefrontsUseCase {
     private readonly itemRepo: MenuItemRepository,
     private readonly hoursRepo: OperatingHoursRepository,
     private readonly searchTermRepo?: SearchTermRepository,
+    private readonly featuredRepo?: FeaturedSlotRepository,
   ) {}
 
   async execute(input: StorefrontSearchInput): Promise<StorefrontSearchOutput> {
@@ -182,13 +187,15 @@ export class SearchStorefrontsUseCase {
         isOpen: false,
         updatedAt: r.updatedAt,
         currency: r.currency,
+        featured: [],
       });
     }
 
     const ids = restaurants.map((r) => r.id);
-    const [items, hours] = await Promise.all([
+    const [items, hours, slots] = await Promise.all([
       ids.length > 0 ? this.itemRepo.findByRestaurantIds(ids) : [],
       ids.length > 0 ? this.hoursRepo.findByRestaurantIds(ids) : [],
+      this.featuredRepo ? this.featuredRepo.listActive(new Date()) : [],
     ]);
 
     const itemsByRestaurant = new Map<string, StorefrontSearchMatch[]>();
@@ -207,6 +214,16 @@ export class SearchStorefrontsUseCase {
     }
 
     const nowDate = new Date();
+    const featuredByRestaurant = new Map<string, FeaturedSlotRef[]>();
+    for (const s of slots) {
+      const list = featuredByRestaurant.get(s.restaurantId) ?? [];
+      list.push({
+        scope: s.scope,
+        citySlug: s.citySlug,
+        category: s.category,
+      });
+      featuredByRestaurant.set(s.restaurantId, list);
+    }
     for (const summary of summaries) {
       const r = restaurantsBySlug.get(summary.slug)!;
       summary.isOpen = this.hoursPolicy.isOpen(
@@ -214,6 +231,7 @@ export class SearchStorefrontsUseCase {
         hoursByRestaurant.get(r.id) ?? [],
         nowDate,
       ).isOpen;
+      summary.featured = featuredByRestaurant.get(r.id) ?? [];
     }
 
     this.cache = {

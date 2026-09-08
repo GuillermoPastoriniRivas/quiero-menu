@@ -2,8 +2,16 @@ import { RestaurantRepository } from '../../../domain/repositories/restaurant.re
 import { MenuCategoryRepository } from '../../../domain/repositories/menu-category.repository.js';
 import { MenuItemRepository } from '../../../domain/repositories/menu-item.repository.js';
 import { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
+import { FeaturedSlotRepository } from '../../../domain/repositories/featured-slot.repository.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
 import { OperatingHoursPolicy } from '../../../domain/services/operating-hours-policy.js';
+import type { FeaturedScope } from '../../../domain/entities/featured-slot.entity.js';
+
+export interface FeaturedSlotRef {
+  scope: FeaturedScope;
+  citySlug: string;
+  category: string;
+}
 
 export interface ActiveStorefrontSummary {
   slug: string;
@@ -21,6 +29,8 @@ export interface ActiveStorefrontSummary {
   /** Abierto ahora (horario + override, en la timezone del local). */
   isOpen: boolean;
   updatedAt: Date;
+  /** Slots de destacado vigentes: la UI decide por contexto (ciudad/rubro). */
+  featured: FeaturedSlotRef[];
 }
 
 const CACHE_TTL_MS = 60_000;
@@ -39,6 +49,7 @@ export class ListActiveStorefrontsUseCase {
     private readonly categoryRepo: MenuCategoryRepository,
     private readonly itemRepo: MenuItemRepository,
     private readonly hoursRepo: OperatingHoursRepository,
+    private readonly featuredRepo?: FeaturedSlotRepository,
   ) {}
 
   async execute(): Promise<ActiveStorefrontSummary[]> {
@@ -58,10 +69,11 @@ export class ListActiveStorefrontsUseCase {
     if (restaurants.length === 0) return [];
 
     const ids = restaurants.map((r) => r.id);
-    const [categories, items, hours] = await Promise.all([
+    const [categories, items, hours, slots] = await Promise.all([
       this.categoryRepo.findByRestaurantIds(ids),
       this.itemRepo.findByRestaurantIds(ids),
       this.hoursRepo.findByRestaurantIds(ids),
+      this.featuredRepo?.listActive(new Date()) ?? [],
     ]);
 
     const itemsByCategory = new Map<string, number>();
@@ -87,6 +99,17 @@ export class ListActiveStorefrontsUseCase {
       hoursByRestaurant.set(h.restaurantId, list);
     }
 
+    const featuredByRestaurant = new Map<string, FeaturedSlotRef[]>();
+    for (const s of slots) {
+      const list = featuredByRestaurant.get(s.restaurantId) ?? [];
+      list.push({
+        scope: s.scope,
+        citySlug: s.citySlug,
+        category: s.category,
+      });
+      featuredByRestaurant.set(s.restaurantId, list);
+    }
+
     const nowDate = new Date();
     return restaurants
       .filter((r) => withMenu.has(r.id))
@@ -106,6 +129,7 @@ export class ListActiveStorefrontsUseCase {
           nowDate,
         ).isOpen,
         updatedAt: r.updatedAt,
+        featured: featuredByRestaurant.get(r.id) ?? [],
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }

@@ -442,6 +442,12 @@ export interface PaginatedResponse<T> {
   meta: { total: number; page: number; pages: number };
 }
 
+export interface FeaturedSlotRef {
+  scope: 'category' | 'home';
+  citySlug: string;
+  category: string;
+}
+
 export interface StorefrontIndexEntry {
   slug: string;
   name: string;
@@ -454,6 +460,8 @@ export interface StorefrontIndexEntry {
   phone: string;
   isOpen: boolean;
   updatedAt: string;
+  /** Slots de destacado vigentes (API nueva; ausente en API vieja). */
+  featured?: FeaturedSlotRef[];
 }
 
 export interface StorefrontData {

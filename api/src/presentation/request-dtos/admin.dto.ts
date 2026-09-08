@@ -69,3 +69,12 @@ export const AdminCreateUnclaimedRestaurantRequestSchema = z.object({
 export type AdminCreateUnclaimedRestaurantRequestDto = z.infer<
   typeof AdminCreateUnclaimedRestaurantRequestSchema
 >;
+
+export const AdminAssignFeaturedRequestSchema = z.object({
+  restaurantId: z.string().min(1),
+  scope: z.enum(['category', 'home']),
+  days: z.coerce.number().int().min(1).max(365).optional().default(30),
+});
+export type AdminAssignFeaturedRequestDto = z.infer<
+  typeof AdminAssignFeaturedRequestSchema
+>;

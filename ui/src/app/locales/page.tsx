@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getStorefrontIndex } from "@/lib/storefront-index";
 import { StoreCard } from "@/components/directory/store-card";
 import { DirectorySearch } from "@/components/directory/directory-search";
+import { isFeatured, sortFeaturedFirst } from "@/lib/featured";
 import { DirectoryJsonLd } from "@/components/directory/directory-json-ld";
 import type { StorefrontIndexEntry } from "@/types";
 
@@ -100,9 +101,15 @@ export default async function LocalesPage() {
                 </Link>
               </div>
               <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {entries.slice(0, 6).map((entry) => (
-                  <StoreCard key={entry.slug} entry={entry} />
-                ))}
+                {sortFeaturedFirst(entries, { citySlug })
+                  .slice(0, 6)
+                  .map((entry) => (
+                    <StoreCard
+                      key={entry.slug}
+                      entry={entry}
+                      featured={isFeatured(entry, { citySlug })}
+                    />
+                  ))}
               </div>
             </section>
           ))}

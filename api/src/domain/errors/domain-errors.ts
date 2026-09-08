@@ -205,3 +205,12 @@ export class OrderNotDeliveredError extends DomainError {
     super('ORDER_NOT_DELIVERED', 'Este pedido todavía no fue entregado.');
   }
 }
+
+export class FeaturedSlotFullError extends DomainError {
+  constructor() {
+    super(
+      'FEATURED_SLOT_FULL',
+      'No hay lugares destacados disponibles en este momento.',
+    );
+  }
+}

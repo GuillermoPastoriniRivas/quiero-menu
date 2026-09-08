@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getStorefrontIndex } from "@/lib/storefront-index";
 import { StoreCard } from "@/components/directory/store-card";
 import { DirectorySearch } from "@/components/directory/directory-search";
+import { isFeatured, sortFeaturedFirst } from "@/lib/featured";
 import {
   DirectoryJsonLd,
   BreadcrumbsJsonLd,
@@ -154,8 +155,12 @@ export default async function CityDirectoryPage({
           placeholder={`Buscá en ${cityName}… ej: milanesa, empanadas, helado`}
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {entries.map((entry) => (
-              <StoreCard key={entry.slug} entry={entry} />
+            {sortFeaturedFirst(entries, { citySlug }).map((entry) => (
+              <StoreCard
+                key={entry.slug}
+                entry={entry}
+                featured={isFeatured(entry, { citySlug })}
+              />
             ))}
           </div>
         </DirectorySearch>

@@ -9,6 +9,8 @@ import { backupSessionForImpersonation } from '@/lib/admin-session';
 import type { AdminRestaurantDetail, ImpersonateResponse } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { formatDate } from '@/lib/format';
 
@@ -21,6 +23,10 @@ export default function AdminLocalDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [impersonating, setImpersonating] = useState(false);
+  const [featScope, setFeatScope] = useState<'category' | 'home'>('category');
+  const [featDays, setFeatDays] = useState('30');
+  const [featuring, setFeaturing] = useState(false);
+  const [featMsg, setFeatMsg] = useState('');
 
   const load = useCallback(async () => {
     if (!id || id === NOT_FOUND_FALLBACK) {
@@ -59,6 +65,27 @@ export default function AdminLocalDetailPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo entrar al local');
       setImpersonating(false);
+    }
+  };
+
+  const handleFeature = async () => {
+    if (!detail) return;
+    setFeaturing(true);
+    setFeatMsg('');
+    try {
+      const out = await api.post<{ slotId: string; endsAt: string }>(
+        '/admin/featured',
+        {
+          restaurantId: detail.restaurant.id,
+          scope: featScope,
+          days: Number(featDays) || 30,
+        },
+      );
+      setFeatMsg(`Destacado hasta el ${formatDate(out.endsAt)}`);
+    } catch (e) {
+      setFeatMsg(e instanceof Error ? e.message : 'No se pudo destacar');
+    } finally {
+      setFeaturing(false);
     }
   };
 
@@ -180,6 +207,47 @@ export default function AdminLocalDetailPage() {
           <Row label="Estado" value={r.status} />
         </dl>
       </InfoCard>
+
+      <div className="bg-white rounded-2xl border border-amber-400/40 p-5 mt-4">
+        <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+          Destacar en el directorio
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-on-surface-variant">
+              Lugar
+            </Label>
+            <select
+              value={featScope}
+              onChange={(e) =>
+                setFeatScope(e.target.value as 'category' | 'home')
+              }
+              className="h-10 rounded-xl border-none bg-surface-container-low px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <option value="category">Arriba del rubro</option>
+              <option value="home">Home de la ciudad</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-on-surface-variant">
+              Días
+            </Label>
+            <Input
+              value={featDays}
+              onChange={(e) => setFeatDays(e.target.value)}
+              inputMode="numeric"
+              className="h-10 w-24"
+            />
+          </div>
+          <Button size="sm" onClick={handleFeature} disabled={featuring}>
+            <MaterialIcon name="star" size="sm" />
+            {featuring ? 'Asignando...' : 'Destacar'}
+          </Button>
+        </div>
+        {featMsg && (
+          <p className="text-xs text-on-surface-variant mt-2">{featMsg}</p>
+        )}
+      </div>
     </div>
   );
 }

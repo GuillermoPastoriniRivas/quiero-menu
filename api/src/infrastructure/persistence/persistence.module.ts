@@ -84,6 +84,10 @@ import {
   SearchTermSchema,
 } from './mongoose/schemas/search-term.schema.js';
 import {
+  FeaturedSlotModel,
+  FeaturedSlotSchema,
+} from './mongoose/schemas/featured-slot.schema.js';
+import {
   StoreClaimModel,
   StoreClaimSchema,
 } from './mongoose/schemas/store-claim.schema.js';
@@ -115,6 +119,7 @@ import { MongoStorefrontViewRepository } from './mongoose/repositories/mongo-sto
 import { MongoAnalyticsRepository } from './mongoose/repositories/mongo-analytics.repository.js';
 import { MongoStorefrontEventRepository } from './mongoose/repositories/mongo-storefront-event.repository.js';
 import { MongoSearchTermRepository } from './mongoose/repositories/mongo-search-term.repository.js';
+import { MongoFeaturedSlotRepository } from './mongoose/repositories/mongo-featured-slot.repository.js';
 import { MongoStoreClaimRepository } from './mongoose/repositories/mongo-store-claim.repository.js';
 import { MongoOrderFeedbackRepository } from './mongoose/repositories/mongo-order-feedback.repository.js';
 
@@ -144,6 +149,7 @@ const schemas = MongooseModule.forFeature([
   { name: SearchTermModel.name, schema: SearchTermSchema },
   { name: StoreClaimModel.name, schema: StoreClaimSchema },
   { name: OrderFeedbackModel.name, schema: OrderFeedbackSchema },
+  { name: FeaturedSlotModel.name, schema: FeaturedSlotSchema },
 ]);
 
 const repositories = [
@@ -203,6 +209,10 @@ const repositories = [
   },
   { provide: 'SearchTermRepository', useClass: MongoSearchTermRepository },
   { provide: 'StoreClaimRepository', useClass: MongoStoreClaimRepository },
+  {
+    provide: 'FeaturedSlotRepository',
+    useClass: MongoFeaturedSlotRepository,
+  },
   {
     provide: 'OrderFeedbackRepository',
     useClass: MongoOrderFeedbackRepository,
