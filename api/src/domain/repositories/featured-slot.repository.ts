@@ -26,4 +26,5 @@ export interface FeaturedSlotRepository {
     now: Date,
   ): Promise<number>;
   setActive(id: string, isActive: boolean): Promise<FeaturedSlot | null>;
+  deleteManyByRestaurantId(restaurantId: string): Promise<void>;
 }

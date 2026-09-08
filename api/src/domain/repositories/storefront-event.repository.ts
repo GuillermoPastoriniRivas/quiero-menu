@@ -17,4 +17,5 @@ export interface StorefrontEventRepository {
     since: Date,
     to: Date,
   ): Promise<EventTypeCount>;
+  deleteManyByRestaurantId(restaurantId: string): Promise<void>;
 }

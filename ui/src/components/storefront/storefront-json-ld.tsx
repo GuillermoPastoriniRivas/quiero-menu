@@ -47,6 +47,7 @@ export function StorefrontJsonLd({
   const url = `https://quiero.menu/${slug}`;
   const image = omitEmpty(restaurant.logoUrl) || omitEmpty(restaurant.bannerUrl);
   const categoryDef = getCategoryDef(restaurant.category);
+  const price = priceRange(data);
 
   const openingHoursSpecification = data.operatingHours
     .filter((h) => !h.isClosed && isValidTime(h.opensAt) && isValidTime(h.closesAt))
@@ -65,7 +66,7 @@ export function StorefrontJsonLd({
     ...(image ? { image } : {}),
     ...(omitEmpty(restaurant.phone) ? { telephone: restaurant.phone } : {}),
     ...(categoryDef ? { servesCuisine: categoryDef.cuisine } : {}),
-    ...(priceRange(data) ? { priceRange: priceRange(data) } : {}),
+    ...(price ? { priceRange: price } : {}),
     ...(restaurant.coordinates
       ? {
           geo: {

@@ -214,3 +214,12 @@ export class FeaturedSlotFullError extends DomainError {
     );
   }
 }
+
+export class RestaurantNotFeatureableError extends DomainError {
+  constructor() {
+    super(
+      'RESTAURANT_NOT_FEATUREABLE',
+      'El local necesita ciudad (y rubro para destacar por rubro) antes de poder destacarse.',
+    );
+  }
+}

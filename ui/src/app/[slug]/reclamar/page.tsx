@@ -13,12 +13,27 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const data = await fetchStorefrontData(slug);
+  const name = data?.restaurant.name;
+  const title = name ? `Reclamá ${name} | quiero.menu` : "Reclamar local | quiero.menu";
+  const description = name
+    ? `¿${name} es tu local? Reclamá la cuenta gratis y editá tu menú desde el celular.`
+    : "Reclamá la cuenta de tu local y administrá tu menú digital gratis.";
   return {
-    title: data
-      ? `Reclamá ${data.restaurant.name} | quiero.menu`
-      : "Reclamar local | quiero.menu",
+    title: { absolute: title },
+    description,
     // Página utilitaria: no compite en el índice.
     robots: { index: false, follow: false },
+    // Sobrescribe el canonical/OG del layout de [slug] (heredarlos
+    // apuntaría al storefront).
+    alternates: { canonical: `https://quiero.menu/${slug}/reclamar` },
+    openGraph: {
+      title,
+      description,
+      url: `https://quiero.menu/${slug}/reclamar`,
+      siteName: "quiero.menu",
+      locale: "es_AR",
+      type: "website",
+    },
   };
 }
 

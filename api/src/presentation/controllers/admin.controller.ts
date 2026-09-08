@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   ConflictException,
@@ -46,6 +47,7 @@ import type { AssignFeaturedSlotUseCase } from '../../application/use-cases/feat
 import type { ListFeaturedSlotsUseCase } from '../../application/use-cases/featured/list-featured-slots.use-case.js';
 import type { DeactivateFeaturedSlotUseCase } from '../../application/use-cases/featured/deactivate-featured-slot.use-case.js';
 import { FeaturedSlotFullError } from '../../domain/errors/domain-errors.js';
+import { RestaurantNotFeatureableError } from '../../domain/errors/domain-errors.js';
 import type { ApproveStoreClaimUseCase } from '../../application/use-cases/claims/approve-store-claim.use-case.js';
 import type { RejectStoreClaimUseCase } from '../../application/use-cases/claims/reject-store-claim.use-case.js';
 import type { StoreClaimStatus } from '../../domain/entities/store-claim.entity.js';
@@ -258,6 +260,9 @@ export class AdminController {
     if (!result.ok) {
       if (result.error instanceof FeaturedSlotFullError) {
         throw new ConflictException(result.error.message);
+      }
+      if (result.error instanceof RestaurantNotFeatureableError) {
+        throw new BadRequestException(result.error.message);
       }
       throw new NotFoundException(result.error.message);
     }

@@ -20,4 +20,5 @@ export interface StoreClaimRepository {
     id: string,
     status: StoreClaimStatus,
   ): Promise<StoreClaim | null>;
+  deleteManyByRestaurantId(restaurantId: string): Promise<void>;
 }

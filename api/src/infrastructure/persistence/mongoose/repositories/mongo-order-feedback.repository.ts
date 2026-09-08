@@ -56,4 +56,11 @@ export class MongoOrderFeedbackRepository implements OrderFeedbackRepository {
     });
     return doc ? toDomain(doc) : null;
   }
+
+  async deleteManyByRestaurantId(restaurantId: string): Promise<void> {
+    if (!Types.ObjectId.isValid(restaurantId)) return;
+    await this.model.deleteMany({
+      restaurantId: new Types.ObjectId(restaurantId),
+    });
+  }
 }

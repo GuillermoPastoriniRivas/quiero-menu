@@ -4,6 +4,7 @@ import { FeaturedScope } from '../../../domain/entities/featured-slot.entity.js'
 import { Result, ok, err } from '../../common/result.js';
 import {
   RestaurantNotFoundError,
+  RestaurantNotFeatureableError,
   FeaturedSlotFullError,
 } from '../../../domain/errors/domain-errors.js';
 
@@ -32,7 +33,9 @@ export class AssignFeaturedSlotUseCase {
   ): Promise<
     Result<
       { slotId: string; endsAt: Date },
-      RestaurantNotFoundError | FeaturedSlotFullError
+      | RestaurantNotFoundError
+      | RestaurantNotFeatureableError
+      | FeaturedSlotFullError
     >
   > {
     const restaurant = await this.restaurantRepo.findById(input.restaurantId);
@@ -40,9 +43,8 @@ export class AssignFeaturedSlotUseCase {
 
     const citySlug = restaurant.citySlug ?? '';
     const category = restaurant.category ?? '';
-    if (!citySlug) return err(new RestaurantNotFoundError());
-    if (input.scope === 'category' && !category) {
-      return err(new RestaurantNotFoundError());
+    if (!citySlug || (input.scope === 'category' && !category)) {
+      return err(new RestaurantNotFeatureableError());
     }
 
     const max =

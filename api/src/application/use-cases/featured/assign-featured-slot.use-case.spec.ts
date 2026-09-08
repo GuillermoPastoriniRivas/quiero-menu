@@ -7,10 +7,11 @@ import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.j
 import { RestaurantCategory } from '../../../domain/enums/restaurant-category.enum.js';
 import {
   RestaurantNotFoundError,
+  RestaurantNotFeatureableError,
   FeaturedSlotFullError,
 } from '../../../domain/errors/domain-errors.js';
 
-function makeRestaurant() {
+function makeRestaurant(citySlug = 'paysandu', hasCategory = true) {
   return new Restaurant(
     'r1',
     'la-famosa',
@@ -34,8 +35,8 @@ function makeRestaurant() {
     { primaryColor: '#E8532C' },
     new Date(),
     new Date(),
-    RestaurantCategory.PIZZERIA,
-    'paysandu',
+    hasCategory ? RestaurantCategory.PIZZERIA : undefined,
+    citySlug,
     true,
   );
 }
@@ -103,5 +104,37 @@ describe('AssignFeaturedSlotUseCase', () => {
       expect(days).toBeGreaterThan(29);
       expect(days).toBeLessThanOrEqual(30);
     }
+  });
+
+  it('rechaza destacar un local sin ciudad', async () => {
+    const { uc, slotRepo } = deps({
+      restaurant: makeRestaurant('', false),
+      used: 0,
+    });
+    const out = await uc.execute({
+      restaurantId: 'r1',
+      scope: 'home',
+      days: 30,
+    });
+    expect(out.ok).toBe(false);
+    if (!out.ok)
+      expect(out.error).toBeInstanceOf(RestaurantNotFeatureableError);
+    expect(slotRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('rechaza destacar por rubro un local sin rubro', async () => {
+    const { uc, slotRepo } = deps({
+      restaurant: makeRestaurant('paysandu', false),
+      used: 0,
+    });
+    const out = await uc.execute({
+      restaurantId: 'r1',
+      scope: 'category',
+      days: 30,
+    });
+    expect(out.ok).toBe(false);
+    if (!out.ok)
+      expect(out.error).toBeInstanceOf(RestaurantNotFeatureableError);
+    expect(slotRepo.create).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,5 @@
 import { Controller, Get, Inject, Query } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../decorators/public.decorator.js';
 import { ZodValidationPipe } from '../pipes/zod-validation.pipe.js';
 import {
@@ -26,8 +27,16 @@ export class StorefrontsIndexController {
   /**
    * Búsqueda del directorio: nombre, rubro, descripción y platos de la carta
    * visible. El comensal busca "milanesa", no "Leonardo's".
+   *
+   * Throttle explícito: cada query con resultados registra un término en
+   * `search_terms` (inteligencia de demanda). Sin límite, un scraper
+   * inflaría esa señal y martillarías Mongo con upserts.
    */
   @Public()
+  @Throttle({
+    short: { ttl: 1000, limit: 10 },
+    medium: { ttl: 60000, limit: 60 },
+  })
   @Get('search')
   async search(
     @Query(new ZodValidationPipe(StorefrontSearchRequestSchema))
