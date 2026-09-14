@@ -20,6 +20,7 @@ import { welcomeTemplate } from '../../../infrastructure/email/templates/welcome
 import { verifyEmailTemplate } from '../../../infrastructure/email/templates/verify-email.template.js';
 import { RestaurantCategory } from '../../../domain/enums/restaurant-category.enum.js';
 import { slugifyCity } from '../../common/slugify.js';
+import { deriveGeoFromCity } from '../../common/geo.js';
 
 export interface CreateRestaurantAccountInput {
   ownerName: string;
@@ -86,6 +87,7 @@ export class CreateRestaurantAccountUseCase {
       address: '',
       city: input.city ?? '',
       citySlug: slugifyCity(input.city ?? ''),
+      ...deriveGeoFromCity(input.city ?? '', 'AR'),
       category:
         (input.category as RestaurantCategory) ?? RestaurantCategory.NONE,
       country: 'AR',

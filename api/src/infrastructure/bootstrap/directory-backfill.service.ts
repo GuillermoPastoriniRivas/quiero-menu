@@ -25,9 +25,13 @@ export class DirectoryBackfillService implements OnApplicationBootstrap {
   async onApplicationBootstrap(): Promise<void> {
     try {
       const result = await this.backfill.execute();
-      if (result.citySlugFixed > 0 || result.categoryInferred > 0) {
+      if (
+        result.citySlugFixed > 0 ||
+        result.categoryInferred > 0 ||
+        result.geoFixed > 0
+      ) {
         this.logger.log(
-          `Directory backfill: ${result.citySlugFixed} citySlug, ${result.categoryInferred} category`,
+          `Directory backfill: ${result.citySlugFixed} citySlug, ${result.geoFixed} geo, ${result.categoryInferred} category`,
         );
       }
     } catch (err) {

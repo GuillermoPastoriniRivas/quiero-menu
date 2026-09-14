@@ -453,6 +453,11 @@ export interface StorefrontIndexEntry {
   name: string;
   city: string;
   citySlug: string;
+  /** Provincia/departamento/estado visible. Vacío = sin clasificar (API vieja). */
+  region: string;
+  /** Join keys geo del directorio de 3 niveles. Vacíos = API vieja. */
+  countrySlug: string;
+  regionSlug: string;
   category: string;
   description: string;
   logoUrl: string;

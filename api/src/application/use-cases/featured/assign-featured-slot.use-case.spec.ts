@@ -37,6 +37,9 @@ function makeRestaurant(citySlug = 'paysandu', hasCategory = true) {
     new Date(),
     hasCategory ? RestaurantCategory.PIZZERIA : undefined,
     citySlug,
+    '',
+    '',
+    '',
     true,
   );
 }

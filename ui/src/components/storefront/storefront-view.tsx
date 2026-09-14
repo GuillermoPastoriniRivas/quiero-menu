@@ -352,9 +352,6 @@ export function StorefrontView({
 
   const subtotal = cart.subtotal();
   const appliedCoupon = cart.appliedCoupon;
-  const freeDelivery =
-    !!appliedCoupon?.freeDelivery &&
-    cart.deliveryType === DeliveryType.DELIVERY;
   const deliveryFee = 0;
   const discount = appliedCoupon
     ? appliedCoupon.freeDelivery

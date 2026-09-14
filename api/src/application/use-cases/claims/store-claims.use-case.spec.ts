@@ -38,6 +38,9 @@ function makeRestaurant(claimed?: boolean) {
     new Date(),
     undefined,
     undefined,
+    '',
+    '',
+    '',
     claimed,
   );
 }

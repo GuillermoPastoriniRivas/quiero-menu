@@ -38,6 +38,17 @@ export class RestaurantModel {
   @Prop({ default: '' })
   citySlug: string;
 
+  /** Provincia/departamento/estado (display). Vacío = pendiente de clasificar. */
+  @Prop({ default: '' })
+  region: string;
+
+  /** Join keys geo del directorio (/en/{pais}/{region}/{ciudad}). */
+  @Prop({ default: '' })
+  countrySlug: string;
+
+  @Prop({ default: '' })
+  regionSlug: string;
+
   /**
    * false = cargado como inventario por el equipo, reclamable desde el
    * storefront. Los docs viejos no tienen el campo y se leen como true.

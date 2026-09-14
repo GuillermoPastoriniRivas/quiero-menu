@@ -17,8 +17,13 @@ export interface ActiveStorefrontSummary {
   slug: string;
   name: string;
   city: string;
-  /** Slug normalizado de la ciudad para el directorio (/en/{citySlug}). */
+  /** Slug normalizado de la ciudad para el directorio. */
   citySlug: string;
+  /** Provincia/departamento/estado visible ('' = sin clasificar). */
+  region: string;
+  /** Join keys geo del directorio de 3 niveles ('' = sin clasificar). */
+  countrySlug: string;
+  regionSlug: string;
   /** Rubro del local ('' = sin clasificar). */
   category: string;
   description: string;
@@ -120,6 +125,9 @@ export class ListActiveStorefrontsUseCase {
         name: r.name,
         city: r.city,
         citySlug: r.citySlug ?? '',
+        region: r.region ?? '',
+        countrySlug: r.countrySlug ?? '',
+        regionSlug: r.regionSlug ?? '',
         category: r.category ?? '',
         description: r.description,
         logoUrl: r.logoUrl,

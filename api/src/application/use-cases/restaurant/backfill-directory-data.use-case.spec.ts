@@ -12,6 +12,7 @@ function makeRestaurant(
   city: string,
   citySlug?: string,
   category?: RestaurantCategory,
+  geo?: { countrySlug: string; region: string; regionSlug: string },
 ) {
   return new Restaurant(
     id,
@@ -38,6 +39,9 @@ function makeRestaurant(
     new Date(),
     category,
     citySlug,
+    geo?.region ?? '',
+    geo?.countrySlug ?? '',
+    geo?.regionSlug ?? '',
   );
 }
 
@@ -91,13 +95,54 @@ describe('BackfillDirectoryDataUseCase', () => {
     expect(out.categoryInferred).toBe(2);
     expect(updates).toContainEqual({
       id: '1',
-      data: { citySlug: 'concepcion-del-uruguay' },
+      data: {
+        citySlug: 'concepcion-del-uruguay',
+        countrySlug: 'argentina',
+        region: 'Entre Ríos',
+        regionSlug: 'entre-rios',
+      },
+    });
+    expect(updates).toContainEqual({
+      id: '2',
+      data: {
+        citySlug: 'paysandu',
+        countrySlug: 'uruguay',
+        region: 'Paysandú',
+        regionSlug: 'paysandu',
+      },
     });
     expect(updates).toContainEqual({ id: '1', data: { category: 'pizzeria' } });
-    expect(updates).toContainEqual({ id: '2', data: { citySlug: 'paysandu' } });
     expect(updates).toContainEqual({
       id: '2',
       data: { category: 'hamburgueseria' },
+    });
+  });
+
+  it('completa la jerarquia geo de locales con ciudades ya known', async () => {
+    const r = makeRestaurant(
+      '1',
+      'Concepción del Uruguay',
+      'concepcion-del-uruguay',
+      RestaurantCategory.CAFE,
+    );
+    const { restaurantRepo, itemRepo, updates } = makeDeps(
+      [r],
+      [makeItem('1', 'Cafe')],
+    );
+    const useCase = new BackfillDirectoryDataUseCase(restaurantRepo, itemRepo);
+
+    const out = await useCase.execute();
+
+    expect(out.citySlugFixed).toBe(0);
+    expect(out.categoryInferred).toBe(0);
+    expect(out.geoFixed).toBe(1);
+    expect(updates).toContainEqual({
+      id: '1',
+      data: {
+        countrySlug: 'argentina',
+        region: 'Entre Ríos',
+        regionSlug: 'entre-rios',
+      },
     });
   });
 
@@ -107,6 +152,11 @@ describe('BackfillDirectoryDataUseCase', () => {
       'Concepción del Uruguay',
       'concepcion-del-uruguay',
       RestaurantCategory.CAFE,
+      {
+        countrySlug: 'argentina',
+        region: 'Entre Ríos',
+        regionSlug: 'entre-rios',
+      },
     );
     const { restaurantRepo, itemRepo, updates } = makeDeps(
       [r],
@@ -118,6 +168,7 @@ describe('BackfillDirectoryDataUseCase', () => {
 
     expect(out.citySlugFixed).toBe(0);
     expect(out.categoryInferred).toBe(0);
+    expect(out.geoFixed).toBe(0);
     expect(updates).toHaveLength(0);
   });
 

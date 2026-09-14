@@ -34,6 +34,9 @@ export class RestaurantMapper {
       doc.updatedAt,
       (doc.category as RestaurantCategory) ?? RestaurantCategory.NONE,
       doc.citySlug ?? '',
+      doc.region ?? '',
+      doc.countrySlug ?? '',
+      doc.regionSlug ?? '',
       doc.claimed ?? true,
     );
   }

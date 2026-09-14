@@ -8,6 +8,7 @@ import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
 import { SubscriptionStatus } from '../../../domain/enums/subscription-status.enum.js';
 import { PaymentProvider } from '../../../domain/enums/payment-provider.enum.js';
 import { slugifyCity } from '../../common/slugify.js';
+import { deriveGeoFromCity } from '../../common/geo.js';
 
 export interface CreateUnclaimedRestaurantInput {
   restaurantName: string;
@@ -49,6 +50,7 @@ export class CreateUnclaimedRestaurantUseCase {
       address: '',
       city: input.city ?? '',
       citySlug: slugifyCity(input.city ?? ''),
+      ...deriveGeoFromCity(input.city ?? '', 'AR'),
       category: input.category ?? RestaurantCategory.NONE,
       country: 'AR',
       coordinates: null,

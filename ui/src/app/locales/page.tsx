@@ -30,17 +30,38 @@ export async function generateMetadata({
     : baseMetadata;
 }
 
+interface CitySection {
+  slug: string;
+  name: string;
+  href: string;
+  entries: StorefrontIndexEntry[];
+}
+
 function groupByCity(
   entries: StorefrontIndexEntry[],
-): Map<string, StorefrontIndexEntry[]> {
-  const groups = new Map<string, StorefrontIndexEntry[]>();
+): CitySection[] {
+  const groups = new Map<string, CitySection>();
   for (const entry of entries) {
-    const key = entry.citySlug || "";
-    const list = groups.get(key) ?? [];
-    list.push(entry);
-    groups.set(key, list);
+    if (!entry.citySlug) continue;
+    const existing = groups.get(entry.citySlug);
+    if (existing) {
+      existing.entries.push(entry);
+      continue;
+    }
+    // Locales geo-clasificados => ruta /en/{pais}/{region}/{ciudad}; si aún
+    // no tienen región, conservan la URL /en/{ciudad} (no 404ear lo indexado).
+    const href =
+      entry.countrySlug && entry.regionSlug
+        ? `/en/${entry.countrySlug}/${entry.regionSlug}/${entry.citySlug}`
+        : `/en/${entry.citySlug}`;
+    groups.set(entry.citySlug, {
+      slug: entry.citySlug,
+      name: entry.city || entry.citySlug,
+      href,
+      entries: [entry],
+    });
   }
-  return groups;
+  return [...groups.values()];
 }
 
 export default async function LocalesPage({
@@ -56,12 +77,8 @@ export default async function LocalesPage({
   const withCity = index.filter((e) => e.citySlug);
   const noCity = index.filter((e) => !e.citySlug);
   const groups = groupByCity(withCity);
-  const cities = [...groups.entries()]
-    .map(([slug, entries]) => ({
-      slug,
-      name: entries[0]?.city || slug,
-      count: entries.length,
-    }))
+  const cities = groups
+    .map((g) => ({ slug: g.slug, name: g.name, count: g.entries.length }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
@@ -133,27 +150,27 @@ export default async function LocalesPage({
           initialCitySlug={query.city ?? ""}
           initialOpenNow={query.open === "1"}
         >
-          {[...groups.entries()].map(([citySlug, entries]) => (
-            <section key={citySlug} className="mt-12">
+          {groups.map((section) => (
+            <section key={section.slug} className="mt-12">
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="font-[family-name:var(--font-heading)] text-xl font-extrabold text-on-surface">
-                  {entries[0]?.city || citySlug}
+                  {section.name}
                 </h2>
                 <Link
-                  href={`/en/${citySlug}`}
+                  href={section.href}
                   className="text-sm font-bold text-primary hover:underline"
                 >
                   Ver todos los locales →
                 </Link>
               </div>
               <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {sortFeaturedFirst(entries, { citySlug })
+                {sortFeaturedFirst(section.entries, { citySlug: section.slug })
                   .slice(0, 6)
                   .map((entry) => (
                     <StoreCard
                       key={entry.slug}
                       entry={entry}
-                      featured={isFeatured(entry, { citySlug })}
+                      featured={isFeatured(entry, { citySlug: section.slug })}
                     />
                   ))}
               </div>

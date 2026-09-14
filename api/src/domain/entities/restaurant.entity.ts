@@ -63,6 +63,11 @@ export class Restaurant {
     public readonly category?: RestaurantCategory,
     /** Slug normalizado de la ciudad: join key de las páginas de directorio. */
     public readonly citySlug?: string,
+    /** Provincia/departamento/estado visible (display, no normalizado). */
+    public readonly region?: string,
+    /** Join keys geo del directorio de 3 niveles (/en/{pais}/{region}/{ciudad}). */
+    public readonly countrySlug?: string,
+    public readonly regionSlug?: string,
     /**
      * true = el local ya tiene dueño (creado por signup o por admin con
      * cuenta). false = cargado como inventario, reclamable desde el

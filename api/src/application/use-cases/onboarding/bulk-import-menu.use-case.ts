@@ -8,6 +8,7 @@ import type { MenuItemOptionRepository } from '../../../domain/repositories/menu
 import { MenuItemType } from '../../../domain/enums/menu-item-type.enum.js';
 import { Result, ok } from '../../common/result.js';
 import { slugifyCity } from '../../common/slugify.js';
+import { deriveGeoFromCity } from '../../common/geo.js';
 
 export interface BulkImportResult {
   categories: number;
@@ -45,6 +46,10 @@ export class BulkImportMenuUseCase {
     if (data.restaurant.city) {
       restUpdate.city = data.restaurant.city;
       restUpdate.citySlug = slugifyCity(data.restaurant.city);
+      const geo = deriveGeoFromCity(data.restaurant.city, 'AR');
+      restUpdate.countrySlug = geo.countrySlug;
+      restUpdate.region = geo.region;
+      restUpdate.regionSlug = geo.regionSlug;
     }
     if (data.restaurant.category) {
       restUpdate.category = data.restaurant.category;

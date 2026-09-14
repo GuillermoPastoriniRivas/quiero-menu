@@ -3,10 +3,12 @@ import { MenuItemRepository } from '../../../domain/repositories/menu-item.repos
 import { RestaurantCategory } from '../../../domain/enums/restaurant-category.enum.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
 import { slugifyCity } from '../../common/slugify.js';
+import { deriveGeoFromCity } from '../../common/geo.js';
 
 export interface BackfillDirectoryResult {
   citySlugFixed: number;
   categoryInferred: number;
+  geoFixed: number;
 }
 
 const CATEGORY_KEYWORDS: {
@@ -79,18 +81,29 @@ export class BackfillDirectoryDataUseCase {
     const needsCategoryIds: string[] = [];
     let citySlugFixed = 0;
     let categoryInferred = 0;
+    let geoFixed = 0;
 
     for (const r of restaurants) {
       const patch: Record<string, string> = {};
       if (!r.citySlug && r.city) {
         patch.citySlug = slugifyCity(r.city);
+      } // Jerarquía geo 3 niveles: solo locales con ciudad conocida y joins
+      // vacíos. Nunca pisa un countrySlug/regionSlug ya cargado.
+      const geo = deriveGeoFromCity(r.city, r.country);
+      if (geo.countrySlug && !r.countrySlug) {
+        patch.countrySlug = geo.countrySlug;
+      }
+      if (geo.region && !r.regionSlug) {
+        patch.region = geo.region;
+        patch.regionSlug = geo.regionSlug;
       }
       if (!r.category) {
         needsCategoryIds.push(r.id);
       }
       if (Object.keys(patch).length > 0) {
         await this.restaurantRepo.update(r.id, patch);
-        citySlugFixed++;
+        if (patch.citySlug) citySlugFixed++;
+        if (patch.countrySlug || patch.regionSlug) geoFixed++;
       }
     }
 
@@ -115,7 +128,7 @@ export class BackfillDirectoryDataUseCase {
       }
     }
 
-    return { citySlugFixed, categoryInferred };
+    return { citySlugFixed, categoryInferred, geoFixed };
   }
 }
 
