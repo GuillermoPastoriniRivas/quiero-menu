@@ -285,6 +285,7 @@ const useCaseProviders = [
     provide: 'SearchStorefrontsUseCase',
     useFactory: (
       restRepo: any,
+      catRepo: any,
       itemRepo: any,
       hoursRepo: any,
       searchTermRepo: any,
@@ -292,6 +293,7 @@ const useCaseProviders = [
     ) =>
       new SearchStorefrontsUseCase(
         restRepo,
+        catRepo,
         itemRepo,
         hoursRepo,
         searchTermRepo,
@@ -299,6 +301,7 @@ const useCaseProviders = [
       ),
     inject: [
       'RestaurantRepository',
+      'MenuCategoryRepository',
       'MenuItemRepository',
       'OperatingHoursRepository',
       'SearchTermRepository',
@@ -722,27 +725,6 @@ const useCaseProviders = [
     provide: 'DeactivateFeaturedSlotUseCase',
     useFactory: (slotRepo: any) => new DeactivateFeaturedSlotUseCase(slotRepo),
     inject: ['FeaturedSlotRepository'],
-  },
-  {
-    provide: 'SearchStorefrontsUseCase',
-    useFactory: (
-      restRepo: any,
-      itemRepo: any,
-      hoursRepo: any,
-      searchTermRepo: any,
-    ) =>
-      new SearchStorefrontsUseCase(
-        restRepo,
-        itemRepo,
-        hoursRepo,
-        searchTermRepo,
-      ),
-    inject: [
-      'RestaurantRepository',
-      'MenuItemRepository',
-      'OperatingHoursRepository',
-      'SearchTermRepository',
-    ],
   },
   {
     provide: 'ListSearchTermsUseCase',

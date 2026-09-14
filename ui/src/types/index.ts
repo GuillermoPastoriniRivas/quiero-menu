@@ -459,6 +459,8 @@ export interface StorefrontIndexEntry {
   bannerUrl: string;
   phone: string;
   isOpen: boolean;
+  /** Ausente en APIs viejas; false significa que no hay horario publicado. */
+  hoursKnown?: boolean;
   updatedAt: string;
   /** Slots de destacado vigentes (API nueva; ausente en API vieja). */
   featured?: FeaturedSlotRef[];

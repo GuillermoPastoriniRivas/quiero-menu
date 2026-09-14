@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getStorefrontIndex } from "@/lib/storefront-index";
+import { getStorefrontIndexState } from "@/lib/storefront-index";
 import { StoreCard } from "@/components/directory/store-card";
 import { DirectorySearch } from "@/components/directory/directory-search";
 import { isFeatured, sortFeaturedFirst } from "@/lib/featured";
@@ -11,12 +11,24 @@ import type { StorefrontIndexEntry } from "@/types";
 // (el índice tiene cache propia de 60s contra la API).
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   title: { absolute: "Locales con menú digital | quiero.menu" },
   description:
     "Mirá el menú de los locales de tu ciudad, pedí directo por WhatsApp y seguí tu pedido en vivo. Sin apps y sin comisiones.",
   alternates: { canonical: "https://quiero.menu/locales" },
 };
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; city?: string; open?: string }>;
+}): Promise<Metadata> {
+  const query = await searchParams;
+  const filtered = Boolean(query.q || query.city || query.open);
+  return filtered
+    ? { ...baseMetadata, robots: { index: false, follow: true } }
+    : baseMetadata;
+}
 
 function groupByCity(
   entries: StorefrontIndexEntry[],
@@ -31,11 +43,26 @@ function groupByCity(
   return groups;
 }
 
-export default async function LocalesPage() {
-  const index = await getStorefrontIndex();
+export default async function LocalesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; city?: string; open?: string }>;
+}) {
+  const [indexState, query] = await Promise.all([
+    getStorefrontIndexState(),
+    searchParams,
+  ]);
+  const index = indexState.entries;
   const withCity = index.filter((e) => e.citySlug);
   const noCity = index.filter((e) => !e.citySlug);
   const groups = groupByCity(withCity);
+  const cities = [...groups.entries()]
+    .map(([slug, entries]) => ({
+      slug,
+      name: entries[0]?.city || slug,
+      count: entries.length,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="min-h-screen bg-surface-container-lowest">
@@ -65,14 +92,27 @@ export default async function LocalesPage() {
 
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         <h1 className="font-[family-name:var(--font-heading)] text-3xl font-extrabold tracking-tight text-on-surface sm:text-4xl">
-          Locales con menú digital
+          ¿Qué tenés ganas de comer?
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-on-surface-variant">
-          Todos los menús están actualizados y funcionando. Tocá un local,
-          mirá su carta y pedí directo, sin apps y sin comisiones.
+          Buscá un plato, compará precios publicados y abrí la carta del local.
+          No necesitás crear una cuenta.
         </p>
 
-        {index.length === 0 ? (
+        {indexState.status === "unavailable" ? (
+          <div role="alert" className="mt-8 rounded-2xl border border-amber-700/20 bg-amber-100/60 p-5 text-amber-950">
+            <p className="font-bold">El directorio no está disponible en este momento.</p>
+            <p className="mt-1 text-sm">No mostramos un inventario vacío porque no pudimos verificar los locales. Recargá la página en unos minutos.</p>
+          </div>
+        ) : null}
+
+        {indexState.status === "stale" ? (
+          <p className="mt-6 rounded-xl bg-amber-100/60 px-4 py-3 text-sm text-amber-950">
+            Estamos mostrando la última versión disponible del directorio.
+          </p>
+        ) : null}
+
+        {indexState.status === "fresh" && index.length === 0 ? (
           <div className="mt-12 rounded-2xl border border-dashed border-outline-variant/60 p-10 text-center">
             <p className="text-on-surface-variant">
               Todavía no hay locales publicados.
@@ -86,7 +126,13 @@ export default async function LocalesPage() {
           </div>
         ) : null}
 
-        <DirectorySearch placeholder="Buscá un local o un plato… ej: milanesa, pizza, empanadas">
+        <DirectorySearch
+          placeholder="Buscá un plato o un local…"
+          cities={cities}
+          initialQuery={query.q ?? ""}
+          initialCitySlug={query.city ?? ""}
+          initialOpenNow={query.open === "1"}
+        >
           {[...groups.entries()].map(([citySlug, entries]) => (
             <section key={citySlug} className="mt-12">
               <div className="flex items-baseline justify-between gap-3">

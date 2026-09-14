@@ -28,6 +28,8 @@ export interface ActiveStorefrontSummary {
   phone: string;
   /** Abierto ahora (horario + override, en la timezone del local). */
   isOpen: boolean;
+  /** Permite distinguir cerrado de horario todavía no publicado. */
+  hoursKnown: boolean;
   updatedAt: Date;
   /** Slots de destacado vigentes: la UI decide por contexto (ciudad/rubro). */
   featured: FeaturedSlotRef[];
@@ -128,6 +130,9 @@ export class ListActiveStorefrontsUseCase {
           hoursByRestaurant.get(r.id) ?? [],
           nowDate,
         ).isOpen,
+        hoursKnown:
+          r.openOverride !== null ||
+          (hoursByRestaurant.get(r.id)?.length ?? 0) > 0,
         updatedAt: r.updatedAt,
         featured: featuredByRestaurant.get(r.id) ?? [],
       }))

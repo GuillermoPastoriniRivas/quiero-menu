@@ -10,6 +10,14 @@ export interface StorefrontSearchMatch {
   basePrice: number;
 }
 
+export interface StorefrontSearchSuggestion {
+  type: "dish" | "restaurant" | "category" | "city";
+  label: string;
+  value: string;
+  count: number;
+  citySlug?: string;
+}
+
 export interface StorefrontSearchResult extends StorefrontIndexEntry {
   currency: string;
   /** Platos de la carta que coinciden con la búsqueda (máx 3). */
@@ -19,12 +27,14 @@ export interface StorefrontSearchResult extends StorefrontIndexEntry {
 export interface StorefrontSearchResponse {
   results: StorefrontSearchResult[];
   total: number;
+  suggestions: StorefrontSearchSuggestion[];
 }
 
 export async function searchStorefronts(
   params: {
     q?: string;
     city?: string;
+    category?: string;
     openNow?: boolean;
     signal?: AbortSignal;
   },
@@ -32,13 +42,15 @@ export async function searchStorefronts(
   const search = new URLSearchParams();
   if (params.q && params.q.trim().length >= 2) search.set("q", params.q.trim());
   if (params.city) search.set("city", params.city);
+  if (params.category) search.set("category", params.category);
   if (params.openNow) search.set("openNow", "true");
 
   const res = await fetch(`${getApiBase()}/storefronts/search?${search}`, {
     signal: params.signal,
   });
   if (!res.ok) throw new Error("search failed");
-  return (await res.json()) as StorefrontSearchResponse;
+  const data = (await res.json()) as StorefrontSearchResponse;
+  return { ...data, suggestions: data.suggestions ?? [] };
 }
 
 export async function fetchStorefrontIndex(
@@ -71,7 +83,7 @@ const CATEGORY_TEXT = new Map(
  */
 export function filterIndexLocally(
   entries: StorefrontIndexEntry[],
-  params: { q?: string; city?: string; openNow?: boolean },
+  params: { q?: string; city?: string; category?: string; openNow?: boolean },
 ): StorefrontSearchResponse {
   const q = normalize(params.q ?? "");
   const tokens = q.split(/\s+/).filter((t) => t.length >= 2);
@@ -85,8 +97,9 @@ export function filterIndexLocally(
         );
         if (entryCity !== city) return false;
       }
+      if (params.category && e.category !== params.category) return false;
       // Datos viejos sin isOpen: no filtrar por algo que no sabemos.
-      if (params.openNow && e.isOpen === false) return false;
+      if (params.openNow && !e.isOpen) return false;
       if (tokens.length === 0) return true;
       const hay = normalize(
         `${e.name} ${e.description} ${CATEGORY_TEXT.get(e.category || "") ?? ""}`,
@@ -95,5 +108,5 @@ export function filterIndexLocally(
     })
     .map((e) => ({ ...e, currency: "", matchedItems: [] }));
 
-  return { results, total: results.length };
+  return { results, total: results.length, suggestions: [] };
 }

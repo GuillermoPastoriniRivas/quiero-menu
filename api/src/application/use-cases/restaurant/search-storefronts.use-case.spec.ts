@@ -6,6 +6,7 @@ import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.j
 import { MenuItemType } from '../../../domain/enums/menu-item-type.enum.js';
 import type { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
 import type { MenuItemRepository } from '../../../domain/repositories/menu-item.repository.js';
+import type { MenuCategoryRepository } from '../../../domain/repositories/menu-category.repository.js';
 import type { OperatingHoursRepository } from '../../../domain/repositories/operating-hours.repository.js';
 import type { SearchTermRepository } from '../../../domain/repositories/search-term.repository.js';
 
@@ -69,6 +70,34 @@ function makeRepoDeps(
   const itemRepo: MenuItemRepository = {
     findByRestaurantIds: jest.fn().mockResolvedValue(items),
   } as unknown as MenuItemRepository;
+  const categoryRepo: MenuCategoryRepository = {
+    findByRestaurantIds: jest.fn().mockResolvedValue([
+      {
+        id: 'cat-1',
+        restaurantId: '1',
+        name: 'Carta',
+        description: '',
+        displayOrder: 0,
+        isVisible: true,
+      },
+      {
+        id: 'cat-2',
+        restaurantId: '2',
+        name: 'Carta',
+        description: '',
+        displayOrder: 0,
+        isVisible: true,
+      },
+      {
+        id: 'cat-3',
+        restaurantId: '3',
+        name: 'Carta',
+        description: '',
+        displayOrder: 0,
+        isVisible: true,
+      },
+    ]),
+  } as unknown as MenuCategoryRepository;
   const hoursRepo: OperatingHoursRepository = {
     findByRestaurantIds: jest.fn().mockResolvedValue(hours),
   } as unknown as OperatingHoursRepository;
@@ -76,12 +105,13 @@ function makeRepoDeps(
     record: jest.fn().mockResolvedValue(undefined),
     listTop: jest.fn().mockResolvedValue([]),
   };
-  return { restaurantRepo, itemRepo, hoursRepo, searchTermRepo };
+  return { restaurantRepo, categoryRepo, itemRepo, hoursRepo, searchTermRepo };
 }
 
 function makeUseCase(deps: ReturnType<typeof makeRepoDeps>) {
   return new SearchStorefrontsUseCase(
     deps.restaurantRepo,
+    deps.categoryRepo,
     deps.itemRepo,
     deps.hoursRepo,
     deps.searchTermRepo,
@@ -170,7 +200,7 @@ describe('SearchStorefrontsUseCase', () => {
     expect(out.total).toBe(0);
 
     const all = await useCase.execute({});
-    expect(all.total).toBe(1);
+    expect(all.total).toBe(0);
   });
 
   it('matchea el rubro de la taxonomia', async () => {
@@ -180,6 +210,46 @@ describe('SearchStorefrontsUseCase', () => {
 
     const out = await useCase.execute({ q: 'pizza' });
     expect(out.total).toBe(1);
+  });
+
+  it('tolera variantes habituales y sugiere platos reales', async () => {
+    const local = makeRestaurant('1', { name: 'La Italiana' });
+    const deps = makeRepoDeps(
+      [local],
+      [makeItem('1', 'Pizza de muzzarella')],
+      [],
+    );
+    const useCase = makeUseCase(deps);
+
+    const out = await useCase.execute({ q: 'muzarela' });
+
+    expect(out.total).toBe(1);
+    expect(out.suggestions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'dish', label: 'Pizza de muzzarella' }),
+      ]),
+    );
+  });
+
+  it('usa la misma elegibilidad del directorio y excluye cartas ocultas', async () => {
+    const local = makeRestaurant('1');
+    const deps = makeRepoDeps([local], [makeItem('1', 'Pizza')], []);
+    (deps.categoryRepo.findByRestaurantIds as jest.Mock).mockResolvedValue([
+      {
+        id: 'cat-1',
+        restaurantId: '1',
+        name: 'Carta privada',
+        description: '',
+        displayOrder: 0,
+        isVisible: false,
+      },
+    ]);
+    const useCase = makeUseCase(deps);
+
+    const out = await useCase.execute({ q: 'pizza' });
+
+    expect(out.results).toHaveLength(0);
+    expect(out.suggestions).toHaveLength(0);
   });
 
   it('loguea el termino buscado y marca los sin resultados', async () => {

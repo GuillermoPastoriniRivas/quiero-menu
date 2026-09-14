@@ -81,7 +81,11 @@ export function StoreCard({
                   : "bg-surface-container-high text-on-surface-variant"
               }`}
             >
-              {entry.isOpen ? "Abierto ahora" : "Cerrado ahora"}
+              {entry.hoursKnown === false
+                ? "Horario no publicado"
+                : entry.isOpen
+                  ? "Abierto ahora"
+                  : "Cerrado ahora"}
             </span>
           </span>
         </div>

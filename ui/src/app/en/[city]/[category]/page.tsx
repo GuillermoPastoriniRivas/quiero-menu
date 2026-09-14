@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getStorefrontIndex } from "@/lib/storefront-index";
 import { StoreCard } from "@/components/directory/store-card";
+import { DirectorySearch } from "@/components/directory/directory-search";
 import {
   DirectoryJsonLd,
   BreadcrumbsJsonLd,
@@ -20,10 +21,12 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ city: string; category: string }>;
+  searchParams: Promise<{ q?: string; open?: string }>;
 }): Promise<Metadata> {
-  const { city, category } = await params;
+  const [{ city, category }, query] = await Promise.all([params, searchParams]);
   const citySlug = slugifyCity(city);
   const categoryDef = getDirectoryCategoryByPlural(category);
   const entries = (await getStorefrontIndex()).filter(
@@ -36,7 +39,7 @@ export async function generateMetadata({
   const cityName = entries[0]?.city || citySlug;
   const title = `${categoryDef.pluralLabel} en ${cityName} | Menús y pedidos | quiero.menu`;
   const description = `${categoryDef.pluralLabel} en ${cityName} con menú completo y precios actualizados. Compara locales, mirá la carta y pedí directo por WhatsApp, sin apps y sin comisiones.`;
-  return {
+  const metadata: Metadata = {
     title: { absolute: title },
     description,
     alternates: { canonical: `${BASE_URL}/en/${citySlug}/${categoryDef.plural}` },
@@ -54,14 +57,19 @@ export async function generateMetadata({
       type: "website",
     },
   };
+  return query.q || query.open
+    ? { ...metadata, robots: { index: false, follow: true } }
+    : metadata;
 }
 
 export default async function CityCategoryDirectoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ city: string; category: string }>;
+  searchParams: Promise<{ q?: string; open?: string }>;
 }) {
-  const { city, category } = await params;
+  const [{ city, category }, query] = await Promise.all([params, searchParams]);
   const citySlug = slugifyCity(city);
   const categoryDef = getDirectoryCategoryByPlural(category);
   if (!categoryDef) notFound();
@@ -122,21 +130,29 @@ export default async function CityCategoryDirectoryPage({
           directo por WhatsApp. Sin apps y sin comisiones.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortFeaturedFirst(entries, {
-            citySlug,
-            category: categoryDef.value,
-          }).map((entry) => (
-            <StoreCard
-              key={entry.slug}
-              entry={entry}
-              featured={isFeatured(entry, {
-                citySlug,
-                category: categoryDef.value,
-              })}
-            />
-          ))}
-        </div>
+        <DirectorySearch
+          citySlug={citySlug}
+          category={categoryDef.value}
+          initialQuery={query.q ?? ""}
+          initialOpenNow={query.open === "1"}
+          placeholder={`Buscá en ${categoryDef.pluralLabel.toLowerCase()}…`}
+        >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {sortFeaturedFirst(entries, {
+              citySlug,
+              category: categoryDef.value,
+            }).map((entry) => (
+              <StoreCard
+                key={entry.slug}
+                entry={entry}
+                featured={isFeatured(entry, {
+                  citySlug,
+                  category: categoryDef.value,
+                })}
+              />
+            ))}
+          </div>
+        </DirectorySearch>
 
         <section className="mt-16 rounded-3xl bg-surface-container-low p-8 text-center sm:p-12">
           <h2 className="font-[family-name:var(--font-heading)] text-2xl font-extrabold text-on-surface">

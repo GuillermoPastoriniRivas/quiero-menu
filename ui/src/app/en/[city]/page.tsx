@@ -48,10 +48,12 @@ function buildMetadata(entries: StorefrontIndexEntry[], citySlug: string): Metad
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ city: string }>;
+  searchParams: Promise<{ q?: string; open?: string }>;
 }): Promise<Metadata> {
-  const { city } = await params;
+  const [{ city }, query] = await Promise.all([params, searchParams]);
   const citySlug = slugifyCity(city);
   const entries = (await getStorefrontIndex()).filter(
     (e) => e.citySlug === citySlug,
@@ -59,15 +61,20 @@ export async function generateMetadata({
   if (entries.length === 0) {
     return { title: "Directorio", robots: { index: false, follow: false } };
   }
-  return buildMetadata(entries, citySlug);
+  const metadata = buildMetadata(entries, citySlug);
+  return query.q || query.open
+    ? { ...metadata, robots: { index: false, follow: true } }
+    : metadata;
 }
 
 export default async function CityDirectoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ city: string }>;
+  searchParams: Promise<{ q?: string; open?: string }>;
 }) {
-  const { city } = await params;
+  const [{ city }, query] = await Promise.all([params, searchParams]);
   const citySlug = slugifyCity(city);
   const entries = (await getStorefrontIndex()).filter(
     (e) => e.citySlug === citySlug,
@@ -132,8 +139,8 @@ export default async function CityDirectoryPage({
           Locales de comida en {cityName}
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-on-surface-variant">
-          Menús completos con precios reales, horarios actualizados y pedido
-          directo. Elegí dónde pedir y tocá para ver la carta.
+          Explorá platos y precios publicados por cada local. Elegí una opción
+          y abrí la carta completa para pedir directo.
         </p>
 
         {categories.length > 0 ? (
@@ -153,6 +160,8 @@ export default async function CityDirectoryPage({
         <DirectorySearch
           citySlug={citySlug}
           placeholder={`Buscá en ${cityName}… ej: milanesa, empanadas, helado`}
+          initialQuery={query.q ?? ""}
+          initialOpenNow={query.open === "1"}
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sortFeaturedFirst(entries, { citySlug }).map((entry) => (

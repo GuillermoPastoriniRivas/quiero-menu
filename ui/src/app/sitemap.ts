@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getStorefrontIndex } from '@/lib/storefront-index';
+import { getStorefrontIndexState } from '@/lib/storefront-index';
 import { getCategoryDef } from '@/lib/restaurant-categories';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +8,11 @@ const BASE_URL = 'https://quiero.menu';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const index = await getStorefrontIndex();
+  const indexState = await getStorefrontIndexState();
+  if (indexState.status === 'unavailable') {
+    throw new Error('Storefront index unavailable; refusing to publish an incomplete sitemap');
+  }
+  const index = indexState.entries;
 
   const storefronts: MetadataRoute.Sitemap = index.map((entry) => ({
     url: `${BASE_URL}/${entry.slug}`,
