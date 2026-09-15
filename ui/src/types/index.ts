@@ -62,6 +62,10 @@ export interface Restaurant {
   city: string;
   category?: string;
   citySlug?: string;
+  /** Provincia/departamento (display) y joins geo del directorio. API vieja = vacíos. */
+  region?: string;
+  regionSlug?: string;
+  countrySlug?: string;
   /** false = cargado como inventario, reclamable. undefined (API vieja) = con dueño. */
   claimed?: boolean;
   country: string;
@@ -464,6 +468,8 @@ export interface StorefrontIndexEntry {
   bannerUrl: string;
   phone: string;
   isOpen: boolean;
+  /** false = ficha de inventario sin dueño (reclamable). Ausente = API vieja. */
+  claimed?: boolean;
   /** Ausente en APIs viejas; false significa que no hay horario publicado. */
   hoursKnown?: boolean;
   updatedAt: string;

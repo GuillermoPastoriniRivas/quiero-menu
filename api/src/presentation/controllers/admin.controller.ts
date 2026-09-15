@@ -7,6 +7,7 @@ import {
   Inject,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -34,9 +35,12 @@ import {
   AdminAuditLogsRequestDto,
   AdminSearchTermsRequestSchema,
   AdminSearchTermsRequestDto,
+  AdminUpdateRestaurantRequestSchema,
+  AdminUpdateRestaurantRequestDto,
 } from '../request-dtos/admin.dto.js';
 import type { SearchRestaurantsUseCase } from '../../application/use-cases/admin/search-restaurants.use-case.js';
 import type { GetRestaurantDetailUseCase } from '../../application/use-cases/admin/get-restaurant-detail.use-case.js';
+import type { UpdateRestaurantUseCase } from '../../application/use-cases/restaurant/update-restaurant.use-case.js';
 import type { CreateRestaurantAccountUseCase } from '../../application/use-cases/admin/create-restaurant-account.use-case.js';
 import type { CreateUnclaimedRestaurantUseCase } from '../../application/use-cases/claims/create-unclaimed-restaurant.use-case.js';
 import type { ImpersonateRestaurantOwnerUseCase } from '../../application/use-cases/admin/impersonate-restaurant-owner.use-case.js';
@@ -82,6 +86,8 @@ export class AdminController {
     private readonly listFeaturedSlotsUseCase: ListFeaturedSlotsUseCase,
     @Inject('DeactivateFeaturedSlotUseCase')
     private readonly deactivateFeaturedSlotUseCase: DeactivateFeaturedSlotUseCase,
+    @Inject('UpdateRestaurantUseCase')
+    private readonly updateRestaurantUseCase: UpdateRestaurantUseCase,
     private readonly audit: AuditService,
   ) {}
 
@@ -166,8 +172,7 @@ export class AdminController {
 
   /** Alta de inventario: local sin dueño (claimed=false). */
   @Throttle({ short: { limit: 10, ttl: 60_000 } })
-  @Post('restaurants/unclaimed')
-  async createUnclaimed(
+  @Post('restaurants/unclaimed')  async createUnclaimed(
     @CurrentUser() admin: RequestUser,
     @Body(new ZodValidationPipe(AdminCreateUnclaimedRestaurantRequestSchema))
     body: AdminCreateUnclaimedRestaurantRequestDto,
@@ -188,6 +193,25 @@ export class AdminController {
       { slug: result.value.slug },
     );
     return result.value;
+  }
+
+  /**
+   * Edición de ficha desde el admin: los datos públicos del local (nombre,
+   * dirección, ciudad/región, rubro, teléfono). Es la herramienta de carga y
+   * corrección del inventario; UpdateRestaurantUseCase recalcula los slugs geo.
+   */
+  @Throttle({ short: { limit: 20, ttl: 60_000 } })
+  @Patch('restaurants/:id')
+  async updateRestaurant(
+    @CurrentUser() admin: RequestUser,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(AdminUpdateRestaurantRequestSchema))
+    body: AdminUpdateRestaurantRequestDto,
+  ) {
+    const result = await this.updateRestaurantUseCase.execute(id, body);
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    this.audit.log('admin.restaurant_updated', admin._id, id, { fields: Object.keys(body) });
+    return { restaurant: result.value };
   }
 
   /** Cola de pedidos de cuenta. */

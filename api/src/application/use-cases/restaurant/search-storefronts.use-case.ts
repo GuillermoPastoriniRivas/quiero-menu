@@ -291,6 +291,7 @@ export class SearchStorefrontsUseCase {
         isOpen: false,
         hoursKnown: false,
         updatedAt: r.updatedAt,
+        claimed: r.claimed !== false,
         currency: r.currency,
         featured: [],
       });
@@ -345,7 +346,10 @@ export class SearchStorefrontsUseCase {
     }
     const publicSummaries = summaries.filter((summary) => {
       const restaurant = restaurantsBySlug.get(summary.slug);
-      return restaurant ? restaurantsWithMenu.has(restaurant.id) : false;
+      if (!restaurant) return false;
+      // Mismo criterio que el index: el local con carta O la ficha de
+      // inventario sin dueño son resultados válidos.
+      return restaurantsWithMenu.has(restaurant.id) || restaurant.claimed === false;
     });
     for (const summary of publicSummaries) {
       const r = restaurantsBySlug.get(summary.slug)!;

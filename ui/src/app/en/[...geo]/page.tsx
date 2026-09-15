@@ -295,8 +295,8 @@ function CityView({
       {siteHeader({ href, label: `Todos los locales de ${city.cityName}` })}
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         <p className="text-sm font-bold uppercase tracking-wide text-primary">
-          {entries.length} {entries.length === 1 ? "local" : "locales"} con menú
-          online
+          {entries.length} {entries.length === 1 ? "local" : "locales"}{" "}
+          publicados
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-heading)] text-3xl font-extrabold tracking-tight text-on-surface sm:text-4xl">
           Locales de comida en {city.cityName}

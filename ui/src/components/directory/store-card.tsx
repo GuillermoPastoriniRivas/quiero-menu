@@ -31,6 +31,7 @@ export function StoreCard({
   const categoryDef = getCategoryDef(entry.category);
   const updated = formatUpdatedDate(entry.updatedAt);
   const showDishChips = matchedItems && matchedItems.length > 0 && currency;
+  const unclaimed = entry.claimed === false;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
@@ -117,6 +118,16 @@ export function StoreCard({
           </div>
         ) : null}
 
+        {unclaimed ? (
+          <Link
+            href={`/${entry.slug}/reclamar`}
+            className="mt-auto flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-[12px] font-bold text-primary transition-colors hover:bg-primary/10"
+          >
+            <MaterialIcon name="storefront" size="xs" />
+            Este local es tuyo? Reclamalo
+          </Link>
+        ) : null}
+
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           <span className="text-[11px] text-on-surface-variant/80">
             {updated ? `Actualizado el ${updated}` : null}
@@ -137,7 +148,7 @@ export function StoreCard({
               href={`/${entry.slug}`}
               className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
             >
-              Ver menú
+              {unclaimed ? "Ver ficha" : "Ver menú"}
               <MaterialIcon name="arrow_forward" size="xs" />
             </Link>
           </div>

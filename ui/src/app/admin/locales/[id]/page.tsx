@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { formatDate } from '@/lib/format';
+import { RESTAURANT_CATEGORIES } from '@/lib/restaurant-categories';
 
 const NOT_FOUND_FALLBACK = 'unknown';
 
@@ -27,6 +28,19 @@ export default function AdminLocalDetailPage() {
   const [featDays, setFeatDays] = useState('30');
   const [featuring, setFeaturing] = useState(false);
   const [featMsg, setFeatMsg] = useState('');
+  // Edición de ficha (herramienta de carga y corrección del inventario).
+  const [ficha, setFicha] = useState({
+    name: '',
+    description: '',
+    address: '',
+    city: '',
+    region: '',
+    country: '',
+    category: '',
+    phone: '',
+  });
+  const [fichaSaving, setFichaSaving] = useState(false);
+  const [fichaMsg, setFichaMsg] = useState('');
 
   const load = useCallback(async () => {
     if (!id || id === NOT_FOUND_FALLBACK) {
@@ -39,6 +53,16 @@ export default function AdminLocalDetailPage() {
         `/admin/restaurants/${id}`,
       );
       setDetail(data);
+      setFicha({
+        name: data.restaurant.name ?? '',
+        description: data.restaurant.description ?? '',
+        address: data.restaurant.address ?? '',
+        city: data.restaurant.city ?? '',
+        region: (data.restaurant as { region?: string }).region ?? '',
+        country: data.restaurant.country ?? '',
+        category: (data.restaurant as { category?: string }).category ?? '',
+        phone: data.restaurant.phone ?? '',
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar el local');
     } finally {
@@ -65,6 +89,34 @@ export default function AdminLocalDetailPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo entrar al local');
       setImpersonating(false);
+    }
+  };
+
+  const handleSaveFicha = async () => {
+    if (!detail) return;
+    setFichaSaving(true);
+    setFichaMsg('');
+    try {
+      const patch: Record<string, string> = {};
+      if (ficha.name && ficha.name !== detail.restaurant.name) patch.name = ficha.name;
+      if (ficha.description !== (detail.restaurant.description ?? '')) patch.description = ficha.description;
+      if (ficha.address !== (detail.restaurant.address ?? '')) patch.address = ficha.address;
+      if (ficha.city !== (detail.restaurant.city ?? '')) patch.city = ficha.city;
+      if (ficha.region !== ((detail.restaurant as { region?: string }).region ?? '')) patch.region = ficha.region;
+      if (ficha.country !== (detail.restaurant.country ?? '')) patch.country = ficha.country;
+      if (ficha.category !== ((detail.restaurant as { category?: string }).category ?? '')) patch.category = ficha.category;
+      if (ficha.phone !== (detail.restaurant.phone ?? '')) patch.phone = ficha.phone;
+      if (Object.keys(patch).length === 0) {
+        setFichaMsg('Sin cambios que guardar');
+        return;
+      }
+      await api.patch(`/admin/restaurants/${detail.restaurant.id}`, patch);
+      setFichaMsg('Ficha actualizada: los slugs geo se recalculan la totalidad');
+      await load();
+    } catch (e) {
+      setFichaMsg(e instanceof Error ? e.message : 'No se pudo actualizar');
+    } finally {
+      setFichaSaving(false);
     }
   };
 
@@ -207,6 +259,63 @@ export default function AdminLocalDetailPage() {
           <Row label="Estado" value={r.status} />
         </dl>
       </InfoCard>
+
+      <div className="bg-white rounded-2xl border border-outline-variant/40 p-5 mt-4">
+        <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+          Ficha pública (Inventario)
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3 mb-3">
+          <div className="space-y-1">
+            <Label className="text-xs text-on-surface-variant">Nombre</Label>
+            <Input value={ficha.name} onChange={(e) => setFicha({ ...ficha, name: e.target.value })} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-on-surface-variant">Rubro</Label>
+            <select
+              value={ficha.category}
+              onChange={(e) => setFicha({ ...ficha, category: e.target.value })}
+              className="h-10 w-full rounded-xl border-none bg-surface-container-low px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <option value="">Sin clasificar</option>
+              {RESTAURANT_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-on-surface-variant">Dirección</Label>
+            <Input value={ficha.address} onChange={(e) => setFicha({ ...ficha, address: e.target.value })} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-on-surface-variant">Teléfono</Label>
+            <Input value={ficha.phone} onChange={(e) => setFicha({ ...ficha, phone: e.target.value })} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-on-surface-variant">Ciudad</Label>
+            <Input value={ficha.city} onChange={(e) => setFicha({ ...ficha, city: e.target.value })} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-on-surface-variant">
+              Provincia/departamento ({ficha.region || 'consultar'})
+            </Label>
+            <Input value={ficha.region} onChange={(e) => setFicha({ ...ficha, region: e.target.value })} />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs text-on-surface-variant">Descripción</Label>
+            <textarea
+              value={ficha.description}
+              onChange={(e) => setFicha({ ...ficha, description: e.target.value })}
+              rows={2}
+              maxLength={500}
+              className="h-20 w-full rounded-xl border-none bg-surface-container-low px-4 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30"
+            />
+          </div>
+        </div>
+        <Button size="sm" onClick={handleSaveFicha} disabled={fichaSaving}>
+          {fichaSaving ? 'Guardando...' : 'Guardar ficha'}
+        </Button>
+        {fichaMsg && <p className="text-xs text-on-surface-variant mt-2">{fichaMsg}</p>}
+      </div>
 
       <div className="bg-white rounded-2xl border border-amber-400/40 p-5 mt-4">
         <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">

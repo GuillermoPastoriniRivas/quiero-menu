@@ -65,9 +65,28 @@ export const AdminCreateUnclaimedRestaurantRequestSchema = z.object({
   category: z.nativeEnum(RestaurantCategory).optional(),
   currency: z.string().length(3).optional(),
   timezone: z.string().max(60).optional(),
+  // Datos públicos para la ficha del inventario (enriquecen el reclamo).
+  address: z.string().max(200).optional(),
+  phone: z.string().max(30).optional(),
+  description: z.string().max(500).optional(),
 });
 export type AdminCreateUnclaimedRestaurantRequestDto = z.infer<
   typeof AdminCreateUnclaimedRestaurantRequestSchema
+>;
+
+/** Edicion de ficha desde el panel admin (locales del inventario y con dueño). */
+export const AdminUpdateRestaurantRequestSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  description: z.string().max(500).optional(),
+  address: z.string().max(200).optional(),
+  city: z.string().max(80).optional(),
+  region: z.string().max(80).optional(),
+  country: z.string().max(60).optional(),
+  category: z.nativeEnum(RestaurantCategory).optional(),
+  phone: z.string().max(30).optional(),
+});
+export type AdminUpdateRestaurantRequestDto = z.infer<
+  typeof AdminUpdateRestaurantRequestSchema
 >;
 
 export const AdminAssignFeaturedRequestSchema = z.object({

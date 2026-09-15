@@ -38,6 +38,8 @@ export interface ActiveStorefrontSummary {
   updatedAt: Date;
   /** Slots de destacado vigentes: la UI decide por contexto (ciudad/rubro). */
   featured: FeaturedSlotRef[];
+  /** false = ficha de inventario sin dueño (reclamable desde el directorio). */
+  claimed: boolean;
 }
 
 const CACHE_TTL_MS = 60_000;
@@ -119,7 +121,10 @@ export class ListActiveStorefrontsUseCase {
 
     const nowDate = new Date();
     return restaurants
-      .filter((r) => withMenu.has(r.id))
+      // El directorio sirve a DOS públicos: claimed=true con carta (lo que es
+      // el producto) y claimed=false = ficha de inventario indexable que
+      // genera el reclamo. Los claimed sin menu no se muestran.
+      .filter((r) => withMenu.has(r.id) || r.claimed === false)
       .map((r) => ({
         slug: r.slug,
         name: r.name,
@@ -142,6 +147,7 @@ export class ListActiveStorefrontsUseCase {
           r.openOverride !== null ||
           (hoursByRestaurant.get(r.id)?.length ?? 0) > 0,
         updatedAt: r.updatedAt,
+        claimed: r.claimed !== false,
         featured: featuredByRestaurant.get(r.id) ?? [],
       }))
       .sort((a, b) => a.name.localeCompare(b.name));

@@ -17,6 +17,10 @@ export interface CreateUnclaimedRestaurantInput {
   category?: RestaurantCategory;
   currency?: string;
   timezone?: string;
+  /** Datos públicos para la ficha del inventario. */
+  address?: string;
+  phone?: string;
+  description?: string;
 }
 
 /**
@@ -44,17 +48,17 @@ export class CreateUnclaimedRestaurantUseCase {
     const restaurant = await this.restaurantRepo.create({
       slug: input.restaurantSlug,
       name: input.restaurantName,
-      description: '',
+      description: input.description ?? '',
       logoUrl: '',
       bannerUrl: '',
-      address: '',
+      address: input.address ?? '',
       city: input.city ?? '',
       citySlug: slugifyCity(input.city ?? ''),
       ...deriveGeoFromCity(input.city ?? '', 'AR'),
       category: input.category ?? RestaurantCategory.NONE,
       country: 'AR',
       coordinates: null,
-      phone: '',
+      phone: input.phone ?? '',
       timezone: input.timezone ?? 'America/Argentina/Buenos_Aires',
       currency: input.currency ?? 'ARS',
       status: RestaurantStatus.ACTIVE,

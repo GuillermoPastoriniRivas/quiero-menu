@@ -40,6 +40,9 @@ export default function AdminNuevoLocalPage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [city, setCity] = useState('Concepción del Uruguay');
   const [category, setCategory] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [description, setDescription] = useState('');
   const [sendEmails, setSendEmails] = useState(true);
   const [isInventory, setIsInventory] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -65,6 +68,9 @@ export default function AdminNuevoLocalPage() {
             category: category || undefined,
             currency: 'ARS',
             timezone: 'America/Argentina/Buenos_Aires',
+            address: address || undefined,
+            phone: phone || undefined,
+            description: description || undefined,
           },
         );
         router.push(`/admin/locales/${created.restaurantId}`);
@@ -213,6 +219,46 @@ export default function AdminNuevoLocalPage() {
             </Label>
             <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} />
           </div>
+          {isInventory && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="address" className="text-xs font-bold text-on-surface-variant ml-1">
+                  Dirección (opcional, para la ficha pública)
+                </Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Urquiza 1234, Concepción del Uruguay"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="text-xs font-bold text-on-surface-variant ml-1">
+                  Teléfono/WA (opcional, para la ficha)
+                </Label>
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+54 9 3442 123456"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="description" className="text-xs font-bold text-on-surface-variant ml-1">
+                  Descripción (opcional, para la ficha)
+                </Label>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  maxLength={500}
+                  rows={2}
+                  placeholder="Una línea: qué vende y qué hace especial al local"
+                  className="h-20 w-full rounded-xl border-none bg-surface-container-low px-4 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30"
+                />
+              </div>
+            </>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="category" className="text-xs font-bold text-on-surface-variant ml-1">
               Rubro

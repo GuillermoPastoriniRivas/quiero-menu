@@ -1,6 +1,7 @@
 import { fetchStorefrontData } from "@/lib/storefront-data";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontJsonLd } from "@/components/storefront/storefront-json-ld";
+import { FichaView } from "@/components/storefront/ficha-view";
 
 export default async function StorefrontPage({
   params,
@@ -18,9 +19,22 @@ export default async function StorefrontPage({
   // SSR: contenido del menú en el HTML + JSON-LD. El cliente refetchea en mount
   // para tener isOpen/disponibilidad en vivo.
   const data = await fetchStorefrontData(slug);
+  if (!data) return <StorefrontClient slug={slug} initialData={null} />;
+
+  // Local de inventario (sin dueño): ficha informativa, no el storefront de
+  // pedidos. La ficha es la landing del negocio; el CTA es el reclamo.
+  if (data.restaurant.claimed === false) {
+    return (
+      <>
+        <StorefrontJsonLd data={data} slug={slug} />
+        <FichaView data={data} slug={slug} />
+      </>
+    );
+  }
+
   return (
     <>
-      {data && <StorefrontJsonLd data={data} slug={slug} />}
+      <StorefrontJsonLd data={data} slug={slug} />
       <StorefrontClient slug={slug} initialData={data} />
     </>
   );
