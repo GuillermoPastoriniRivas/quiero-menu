@@ -99,6 +99,7 @@ export function NearbyStores({
     () => userPosStore.getServerSnapshot(),
   );
   const [locating, setLocating] = useState(false);
+  const [denied, setDenied] = useState(false);
   const askedRef = useRef(false);
 
   const startGeolocation = useCallback(() => {
@@ -113,16 +114,20 @@ export function NearbyStores({
         });
         setLocating(false);
       },
-      () => setLocating(false),
+      (err) => {
+        setLocating(false);
+        if (err.code === err.PERMISSION_DENIED) setDenied(true);
+      },
       { timeout: 10_000, maximumAge: 300_000 },
     );
   }, []);
 
-  // Si no hay posición guardada (o expiró), pedirla: permiso previo
-  // concedido => silencioso; si no, el browser muestra su prompt.
+  // Si no hay posición guardada (o expiró), pedirla SOLO si el permiso está
+  // concedido o es indeterminado: si el usuario lo negó, no volvemos a
+  // molestarlo en cada visita ( queda el aviso con la explicación).
   useEffect(() => {
     if (askedRef.current) return;
-    askedRef.current = true;
+    let cancelled = false;
     try {
       const stored: UserPos | null = rawPos
         ? (JSON.parse(rawPos) as UserPos)
@@ -131,9 +136,25 @@ export function NearbyStores({
     } catch {
       // JSON corrupto en storage: pedimos de nuevo.
     }
-    // Fuera del cuerpo sincrónico: evita cascada de renders en hidratación.
-    const timer = setTimeout(startGeolocation, 0);
-    return () => clearTimeout(timer);
+    if (navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: "geolocation" })
+        .then((p) => {
+          if (cancelled) return;
+          setDenied(p.state === "denied");
+          if (p.state !== "denied") startGeolocation();
+        })
+        .catch(() => {
+          if (!cancelled) startGeolocation();
+        });
+    } else {
+      // Fuera del cuerpo sincrónico: evita cascada de renders en hidratación.
+      const timer = setTimeout(startGeolocation, 0);
+      return () => clearTimeout(timer);
+    }
+    return () => {
+      cancelled = true;
+    };
   }, [rawPos, startGeolocation]);
 
   const requestManually = useCallback(() => {
@@ -159,17 +180,30 @@ export function NearbyStores({
 
   if (nearby.length === 0) {
     if (locating) return null;
+    // Con posición guardada pero sin locales geo-localizados cerca: no
+    // re-pedimos nada, explicamos que aún no hay cobertura cerca de ahí.
+    if (pos) {
+      return (
+        <div className="mt-8 rounded-2xl border border-outline-variant/40 bg-surface-container-low px-4 py-3">
+          <p className="text-sm text-on-surface-variant">
+            Todavía no hay locales con su carta publicada cerca tuyo. Podés ver
+            todo el directorio en la lista de abajo.
+          </p>
+        </div>
+      );
+    }
+    const copy = denied
+      ? "La ubicación está bloqueada para este sitio. Activla en el navegador para ver los locales más cercanos primero."
+      : "Compartí tu ubicación para ver los locales más cercanos primero.";
     return (
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-outline-variant/40 bg-surface-container-low px-4 py-3">
-        <p className="text-sm text-on-surface-variant">
-          Compartí tu ubicación para ver los locales más cercanos primero.
-        </p>
+        <p className="text-sm text-on-surface-variant">{copy}</p>
         <button
           type="button"
           onClick={requestManually}
           className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/20"
         >
-          Usar mi ubicación
+          {denied ? "Intentar de nuevo" : "Usar mi ubicación"}
         </button>
       </div>
     );

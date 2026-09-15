@@ -8,6 +8,7 @@ import {
   UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import {
   CurrentUser,
   RequestUser,
@@ -33,6 +34,10 @@ export class OnboardingController {
   ) {}
 
   @Public()
+  @Throttle({
+    short: { limit: 3, ttl: 60_000 },
+    medium: { limit: 10, ttl: 3_600_000 },
+  })
   @Post('analyze')
   @UseInterceptors(
     FilesInterceptor('images', 2, {

@@ -127,7 +127,7 @@ export class ApproveStoreClaimUseCase {
       type: 'password_reset',
       expiresAt,
     });
-    const setUrl = `${this.frontendUrl}/reset-password?token=${rawToken}`;
+    const setUrl = `${this.frontendUrl}/reset-password?token=${rawToken}&source=claim`;
     await this.emailService.send({
       to: email,
       subject: `Tu local ${restaurantName} ya es tuyo — creá tu contraseña`,

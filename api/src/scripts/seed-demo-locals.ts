@@ -31,6 +31,8 @@ interface DemoLocalSeed {
   category: string;
   /** false = inventario reclamable: muestra la ficha con banner (v0 demo). */
   claimed?: boolean;
+  /** Coordenadas del local: sin ellas NearbyStores no puede ordenar por distancia. */
+  coordinates: { lat: number; lng: number };
   /** Galería demo (hotlinks Unsplash validados 200 image/* al escribirlos). */
   gallery: { url: string; source: 'external'; alt: string }[];
   banner: string;
@@ -53,6 +55,7 @@ const DEMOS: DemoLocalSeed[] = [
     phone: '+54 9 3442 553102',
     category: 'heladeria',
     claimed: false,
+    coordinates: { lat: -32.3233, lng: -58.2384 },
     banner:
       'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=1600&q=80',
     gallery: [
@@ -91,6 +94,7 @@ const DEMOS: DemoLocalSeed[] = [
     address: 'General Urquiza 1243, Concepción del Uruguay',
     phone: '+54 9 3442 551204',
     category: 'hamburgueseria',
+    coordinates: { lat: -32.3213, lng: -58.2402 },
     banner:
       'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=1600&q=80',
     gallery: [
@@ -211,6 +215,7 @@ const DEMOS: DemoLocalSeed[] = [
     address: 'Almirante Brown 1890, Concepción del Uruguay',
     phone: '+54 9 3442 557703',
     category: 'pizzeria',
+    coordinates: { lat: -32.3195, lng: -58.2353 },
     banner:
       'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1600&q=80',
     gallery: [
@@ -342,6 +347,7 @@ async function main(): Promise<void> {
       country: 'AR',
       countrySlug: 'argentina',
       category: demo.category,
+      coordinates: demo.coordinates,
       phone: demo.phone,
       bannerUrl: demo.banner,
       photoGallery: demo.gallery,

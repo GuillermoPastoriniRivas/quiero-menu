@@ -21,6 +21,7 @@ export default function ResetPasswordPage() {
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  const isClaim = searchParams.get('source') === 'claim';
   const router = useRouter();
 
   const [password, setPassword] = useState('');
@@ -76,7 +77,7 @@ function ResetPasswordContent() {
               <MaterialIcon name="link_off" size="lg" className="text-on-error-container" />
             </div>
             <h1 className="text-2xl font-bold text-on-surface mb-2" style={{ fontFamily: 'var(--font-heading)' }}>Enlace invalido</h1>
-            <p className="text-on-surface-variant text-sm mb-6">Este enlace no contiene un token valido para restablecer tu contrasena.</p>
+            <p className="text-on-surface-variant text-sm mb-6">{isClaim ? 'Este enlace de creacion de contrasena no contiene un token valido. Podes pedir uno nuevo desde "Olvide mi contrasena".' : 'Este enlace no contiene un token valido para restablecer tu contrasena.'}</p>
             <Link href="/forgot-password" className="text-primary font-semibold text-sm hover:underline">Solicitar un nuevo enlace</Link>
           </div>
         </main>
@@ -102,8 +103,8 @@ function ResetPasswordContent() {
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
                 <MaterialIcon name="check_circle" size="lg" className="text-primary" />
               </div>
-              <h1 className="text-2xl font-bold text-on-surface mb-2" style={{ fontFamily: 'var(--font-heading)' }}>Contrasena restablecida</h1>
-              <p className="text-on-surface-variant text-sm mb-6">Tu contrasena fue actualizada correctamente. Ya podes iniciar sesion.</p>
+              <h1 className="text-2xl font-bold text-on-surface mb-2" style={{ fontFamily: 'var(--font-heading)' }}>{isClaim ? 'Contrasena creada' : 'Contrasena restablecida'}</h1>
+              <p className="text-on-surface-variant text-sm mb-6">{isClaim ? 'Listo, tu cuenta esta activa. Inicia sesion para empezar a manejar tu local.' : 'Tu contrasena fue actualizada correctamente. Ya podes iniciar sesion.'}</p>
               <Button className="w-full" size="lg" onClick={() => router.push('/login')}>
                 Iniciar sesion
               </Button>
@@ -111,8 +112,8 @@ function ResetPasswordContent() {
           ) : (
             <>
               <div className="mb-8 text-center">
-                <h1 className="text-2xl font-bold text-on-surface mb-2" style={{ fontFamily: 'var(--font-heading)' }}>Nueva contrasena</h1>
-                <p className="text-on-surface-variant text-sm">Ingresa tu nueva contrasena.</p>
+                <h1 className="text-2xl font-bold text-on-surface mb-2" style={{ fontFamily: 'var(--font-heading)' }}>{isClaim ? 'Crea tu contrasena' : 'Nueva contrasena'}</h1>
+                <p className="text-on-surface-variant text-sm">{isClaim ? 'Elegi una contrasena para activar tu cuenta de dueno.' : 'Ingresa tu nueva contrasena.'}</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -158,7 +159,7 @@ function ResetPasswordContent() {
                 </div>
 
                 <Button type="submit" className="w-full mt-6" size="lg" disabled={loading}>
-                  {loading ? 'Guardando...' : 'Restablecer contrasena'}
+                  {loading ? 'Guardando...' : isClaim ? 'Crear contrasena' : 'Restablecer contrasena'}
                 </Button>
               </form>
             </>
