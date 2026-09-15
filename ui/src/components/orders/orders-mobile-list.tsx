@@ -11,7 +11,7 @@ import { NEXT_STATUS, STATUS_BADGE_VARIANT, STATUS_LABELS } from './status';
 
 interface OrdersMobileListProps {
   orders: OrderWithRedaction[];
-  currency?: string;
+  currency: string;
   onOpen: (order: OrderWithRedaction) => void;
   onAdvance: (order: OrderWithRedaction) => void;
 }

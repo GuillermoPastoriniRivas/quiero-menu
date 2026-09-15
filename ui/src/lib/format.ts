@@ -1,14 +1,24 @@
-export function formatCurrency(amount: number, currency = 'COP'): string {
-  return new Intl.NumberFormat('es-CO', {
+export function formatCurrency(amount: number, currency: string): string {
+  return new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency,
+    currencyDisplay: 'narrowSymbol',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(amount) + ` ${currency}`;
+}
+
+/** Para renderizar el número y la unidad con tamaños distintos. */
+export function formatCurrencyParts(amount: number, currency: string): {
+  number: string;
+  currency: string;
+} {
+  const formatted = formatCurrency(amount, currency);
+  return { number: formatted.slice(0, -currency.length - 1), currency };
 }
 
 export function formatARS(amount: number): string {
-  return `$${amount.toLocaleString('es-AR')}`;
+  return formatCurrency(amount, 'ARS');
 }
 
 export function formatDate(date: string | Date): string {

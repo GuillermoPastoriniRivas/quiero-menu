@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { QRCodeSVG } from 'qrcode.react';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { Money } from '@/components/ui/money';
 import { Logo } from '@/components/ui/logo';
 import { CookielessAnalytics } from '@/components/analytics/cookieless-analytics';
 import { LandingNav } from '@/components/landing/landing-nav';
@@ -933,9 +934,7 @@ export default async function LandingPage() {
                   </span>
                 </div>
                 <p className="mt-6">
-                  <span className="font-[family-name:var(--font-heading)] text-5xl font-extrabold">
-                    $0
-                  </span>
+                  <Money amount={0} currency="ARS" className="font-[family-name:var(--font-heading)] text-5xl font-extrabold" />
                   <span className="text-on-surface-variant"> / mes</span>
                 </p>
                 <ul className="mt-6 flex-1 space-y-3 text-sm">
@@ -972,9 +971,7 @@ export default async function LandingPage() {
                   <p className="text-sm text-on-surface-variant">Para el local que ya vende todos los días</p>
                 </div>
                 <p className="mt-6">
-                  <span className="font-[family-name:var(--font-heading)] text-5xl font-extrabold">
-                    $15.000
-                  </span>
+                  <Money amount={15000} currency="ARS" className="font-[family-name:var(--font-heading)] text-5xl font-extrabold" />
                   <span className="text-on-surface-variant"> / mes</span>
                 </p>
                 <ul className="mt-6 flex-1 space-y-3 text-sm">

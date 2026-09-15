@@ -4,6 +4,7 @@ import {
 } from '../../../domain/repositories/order.repository.js';
 import { OrderItemRepository } from '../../../domain/repositories/order-item.repository.js';
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
+import { RestaurantRepository } from '../../../domain/repositories/restaurant.repository.js';
 import { Order } from '../../../domain/entities/order.entity.js';
 import { OrderItem } from '../../../domain/entities/order-item.entity.js';
 import { PlanTier } from '../../../domain/enums/plan-tier.enum.js';
@@ -23,7 +24,7 @@ export interface PlanInfo {
 }
 
 export interface ListOrdersOutput {
-  data: OrderWithRedaction[];
+  data: (OrderWithRedaction & { currency: string })[];
   meta: { total: number; page: number; pages: number };
   planInfo: PlanInfo;
 }
@@ -63,6 +64,7 @@ export class ListOrdersUseCase {
     private readonly orderRepo: OrderRepository,
     private readonly orderItemRepo: OrderItemRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
+    private readonly restaurantRepo: RestaurantRepository,
   ) {}
 
   async execute(filters: OrderFilters): Promise<ListOrdersOutput> {
@@ -133,9 +135,13 @@ export class ListOrdersUseCase {
       itemsByOrderId.set(item.orderId, list);
     }
 
+    // Un solo query: la moneda es del restaurante, no del pedido
+    const restaurant = await this.restaurantRepo.findById(filters.restaurantId);
+
     return {
       data: data.map((o) => ({
         ...o,
+        currency: restaurant?.currency ?? 'ARS',
         items: o.redacted ? [] : (itemsByOrderId.get(o.id) ?? []),
       })),
       meta: result.meta,

@@ -36,7 +36,7 @@ export function OrderDetailDialog({
   onRetryItems,
   onStatusChange,
 }: OrderDetailDialogProps) {
-  const currency = restaurant?.currency;
+  const currency = restaurant?.currency ?? 'ARS';
   const nextAction = order ? NEXT_STATUS[order.status] : undefined;
   const trackingHref =
     order && restaurant

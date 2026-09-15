@@ -1,10 +1,11 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/card';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import type { OrderWithRedaction } from '@/types';
 import { OrderStatus } from '@/types';
-import { formatCurrency } from '@/lib/format';
+import { Money } from '@/components/ui/money';
 import { isActiveStatus } from './status';
 
 function isSameDay(a: string | Date, b: string | Date): boolean {
@@ -19,7 +20,7 @@ function isSameDay(a: string | Date, b: string | Date): boolean {
 
 interface OrdersKpisProps {
   orders: OrderWithRedaction[];
-  currency?: string;
+  currency: string;
 }
 
 export function OrdersKpis({ orders, currency }: OrdersKpisProps) {
@@ -32,11 +33,11 @@ export function OrdersKpis({ orders, currency }: OrdersKpisProps) {
   const revenueToday = todayValid.reduce((sum, o) => sum + o.total, 0);
   const avgTicket = todayValid.length > 0 ? revenueToday / todayValid.length : 0;
 
-  const kpis = [
+  const kpis: { label: string; value: ReactNode; icon: string; tone: string }[] = [
     { label: 'Activos', value: String(active), icon: 'rocket_launch', tone: 'text-primary bg-primary/10' },
     { label: 'Pedidos hoy', value: String(todayOrders.length), icon: 'receipt_long', tone: 'text-tertiary bg-tertiary/10' },
-    { label: 'Ingresos hoy', value: formatCurrency(revenueToday, currency), icon: 'payments', tone: 'text-success bg-success/10' },
-    { label: 'Ticket promedio', value: formatCurrency(avgTicket, currency), icon: 'query_stats', tone: 'text-on-surface-variant bg-surface-container-low' },
+    { label: 'Ingresos hoy', value: <Money amount={revenueToday} currency={currency} />, icon: 'payments', tone: 'text-success bg-success/10' },
+    { label: 'Ticket promedio', value: <Money amount={avgTicket} currency={currency} />, icon: 'query_stats', tone: 'text-on-surface-variant bg-surface-container-low' },
   ];
 
   return (

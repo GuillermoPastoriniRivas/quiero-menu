@@ -349,7 +349,9 @@ export class SearchStorefrontsUseCase {
       if (!restaurant) return false;
       // Mismo criterio que el index: el local con carta O la ficha de
       // inventario sin dueño son resultados válidos.
-      return restaurantsWithMenu.has(restaurant.id) || restaurant.claimed === false;
+      return (
+        restaurantsWithMenu.has(restaurant.id) || restaurant.claimed === false
+      );
     });
     for (const summary of publicSummaries) {
       const r = restaurantsBySlug.get(summary.slug)!;

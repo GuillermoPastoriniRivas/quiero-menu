@@ -182,6 +182,8 @@ export interface Order {
   readyAt: string | null;
   deliveredAt: string | null;
   statusHistory?: StatusTransition[];
+  /** Moneda del restaurante, la estampa ListOrders para formatear montos. */
+  currency?: string;
 }
 
 export interface StatusTransition {

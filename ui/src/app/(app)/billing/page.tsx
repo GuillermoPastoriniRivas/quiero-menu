@@ -160,7 +160,7 @@ export default function BillingPage() {
               <p className="text-3xl font-extrabold">
                 {isPro ? 'Pro' : 'Gratis'}
                 <span className="text-sm font-normal text-muted-foreground">
-                  {' '}{isPro ? `· ${formatARS(limits?.priceMonthly ?? PRO_PRICE)}/mes` : ' · $0/mes'}
+                  {' '}{isPro ? `· ${formatARS(limits?.priceMonthly ?? PRO_PRICE)}/mes` : ' · $0 ARS/mes'}
                 </span>
               </p>
               {isPro && sub && (

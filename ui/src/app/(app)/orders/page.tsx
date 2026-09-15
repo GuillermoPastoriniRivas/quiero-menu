@@ -169,7 +169,7 @@ export default function OrdersPage() {
     cancelled: orders.filter((o) => o.status === OrderStatus.CANCELLED).length,
   };
 
-  const currency = restaurant?.currency;
+  const currency = restaurant?.currency ?? 'ARS';
   const filtersActive = q !== '' || deliveryFilter !== 'all' || tab !== 'all';
 
   const advance = (order: OrderWithRedaction) => {

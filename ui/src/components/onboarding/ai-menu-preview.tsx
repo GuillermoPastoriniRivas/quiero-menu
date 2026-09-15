@@ -332,7 +332,7 @@ export function AiMenuPreview({
                                 {v.name}
                                 {v.priceOverride != null && (
                                   <span className="font-bold text-primary">
-                                    {formatCurrency(v.priceOverride)}
+                                    {formatCurrency(v.priceOverride, result.restaurant.currency ?? 'ARS')}
                                   </span>
                                 )}
                               </span>
@@ -348,7 +348,7 @@ export function AiMenuPreview({
                               >
                                 {opt.name}
                                 {opt.priceDelta > 0 && (
-                                  <span className="font-bold">+{formatCurrency(opt.priceDelta)}</span>
+                                  <span className="font-bold">+{formatCurrency(opt.priceDelta, result.restaurant.currency ?? 'ARS')}</span>
                                 )}
                                 <span className="text-primary/60">({opt.optionGroup})</span>
                               </span>

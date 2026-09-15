@@ -936,12 +936,18 @@ const useCaseProviders = [
   },
   {
     provide: 'ListOrdersUseCase',
-    useFactory: (orderRepo: any, orderItemRepo: any, subRepo: any) =>
-      new ListOrdersUseCase(orderRepo, orderItemRepo, subRepo),
+    useFactory: (
+      orderRepo: any,
+      orderItemRepo: any,
+      subRepo: any,
+      restaurantRepo: any,
+    ) =>
+      new ListOrdersUseCase(orderRepo, orderItemRepo, subRepo, restaurantRepo),
     inject: [
       'OrderRepository',
       'OrderItemRepository',
       'SubscriptionRepository',
+      'RestaurantRepository',
     ],
   },
   {

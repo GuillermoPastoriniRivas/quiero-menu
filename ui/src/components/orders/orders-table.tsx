@@ -20,7 +20,7 @@ import { NEXT_STATUS, STATUS_BADGE_VARIANT, STATUS_LABELS } from './status';
 
 interface OrdersTableProps {
   orders: OrderWithRedaction[];
-  currency?: string;
+  currency: string;
   onOpen: (order: OrderWithRedaction) => void;
   onAdvance: (order: OrderWithRedaction) => void;
 }

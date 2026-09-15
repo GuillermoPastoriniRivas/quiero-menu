@@ -34,7 +34,7 @@ export const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; lab
 
 interface RecentOrdersListProps {
   orders: OrderWithRedaction[];
-  currency?: string;
+  currency: string;
   /** Si no se pasa, la lista es solo-lectura (la operacion vive en Pedidos) */
   onAdvance?: (order: OrderWithRedaction) => void;
 }

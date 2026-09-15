@@ -9,6 +9,7 @@ import { MaterialIcon } from '@/components/ui/material-icon';
 import type { AnalyticsOverview } from '@/types';
 import { OrderStatus } from '@/types';
 import { formatCurrency, formatMinutes } from '@/lib/format';
+import { Money } from '@/components/ui/money';
 
 const STATUS_LABELS: Record<string, string> = {
   [OrderStatus.NEW]: 'Nuevos',
@@ -119,7 +120,7 @@ export default function AnalyticsPage() {
             <Card size="sm" className="shadow-sm border border-outline-variant/10">
               <CardContent className="px-4 py-3 space-y-1">
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ingresos</p>
-                <p className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}>{formatCurrency(data.summary.revenue, currency)}</p>
+                <p className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}><Money amount={data.summary.revenue} currency={currency} /></p>
                 {deltaBadge(data.deltas.revenue)}
               </CardContent>
             </Card>
@@ -133,7 +134,7 @@ export default function AnalyticsPage() {
             <Card size="sm" className="shadow-sm border border-outline-variant/10">
               <CardContent className="px-4 py-3 space-y-1">
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Ticket promedio</p>
-                <p className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}>{formatCurrency(data.summary.avgTicket, currency)}</p>
+                <p className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}><Money amount={data.summary.avgTicket} currency={currency} /></p>
               </CardContent>
             </Card>
             <Card size="sm" className="shadow-sm border border-outline-variant/10">

@@ -120,36 +120,38 @@ export class ListActiveStorefrontsUseCase {
     }
 
     const nowDate = new Date();
-    return restaurants
-      // El directorio sirve a DOS públicos: claimed=true con carta (lo que es
-      // el producto) y claimed=false = ficha de inventario indexable que
-      // genera el reclamo. Los claimed sin menu no se muestran.
-      .filter((r) => withMenu.has(r.id) || r.claimed === false)
-      .map((r) => ({
-        slug: r.slug,
-        name: r.name,
-        city: r.city,
-        citySlug: r.citySlug ?? '',
-        region: r.region ?? '',
-        countrySlug: r.countrySlug ?? '',
-        regionSlug: r.regionSlug ?? '',
-        category: r.category ?? '',
-        description: r.description,
-        logoUrl: r.logoUrl,
-        bannerUrl: r.bannerUrl,
-        phone: r.phone,
-        isOpen: this.hoursPolicy.isOpen(
-          r,
-          hoursByRestaurant.get(r.id) ?? [],
-          nowDate,
-        ).isOpen,
-        hoursKnown:
-          r.openOverride !== null ||
-          (hoursByRestaurant.get(r.id)?.length ?? 0) > 0,
-        updatedAt: r.updatedAt,
-        claimed: r.claimed !== false,
-        featured: featuredByRestaurant.get(r.id) ?? [],
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return (
+      restaurants
+        // El directorio sirve a DOS públicos: claimed=true con carta (lo que es
+        // el producto) y claimed=false = ficha de inventario indexable que
+        // genera el reclamo. Los claimed sin menu no se muestran.
+        .filter((r) => withMenu.has(r.id) || r.claimed === false)
+        .map((r) => ({
+          slug: r.slug,
+          name: r.name,
+          city: r.city,
+          citySlug: r.citySlug ?? '',
+          region: r.region ?? '',
+          countrySlug: r.countrySlug ?? '',
+          regionSlug: r.regionSlug ?? '',
+          category: r.category ?? '',
+          description: r.description,
+          logoUrl: r.logoUrl,
+          bannerUrl: r.bannerUrl,
+          phone: r.phone,
+          isOpen: this.hoursPolicy.isOpen(
+            r,
+            hoursByRestaurant.get(r.id) ?? [],
+            nowDate,
+          ).isOpen,
+          hoursKnown:
+            r.openOverride !== null ||
+            (hoursByRestaurant.get(r.id)?.length ?? 0) > 0,
+          updatedAt: r.updatedAt,
+          claimed: r.claimed !== false,
+          featured: featuredByRestaurant.get(r.id) ?? [],
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    );
   }
 }

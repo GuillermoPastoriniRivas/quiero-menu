@@ -254,7 +254,7 @@ export default function KitchenBoardPage() {
                                     <p className="text-xs italic text-yellow-300 mt-0.5">{item.notes}</p>
                                   )}
                                 </div>
-                                <span className="text-on-surface-variant ml-2 shrink-0">{formatCurrency(item.totalPrice)}</span>
+                                <span className="text-on-surface-variant ml-2 shrink-0">{formatCurrency(item.totalPrice, order.currency ?? 'ARS')}</span>
                               </div>
                             ))}
                           </div>
@@ -269,7 +269,7 @@ export default function KitchenBoardPage() {
                         <div className="bg-surface-container rounded-lg p-3 space-y-1">
                           <div className="flex justify-between text-sm">
                             <span className="text-on-surface-variant">Total</span>
-                            <span className="font-bold">{formatCurrency(order.total)}</span>
+                            <span className="font-bold">{formatCurrency(order.total, order.currency ?? 'ARS')}</span>
                           </div>
                           {order.paymentMethod && (
                             <div className="flex justify-between text-xs text-on-surface-variant">

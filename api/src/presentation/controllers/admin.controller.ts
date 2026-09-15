@@ -172,7 +172,8 @@ export class AdminController {
 
   /** Alta de inventario: local sin dueño (claimed=false). */
   @Throttle({ short: { limit: 10, ttl: 60_000 } })
-  @Post('restaurants/unclaimed')  async createUnclaimed(
+  @Post('restaurants/unclaimed')
+  async createUnclaimed(
     @CurrentUser() admin: RequestUser,
     @Body(new ZodValidationPipe(AdminCreateUnclaimedRestaurantRequestSchema))
     body: AdminCreateUnclaimedRestaurantRequestDto,
@@ -210,7 +211,9 @@ export class AdminController {
   ) {
     const result = await this.updateRestaurantUseCase.execute(id, body);
     if (!result.ok) throw new NotFoundException(result.error.message);
-    this.audit.log('admin.restaurant_updated', admin._id, id, { fields: Object.keys(body) });
+    this.audit.log('admin.restaurant_updated', admin._id, id, {
+      fields: Object.keys(body),
+    });
     return { restaurant: result.value };
   }
 

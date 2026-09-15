@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { RecentOrdersList } from '@/components/dashboard/recent-orders-list';
 import { OrderStatus, PlanTier, StorefrontData, AnalyticsOverview } from '@/types';
 import { formatCurrency } from '@/lib/format';
+import { Money } from '@/components/ui/money';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -241,7 +242,7 @@ export default function DashboardPage() {
         <div className="bg-white p-4 rounded-xl border border-outline-variant/10 shadow-sm">
           <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Ingresos</p>
           <p className="text-2xl font-extrabold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
-            {todayRevenue > 0 ? formatCurrency(todayRevenue, restaurant?.currency) : <span className="text-on-surface-variant/30">$0</span>}
+            {todayRevenue > 0 ? <Money amount={todayRevenue} currency={restaurant?.currency ?? 'ARS'} /> : <span className="text-on-surface-variant/30">$0</span>}
           </p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-outline-variant/10 shadow-sm">
@@ -253,7 +254,7 @@ export default function DashboardPage() {
         <div className="bg-white p-4 rounded-xl border border-outline-variant/10 shadow-sm">
           <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Ticket Promedio</p>
           <p className="text-2xl font-extrabold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
-            {avgTicket > 0 ? formatCurrency(avgTicket, restaurant?.currency) : <span className="text-on-surface-variant/30">$0</span>}
+            {avgTicket > 0 ? <Money amount={avgTicket} currency={restaurant?.currency ?? 'ARS'} /> : <span className="text-on-surface-variant/30">$0</span>}
           </p>
         </div>
         <Link href="/analytics" className="bg-white p-4 rounded-xl border border-green-600/20 shadow-sm hover:border-green-600/40 transition-colors">
@@ -300,7 +301,7 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-outline-variant/10 lg:col-span-2">
-              <RecentOrdersList orders={recentOrders} currency={restaurant?.currency} />
+              <RecentOrdersList orders={recentOrders} currency={restaurant?.currency ?? 'ARS'} />
             </div>
             <div className="space-y-4">
               {activeOrders.length > 0 && (

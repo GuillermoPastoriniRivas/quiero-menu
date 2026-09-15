@@ -57,6 +57,7 @@ export default function MenuPage() {
 
   const [richCategories, setRichCategories] = useState<RichCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [menuCurrency, setMenuCurrency] = useState('ARS');
 
   /* --- expanded state --- */
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
@@ -88,6 +89,7 @@ export default function MenuPage() {
     setLoading(true);
     try {
       const data = await api.get<StorefrontData>(`/storefront/${user.restaurantSlug}`);
+      setMenuCurrency(data.restaurant.currency);
       setRichCategories(data.categories);
     } catch {
       toast.error('No se pudo cargar el menu');
@@ -544,7 +546,7 @@ export default function MenuPage() {
                               className="whitespace-nowrap rounded px-1.5 py-0.5 text-sm font-semibold transition-colors hover:bg-muted"
                               title="Editar precio"
                             >
-                              {formatCurrency(item.basePrice)}
+                              {formatCurrency(item.basePrice, menuCurrency)}
                             </button>
                           )}
                           {!item.isAvailable && <Badge variant="secondary">No disponible</Badge>}
@@ -606,7 +608,7 @@ export default function MenuPage() {
                                     >
                                       {v.priceOverride != null ? (
                                         <span className="text-xs text-muted-foreground">
-                                          {formatCurrency(v.priceOverride)}
+                                          {formatCurrency(v.priceOverride, menuCurrency)}
                                         </span>
                                       ) : (
                                         <MaterialIcon name="payments" size="xs" className="text-muted-foreground/60" />
@@ -682,7 +684,7 @@ export default function MenuPage() {
                                             title="Editar precio"
                                           >
                                             <Badge variant="secondary" className="text-xs">
-                                              +{formatCurrency(opt.priceDelta)}
+                                              +{formatCurrency(opt.priceDelta, menuCurrency)}
                                             </Badge>
                                           </button>
                                         ))}
