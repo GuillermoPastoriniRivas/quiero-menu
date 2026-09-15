@@ -135,7 +135,7 @@ interface MaterialIconProps {
 
 export function MaterialIcon({ name, size = "md", fill = false, className }: MaterialIconProps) {
   const paths = (MATERIAL_SYMBOL_PATHS as Record<string, (typeof MATERIAL_SYMBOL_PATHS)[keyof typeof MATERIAL_SYMBOL_PATHS]>)[name] ?? MATERIAL_SYMBOL_PATHS.error;
-  const d = (fill && paths.fill) || paths.o;
+  const d = (fill && paths.fill) || paths.d;
   return (
     <svg
       viewBox={paths.vb}

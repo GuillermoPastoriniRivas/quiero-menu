@@ -1,0 +1,19 @@
+# quiero.menu
+
+> Menu digital gratis para restaurantes, rotiserias, cafes y negocios gastronomicos. Cada negocio crea su menu web con QR, recibe pedidos directos por WhatsApp y paga un plan mensual fijo: sin comisiones por pedido y sin apps de Delivery de terceros.
+
+Sitio principal: https://quiero.menu — landing con la propuesta completa
+Crear cuenta gratis: https://quiero.menu/signup — sin tarjeta de credito
+Panel: https://quiero.menu/dashboard — app de gestion (requiere login), pedidos, menu y analisis de ventas
+Publicar en redes: https://quiero.menu/publicar — pagina informativa de publicacion
+
+## Politicas
+
+- Privacidad: https://quiero.menu/privacy
+- Terminos: https://quiero.menu/terms
+
+## Contenido publico
+
+- Cada negocio publicado tiene su propia pagina en https://quiero.menu/{slug} optimizada para SEO, con el menu en HTML y datos estructurados JSON-LD
+- El sitio se indexa en Google (robots.txt, sitemap.xml dinamico)
+- Tracking de pedidos publico: https://quiero.menu/tracking/{code}

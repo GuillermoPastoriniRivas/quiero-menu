@@ -347,6 +347,7 @@ function QrCardVisual() {
         bgColor="transparent"
         fgColor="#261815"
         level="M"
+        title="Código QR de ejemplo para tu local"
       />
       <span className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-ambient ring-1 ring-outline-variant/40">
         <MaterialIcon name="print" size="xs" className="text-primary" />
@@ -1085,7 +1086,7 @@ export default async function LandingPage() {
               href="https://asis.chat"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex shrink-0 items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+              className="flex shrink-0 items-center gap-1.5 text-sm font-bold text-[var(--primary-container)] hover:underline"
             >
               Conocer asis.chat
               <MaterialIcon name="open_in_new" size="xs" />

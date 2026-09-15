@@ -29,6 +29,8 @@ interface DemoLocalSeed {
   address: string;
   phone: string;
   category: string;
+  /** false = inventario reclamable: muestra la ficha con banner (v0 demo). */
+  claimed?: boolean;
   opener: {
     dayOfWeek: number;
     opensAt: string;
@@ -39,6 +41,26 @@ interface DemoLocalSeed {
 }
 
 const DEMOS: DemoLocalSeed[] = [
+  {
+    slug: 'heladeria-manhattan',
+    name: 'Heladería Manhattan',
+    description:
+      'Helado artesanal por kilo y cucuruchos desde 1987. Cremas de dulce de leche granizado, frutilla a la villa y chocolate con avellanas.',
+    address: 'Rocamora 882, Concepción del Uruguay',
+    phone: '+54 9 3442 553102',
+    category: 'heladeria',
+    claimed: false,
+    opener: [
+      { dayOfWeek: 0, opensAt: '11:00', closesAt: '23:30', isClosed: false },
+      { dayOfWeek: 1, opensAt: '11:00', closesAt: '23:30', isClosed: false },
+      { dayOfWeek: 2, opensAt: '11:00', closesAt: '23:30', isClosed: false },
+      { dayOfWeek: 3, opensAt: '11:00', closesAt: '23:30', isClosed: false },
+      { dayOfWeek: 4, opensAt: '11:00', closesAt: '00:30', isClosed: false },
+      { dayOfWeek: 5, opensAt: '11:00', closesAt: '00:30', isClosed: false },
+      { dayOfWeek: 6, opensAt: '11:00', closesAt: '00:30', isClosed: false },
+    ],
+    sections: [],
+  },
   {
     slug: 'hamburgueseria-el-ojin',
     name: 'Hamburguesería El Ojin',
@@ -264,7 +286,7 @@ async function main(): Promise<void> {
       currency: 'ARS',
       timezone: 'America/Argentina/Buenos_Aires',
       status: 'active',
-      claimed: true,
+      claimed: demo.claimed !== false,
       openOverride: null,
       customDomain: null,
       socialLinks: null,
