@@ -45,11 +45,9 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
       </header>
 
       <main className="mx-auto flex max-w-4xl flex-col px-5 pb-14 pt-4 sm:px-8 sm:pb-14 sm:pt-6">
-        {/* Mobile: la galería va después de la descripción y los botones de
-            contacto, y el alert de reclamo queda al fondo de la página.
-            Desktop conserva el orden original (reclamo, banner, galería,
-            ficha). Ver orders en cada bloque. */}
-        <div className="order-last mt-10 rounded-3xl border border-primary/30 bg-primary/5 p-6 sm:p-8 md:order-first md:mt-0">
+        {/* Orden (mobile y desktop): banner -> ficha (desc + botones) ->
+            galería -> alert de reclamo al fondo. Ver orders en cada bloque. */}
+        <div className="order-last mt-10 rounded-3xl border border-primary/30 bg-primary/5 p-6 sm:p-8">
           <h2 className="font-[family-name:var(--font-heading)] text-xl font-extrabold text-on-surface">
             ¿Tenés este local? Es tuyo.
           </h2>
@@ -66,7 +64,7 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
         </div>
 
         {restaurant.bannerUrl || restaurant.logoUrl ? (
-          <div className="order-1 mt-4 overflow-hidden rounded-3xl md:mt-8">
+          <div className="order-1 mt-8 overflow-hidden rounded-3xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={restaurant.bannerUrl || restaurant.logoUrl}
@@ -85,7 +83,7 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
           </div>
         ) : null}
 
-        <div className="order-2 mt-8 md:order-4">
+        <div className="order-2 mt-8">
           <div className="flex flex-wrap items-center gap-2">
             {categoryDef && categoryDef.value !== "otro" ? (
               <span className="rounded-full bg-surface-container px-3 py-1 text-xs font-bold uppercase tracking-wide text-on-surface-variant">
