@@ -12,6 +12,16 @@ function waDigits(phone: string | undefined): string {
   return (phone ?? "").replace(/\D/g, "");
 }
 
+/** Ícono del placeholder cuando el local no tiene foto, por rubro. */
+const CATEGORY_ICONS: Record<string, string> = {
+  pizzeria: "restaurant_menu",
+  hamburgueseria: "restaurant",
+  heladeria: "icecream",
+  cafe: "bakery_dining",
+  empanaderia: "bakery_dining",
+  sushi: "restaurant",
+};
+
 /**
  * Card de local para las páginas de directorio. Server component por defecto;
  * en resultados de búsqueda recibe `matchedItems` (los platos que coinciden,
@@ -48,7 +58,14 @@ export function StoreCard({
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-primary/15 via-primary/5 to-transparent" />
+          // Sin foto: placeholder por rubro con ícono, sobre gradiente suave.
+          <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 via-primary/5 to-transparent">
+            <MaterialIcon
+              name={CATEGORY_ICONS[entry.category] ?? "storefront"}
+              size="xl"
+              className="text-primary/35"
+            />
+          </div>
         )}
         {entry.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -116,16 +133,6 @@ export function StoreCard({
               </span>
             ))}
           </div>
-        ) : null}
-
-        {unclaimed ? (
-          <Link
-            href={`/${entry.slug}/reclamar`}
-            className="mt-auto flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-[12px] font-bold text-primary transition-colors hover:bg-primary/10"
-          >
-            <MaterialIcon name="storefront" size="xs" />
-            Este local es tuyo? Reclamalo
-          </Link>
         ) : null}
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
