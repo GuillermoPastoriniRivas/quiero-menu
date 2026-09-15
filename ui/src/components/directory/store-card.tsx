@@ -32,11 +32,14 @@ export function StoreCard({
   matchedItems,
   currency,
   featured = false,
+  distanceKm,
 }: {
   entry: StorefrontIndexEntry;
   matchedItems?: StorefrontSearchMatch[];
   currency?: string;
   featured?: boolean;
+  /** Distancia en km desde el usuario (solo en la sección "Cerca de ti"). */
+  distanceKm?: number | null;
 }) {
   const categoryDef = getCategoryDef(entry.category);
   const updated = formatUpdatedDate(entry.updatedAt);
@@ -111,6 +114,12 @@ export function StoreCard({
         <p className="text-xs font-semibold text-on-surface-variant">
           {categoryDef ? `${categoryDef.label} · ` : ""}
           {entry.city}
+          {distanceKm != null
+            ? ` · a ${distanceKm < 1
+                ? `${Math.round(distanceKm * 1000)} m`
+                : `${distanceKm.toLocaleString("es", { maximumFractionDigits: 1 })} km`
+              }`
+            : ""}
         </p>
 
         {entry.description?.trim() ? (

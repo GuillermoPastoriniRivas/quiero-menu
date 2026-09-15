@@ -5,6 +5,7 @@ import { RestaurantCategory } from '../../../../domain/enums/restaurant-category
 import {
   StorefrontTheme,
   CustomDomainStatus,
+  PhotoGalleryImage,
 } from '../../../../domain/entities/restaurant.entity.js';
 
 export type RestaurantDocument = HydratedDocument<RestaurantModel>;
@@ -55,6 +56,19 @@ export class RestaurantModel {
    */
   @Prop({ type: Boolean, default: true })
   claimed: boolean;
+
+  /** Galería de fotos de la ficha de inventario (embeddocs aplanados). */
+  @Prop({
+    type: [
+      {
+        url: { type: String, required: true },
+        source: { type: String, enum: ['s3', 'external'], required: true },
+        alt: String,
+      },
+    ],
+    default: [],
+  })
+  photoGallery: PhotoGalleryImage[];
 
   @Prop({ default: '' })
   country: string;

@@ -9,6 +9,7 @@ import { SubscriptionStatus } from '../../../domain/enums/subscription-status.en
 import { PaymentProvider } from '../../../domain/enums/payment-provider.enum.js';
 import { slugifyCity } from '../../common/slugify.js';
 import { deriveGeoFromCity } from '../../common/geo.js';
+import { PhotoGalleryImage } from '../../../domain/entities/restaurant.entity.js';
 
 export interface CreateUnclaimedRestaurantInput {
   restaurantName: string;
@@ -21,6 +22,8 @@ export interface CreateUnclaimedRestaurantInput {
   address?: string;
   phone?: string;
   description?: string;
+  /** Galería de fotos validada por el loader antes de enviarla. */
+  photoGallery?: PhotoGalleryImage[];
 }
 
 /**
@@ -73,6 +76,7 @@ export class CreateUnclaimedRestaurantUseCase {
       },
       theme: { primaryColor: '#E8532C' },
       claimed: false,
+      ...(input.photoGallery ? { photoGallery: input.photoGallery } : {}),
     });
 
     await this.subscriptionRepo.create({

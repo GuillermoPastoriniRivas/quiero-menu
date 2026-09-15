@@ -1,6 +1,15 @@
 import { z } from 'zod';
 import { RestaurantCategory } from '../../domain/enums/restaurant-category.enum.js';
 
+/** Imagen de la galería de la ficha. El loader valida la URL antes de enviar. */
+export const PhotoGalleryImageSchema = z.object({
+  url: z.string().url().min(8).max(2000),
+  source: z.enum(['s3', 'external']),
+  alt: z.string().max(120).optional(),
+});
+export type PhotoGalleryImageDto = z.infer<typeof PhotoGalleryImageSchema>;
+const PhotoGallerySchema = z.array(PhotoGalleryImageSchema).max(12).optional();
+
 export const AdminSearchRequestSchema = z.object({
   q: z.string().max(120).optional().default(''),
 });
@@ -69,6 +78,7 @@ export const AdminCreateUnclaimedRestaurantRequestSchema = z.object({
   address: z.string().max(200).optional(),
   phone: z.string().max(30).optional(),
   description: z.string().max(500).optional(),
+  photoGallery: PhotoGallerySchema,
 });
 export type AdminCreateUnclaimedRestaurantRequestDto = z.infer<
   typeof AdminCreateUnclaimedRestaurantRequestSchema
@@ -84,6 +94,8 @@ export const AdminUpdateRestaurantRequestSchema = z.object({
   country: z.string().max(60).optional(),
   category: z.nativeEnum(RestaurantCategory).optional(),
   phone: z.string().max(30).optional(),
+  /** Reemplazo total de la galería: array completo o campo ausente = sin tocar. */
+  photoGallery: PhotoGallerySchema,
 });
 export type AdminUpdateRestaurantRequestDto = z.infer<
   typeof AdminUpdateRestaurantRequestSchema

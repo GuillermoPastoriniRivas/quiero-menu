@@ -292,6 +292,8 @@ export class SearchStorefrontsUseCase {
         hoursKnown: false,
         updatedAt: r.updatedAt,
         claimed: r.claimed !== false,
+        lat: r.coordinates?.lat ?? null,
+        lng: r.coordinates?.lng ?? null,
         currency: r.currency,
         featured: [],
       });

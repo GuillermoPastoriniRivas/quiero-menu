@@ -68,6 +68,12 @@ export interface Restaurant {
   countrySlug?: string;
   /** false = cargado como inventario, reclamable. undefined (API vieja) = con dueño. */
   claimed?: boolean;
+  /**
+   * Galería de fotos de la ficha. 's3' = subida por el equipo a nuestro
+   * bucket público; 'external' = link validado 200 image/* al insertarse.
+   * Una imagen que falla al renderizar se oculta (el fetch es del cliente).
+   */
+  photoGallery?: { url: string; source: "s3" | "external"; alt?: string }[];
   country: string;
   coordinates: { lat: number; lng: number } | null;
   phone: string;
@@ -372,6 +378,8 @@ export interface AdminRestaurantDetail {
     status: string;
     openOverride: "open" | "closed" | null;
     customDomain: string | null;
+    /** Coordenadas del local (para el orden por cercanía). */
+    coordinates?: { lat: number; lng: number } | null;
     customDomainStatus: unknown;
     createdAt: string;
     updatedAt: string;
@@ -472,6 +480,9 @@ export interface StorefrontIndexEntry {
   isOpen: boolean;
   /** false = ficha de inventario sin dueño (reclamable). Ausente = API vieja. */
   claimed?: boolean;
+  /** Coordenadas del local (null/ausente = sin cargar). Para ordenar por cercanía. */
+  lat?: number | null;
+  lng?: number | null;
   /** Ausente en APIs viejas; false significa que no hay horario publicado. */
   hoursKnown?: boolean;
   updatedAt: string;

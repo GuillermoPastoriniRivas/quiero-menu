@@ -25,6 +25,18 @@ export type CustomDomainStatus = {
   failedReason?: string;
 } | null;
 
+/**
+ * Imagen de la galería de una ficha de inventario.
+ * - source 's3': subida por el equipo a nuestro bucket público (confiable).
+ * - source 'external': link de terceros; el loader sólo publica URLs que
+ *   responden 200 con Content-Type image/* (verificado con HEAD al insertar).
+ */
+export interface PhotoGalleryImage {
+  url: string;
+  source: 's3' | 'external';
+  alt?: string;
+}
+
 export class Restaurant {
   constructor(
     public readonly id: string,
@@ -74,5 +86,7 @@ export class Restaurant {
      * storefront. undefined (docs viejos) se lee como true.
      */
     public readonly claimed?: boolean,
+    /** Galería de fotos de la ficha (inventario; la gestiona el equipo/scraper). */
+    public readonly photoGallery?: PhotoGalleryImage[],
   ) {}
 }

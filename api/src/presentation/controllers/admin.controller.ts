@@ -185,6 +185,10 @@ export class AdminController {
       category: body.category,
       currency: body.currency,
       timezone: body.timezone,
+      address: body.address,
+      phone: body.phone,
+      description: body.description,
+      photoGallery: body.photoGallery,
     });
     if (!result.ok) throw new ConflictException(result.error.message);
     this.audit.log(

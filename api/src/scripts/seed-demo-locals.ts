@@ -31,6 +31,9 @@ interface DemoLocalSeed {
   category: string;
   /** false = inventario reclamable: muestra la ficha con banner (v0 demo). */
   claimed?: boolean;
+  /** Galería demo (hotlinks Unsplash validados 200 image/* al escribirlos). */
+  gallery: { url: string; source: 'external'; alt: string }[];
+  banner: string;
   opener: {
     dayOfWeek: number;
     opensAt: string;
@@ -50,6 +53,25 @@ const DEMOS: DemoLocalSeed[] = [
     phone: '+54 9 3442 553102',
     category: 'heladeria',
     claimed: false,
+    banner:
+      'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=1600&q=80',
+    gallery: [
+      {
+        url: 'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Cucurucho de helado artesanal',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Salón atendiéndo comenzales',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Interior del local',
+      },
+    ],
     opener: [
       { dayOfWeek: 0, opensAt: '11:00', closesAt: '23:30', isClosed: false },
       { dayOfWeek: 1, opensAt: '11:00', closesAt: '23:30', isClosed: false },
@@ -69,6 +91,25 @@ const DEMOS: DemoLocalSeed[] = [
     address: 'General Urquiza 1243, Concepción del Uruguay',
     phone: '+54 9 3442 551204',
     category: 'hamburgueseria',
+    banner:
+      'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=1600&q=80',
+    gallery: [
+      {
+        url: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Hamburguesa doble con papas',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1547584370-2cc98b8b8dc8?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Hamburguesa con cheddar fundido',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Interior del local',
+      },
+    ],
     opener: [
       { dayOfWeek: 0, opensAt: '20:00', closesAt: '23:59', isClosed: false },
       { dayOfWeek: 1, opensAt: '', closesAt: '', isClosed: true },
@@ -170,6 +211,25 @@ const DEMOS: DemoLocalSeed[] = [
     address: 'Almirante Brown 1890, Concepción del Uruguay',
     phone: '+54 9 3442 557703',
     category: 'pizzeria',
+    banner:
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1600&q=80',
+    gallery: [
+      {
+        url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Pizza muzzarella recién salida del horno',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Pizza especial con rodajas de tomate',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1595854341625-f33ee10dbf94?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Pizza albahaca sobre la mesa de trabajo',
+      },
+    ],
     opener: [
       { dayOfWeek: 0, opensAt: '19:00', closesAt: '23:30', isClosed: false },
       { dayOfWeek: 1, opensAt: '', closesAt: '', isClosed: true },
@@ -283,6 +343,8 @@ async function main(): Promise<void> {
       countrySlug: 'argentina',
       category: demo.category,
       phone: demo.phone,
+      bannerUrl: demo.banner,
+      photoGallery: demo.gallery,
       currency: 'ARS',
       timezone: 'America/Argentina/Buenos_Aires',
       status: 'active',

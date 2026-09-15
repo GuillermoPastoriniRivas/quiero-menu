@@ -40,6 +40,12 @@ export interface ActiveStorefrontSummary {
   featured: FeaturedSlotRef[];
   /** false = ficha de inventario sin dueño (reclamable desde el directorio). */
   claimed: boolean;
+  /**
+   * Coordenadas del local (''=sin cargar). El directorio las usa en el
+   * browser para ordenar por cercanía a la ubicación del usuario.
+   */
+  lat: number | null;
+  lng: number | null;
 }
 
 const CACHE_TTL_MS = 60_000;
@@ -149,6 +155,8 @@ export class ListActiveStorefrontsUseCase {
             (hoursByRestaurant.get(r.id)?.length ?? 0) > 0,
           updatedAt: r.updatedAt,
           claimed: r.claimed !== false,
+          lat: r.coordinates?.lat ?? null,
+          lng: r.coordinates?.lng ?? null,
           featured: featuredByRestaurant.get(r.id) ?? [],
         }))
         .sort((a, b) => a.name.localeCompare(b.name))

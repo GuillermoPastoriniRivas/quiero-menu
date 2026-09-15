@@ -17,6 +17,44 @@ import { RESTAURANT_CATEGORIES } from '@/lib/restaurant-categories';
 
 const NOT_FOUND_FALLBACK = 'unknown';
 
+type GalleryImage = { url: string; source: 's3' | 'external'; alt?: string };
+
+/** Serializa la galería al formato editable (s3:URL y `URL | alt` por línea). */
+function galleryToText(images: GalleryImage[]): string {
+  return images
+    .map((img) => {
+      const prefix = img.source === 's3' ? 's3:' : '';
+      return img.alt ? `${prefix}${img.url} | ${img.alt}` : `${prefix}${img.url}`;
+    })
+    .join('\n');
+}
+
+/**
+ * Galería lista para el PATCH, o undefined si la entrada no es parseable
+ * (mejor no tocar el campo que mandar basura al PATCH).
+ */
+function parseGallery(text: string): GalleryImage[] | undefined {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  const images: GalleryImage[] = [];
+  for (const line of lines) {
+    const source = line.toLowerCase().startsWith('s3:') ? 's3' : 'external';
+    const [urlPart, ...altParts] = line
+      .replace(/^s3:/i, '')
+      .split('|')
+      .map((p) => p.trim());
+    if (!urlPart) return undefined;
+    try {
+      new URL(urlPart);
+    } catch {
+      return undefined;
+    }
+    const alt = altParts.join(' | ').trim();
+    images.push({ url: urlPart, source: source as GalleryImage['source'], ...(alt ? { alt: alt.slice(0, 120) } : {}) });
+  }
+  return images;
+}
+
+
 export default function AdminLocalDetailPage() {
   const id = browserPathParam('', NOT_FOUND_FALLBACK);
   const router = useRouter();
@@ -38,9 +76,13 @@ export default function AdminLocalDetailPage() {
     country: '',
     category: '',
     phone: '',
+    lat: '',
+    lng: '',
+    gallery: '',
   });
   const [fichaSaving, setFichaSaving] = useState(false);
   const [fichaMsg, setFichaMsg] = useState('');
+  const [geocoding, setGeocoding] = useState(false);
 
   const load = useCallback(async () => {
     if (!id || id === NOT_FOUND_FALLBACK) {
@@ -62,6 +104,16 @@ export default function AdminLocalDetailPage() {
         country: data.restaurant.country ?? '',
         category: (data.restaurant as { category?: string }).category ?? '',
         phone: data.restaurant.phone ?? '',
+        lat: data.restaurant.coordinates?.lat != null
+          ? String(data.restaurant.coordinates.lat)
+          : '',
+        lng: data.restaurant.coordinates?.lng != null
+          ? String(data.restaurant.coordinates.lng)
+          : '',
+        gallery: galleryToText(
+          (data.restaurant as { photoGallery?: GalleryImage[] }).photoGallery ??
+            [],
+        ),
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar el local');
@@ -97,7 +149,7 @@ export default function AdminLocalDetailPage() {
     setFichaSaving(true);
     setFichaMsg('');
     try {
-      const patch: Record<string, string> = {};
+      const patch: Record<string, unknown> = {};
       if (ficha.name && ficha.name !== detail.restaurant.name) patch.name = ficha.name;
       if (ficha.description !== (detail.restaurant.description ?? '')) patch.description = ficha.description;
       if (ficha.address !== (detail.restaurant.address ?? '')) patch.address = ficha.address;
@@ -106,6 +158,31 @@ export default function AdminLocalDetailPage() {
       if (ficha.country !== (detail.restaurant.country ?? '')) patch.country = ficha.country;
       if (ficha.category !== ((detail.restaurant as { category?: string }).category ?? '')) patch.category = ficha.category;
       if (ficha.phone !== (detail.restaurant.phone ?? '')) patch.phone = ficha.phone;
+      const gallery = parseGallery(ficha.gallery);
+      if (gallery === undefined) {
+        setFichaMsg(
+          'La galería tiene una línea inválida (URL mal formada): no se guardó',
+        );
+        setFichaSaving(false);
+        return;
+      }
+      if (
+        gallery !== undefined &&
+        JSON.stringify(gallery) !==
+          JSON.stringify(
+            (detail.restaurant as { photoGallery?: GalleryImage[] }).photoGallery ??
+              [],
+          )
+      ) {
+        patch.photoGallery = gallery;
+      }
+      const nextCoords = parseCoords(ficha.lat, ficha.lng);
+      if (
+        nextCoords !== undefined &&
+        JSON.stringify(nextCoords) !== JSON.stringify(detail.restaurant.coordinates ?? null)
+      ) {
+        patch.coordinates = nextCoords;
+      }
       if (Object.keys(patch).length === 0) {
         setFichaMsg('Sin cambios que guardar');
         return;
@@ -118,6 +195,60 @@ export default function AdminLocalDetailPage() {
     } finally {
       setFichaSaving(false);
     }
+  };
+
+  const handleGeocode = async () => {
+    const q = [ficha.address, ficha.city, ficha.region, ficha.country]
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(', ');
+    if (!q) {
+      setFichaMsg('Cargá la dirección y ciudad para buscar coordenadas');
+      return;
+    }
+    setGeocoding(true);
+    setFichaMsg('');
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
+        { headers: { Accept: 'application/json' } },
+      );
+      const results = (await res.json()) as { lat: string; lon: string }[];
+      if (!results.length) {
+        setFichaMsg('No se encontró la dirección; probá completarla mejor o usá tu ubicación');
+        return;
+      }
+      setFicha({ ...ficha, lat: results[0].lat, lng: results[0].lon });
+      setFichaMsg('Coordenadas encontradas: guardá la ficha para aplicarlas');
+    } catch {
+      setFichaMsg('No se pudo contactar el geocodificador');
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  const handleMyLocation = () => {
+    if (!navigator.geolocation) {
+      setFichaMsg('El navegador no soporta geolocalización');
+      return;
+    }
+    setGeocoding(true);
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setFicha((f) => ({
+          ...f,
+          lat: String(p.coords.latitude),
+          lng: String(p.coords.longitude),
+        }));
+        setGeocoding(false);
+        setFichaMsg('Coordenadas tomadas de tu ubicación: guardá la ficha');
+      },
+      () => {
+        setGeocoding(false);
+        setFichaMsg('No se pudo usar tu ubicación');
+      },
+      { timeout: 10_000 },
+    );
   };
 
   const handleFeature = async () => {
@@ -287,6 +418,45 @@ export default function AdminLocalDetailPage() {
             <Input value={ficha.address} onChange={(e) => setFicha({ ...ficha, address: e.target.value })} />
           </div>
           <div className="space-y-1">
+            <Label className="text-xs text-on-surface-variant">
+              Coordenadas (para el orden por cercanía)
+            </Label>
+            <div className="flex gap-1.5">
+              <Input
+                value={ficha.lat}
+                onChange={(e) => setFicha({ ...ficha, lat: e.target.value })}
+                placeholder="-32.48"
+                inputMode="decimal"
+                className="flex-1"
+              />
+              <Input
+                value={ficha.lng}
+                onChange={(e) => setFicha({ ...ficha, lng: e.target.value })}
+                placeholder="-58.23"
+                inputMode="decimal"
+                className="flex-1"
+              />
+              <button
+                type="button"
+                onClick={handleGeocode}
+                disabled={geocoding}
+                title="Buscar por la dirección"
+                className="h-10 shrink-0 rounded-xl bg-primary/10 px-2 text-sm font-bold text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+              >
+                Buscar
+              </button>
+              <button
+                type="button"
+                onClick={handleMyLocation}
+                disabled={geocoding}
+                title="Usar mi ubicación actual"
+                className="h-10 shrink-0 rounded-xl bg-primary/10 px-2 items-center inline-flex text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+              >
+                <MaterialIcon name="my_location" size="sm" />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-1">
             <Label className="text-xs text-on-surface-variant">Teléfono</Label>
             <Input value={ficha.phone} onChange={(e) => setFicha({ ...ficha, phone: e.target.value })} />
           </div>
@@ -308,6 +478,20 @@ export default function AdminLocalDetailPage() {
               rows={2}
               maxLength={500}
               className="h-20 w-full rounded-xl border-none bg-surface-container-low px-4 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30"
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs text-on-surface-variant">
+              Galería de fotos (por línea: URL o s3:URL; alt opcional con ` | texto`)
+            </Label>
+            <textarea
+              value={ficha.gallery}
+              onChange={(e) => setFicha({ ...ficha, gallery: e.target.value })}
+              rows={3}
+              placeholder={
+                's3:https://images.quiero.menu/locales/lorso/fachada.jpg\nhttps://fotos.com/blabla.jpg | sala interior'
+              }
+              className="w-full rounded-xl border-none bg-surface-container-low px-4 py-2 font-mono text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30"
             />
           </div>
         </div>
@@ -379,4 +563,23 @@ function Row({ label, value }: { label: string; value: string }) {
       <dd className="font-semibold text-on-surface truncate">{value}</dd>
     </div>
   );
+}
+
+/**
+ * Coordenadas listas para guardar. undefined = no tocar; null = borrar
+ * (los dos campos vacíos); invalida si falta uno no matchea.
+ */
+function parseCoords(
+  lat: string,
+  lng: string,
+): { lat: number; lng: number } | null | undefined {
+  const latTrim = lat.trim();
+  const lngTrim = lng.trim();
+  if (!latTrim && !lngTrim) return null;
+  if (!latTrim || !lngTrim) return undefined;
+  const la = Number(latTrim);
+  const ln = Number(lngTrim);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return undefined;
+  if (Math.abs(la) > 90 || Math.abs(ln) > 180) return undefined;
+  return { lat: la, lng: ln };
 }

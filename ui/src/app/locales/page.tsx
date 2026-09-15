@@ -5,6 +5,7 @@ import { StoreCard } from "@/components/directory/store-card";
 import { DirectorySearch } from "@/components/directory/directory-search";
 import { isFeatured, sortFeaturedFirst } from "@/lib/featured";
 import { DirectoryJsonLd } from "@/components/directory/directory-json-ld";
+import { NearbyStores } from "@/components/directory/nearby-stores";
 import type { StorefrontIndexEntry } from "@/types";
 
 // El directorio cambia cuando los locales editan su menú: siempre fresco
@@ -142,6 +143,8 @@ export default async function LocalesPage({
             </Link>
           </div>
         ) : null}
+
+        <NearbyStores entries={index} />
 
         <DirectorySearch
           placeholder="Buscá un plato o un local…"
