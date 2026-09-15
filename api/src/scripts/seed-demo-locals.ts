@@ -38,8 +38,6 @@ interface DemoLocalSeed {
   sections: MenuSectionSeed[];
 }
 
-const DAYS = 7;
-
 const DEMOS: DemoLocalSeed[] = [
   {
     slug: 'hamburgueseria-el-ojin',
@@ -330,7 +328,7 @@ async function main(): Promise<void> {
     );
 
     console.log(
-      `Demo listo: ${demo.slug} (${restaurantId}) con ${demo.sections.length} categorías`,
+      `Demo listo: ${demo.slug} (${String(restaurantId)}) con ${demo.sections.length} categorías`,
     );
   }
 

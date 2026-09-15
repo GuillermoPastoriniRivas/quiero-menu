@@ -7,3 +7,4 @@ Thumbs.db
 *.pem
 .vscode/
 .idea/
+graphify-out/
