@@ -7,6 +7,7 @@ import { MaterialIcon } from '@/components/ui/material-icon';
 import { cn } from '@/lib/utils';
 
 const LINKS = [
+  { href: '/locales', label: 'Locales', internal: true },
   { href: '#como-funciona', label: 'Cómo funciona' },
   { href: '#funciones', label: 'Funciones' },
   { href: '#precios', label: 'Precios' },
@@ -43,15 +44,25 @@ export function LandingNav() {
         <Logo size="md" href="/" />
 
         <div className="hidden items-center gap-7 lg:flex">
-          {LINKS.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="font-[family-name:var(--font-heading)] text-sm font-semibold text-on-surface-variant transition-colors hover:text-primary"
-            >
-              {l.label}
-            </a>
-          ))}
+          {LINKS.map((l) =>
+            l.internal ? (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="font-[family-name:var(--font-heading)] text-sm font-semibold text-on-surface-variant transition-colors hover:text-primary"
+              >
+                {l.label}
+              </Link>
+            ) : (
+              <a
+                key={l.href}
+                href={l.href}
+                className="font-[family-name:var(--font-heading)] text-sm font-semibold text-on-surface-variant transition-colors hover:text-primary"
+              >
+                {l.label}
+              </a>
+            ),
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -86,16 +97,27 @@ export function LandingNav() {
       {open && (
         <div className="border-t border-outline-variant/30 bg-surface px-5 pb-6 pt-4 lg:hidden">
           <div className="flex flex-col">
-            {LINKS.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="border-b border-outline-variant/25 py-3.5 font-[family-name:var(--font-heading)] text-base font-semibold text-on-surface"
-              >
-                {l.label}
-              </a>
-            ))}
+            {LINKS.map((l) =>
+              l.internal ? (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="border-b border-outline-variant/25 py-3.5 font-[family-name:var(--font-heading)] text-base font-semibold text-on-surface"
+                >
+                  {l.label}
+                </Link>
+              ) : (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="border-b border-outline-variant/25 py-3.5 font-[family-name:var(--font-heading)] text-base font-semibold text-on-surface"
+                >
+                  {l.label}
+                </a>
+              ),
+            )}
             <Link
               href="/login"
               onClick={() => setOpen(false)}
