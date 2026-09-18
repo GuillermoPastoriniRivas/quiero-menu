@@ -6,6 +6,8 @@ import mongoose from 'mongoose';
  * Uruguay para mostrar el producto punta a punta en el directorio:
  *  - hamburgueseria-el-ojin (claimed=true, con carta y horarios)
  *  - pizzeria-la-barca (claimed=true, con carta y horarios)
+ *  - heladeria-manhattan y rotiseria-dona-clara (claimed=false, ficha con menú solo lectura)
+ * PATCHES completa el perfil de locales de prueba existentes sin tocar su menú.
  * Idempotente: borra y recrea menú/horarios de esos slugs; el restaurant se
  * UPSERTEA por slug.
  */
@@ -55,7 +57,7 @@ const DEMOS: DemoLocalSeed[] = [
     phone: '+54 9 3442 553102',
     category: 'heladeria',
     claimed: false,
-    coordinates: { lat: -32.3233, lng: -58.2384 },
+    coordinates: { lat: -32.4829, lng: -58.2361 },
     banner:
       'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=1600&q=80',
     gallery: [
@@ -84,7 +86,175 @@ const DEMOS: DemoLocalSeed[] = [
       { dayOfWeek: 5, opensAt: '11:00', closesAt: '00:30', isClosed: false },
       { dayOfWeek: 6, opensAt: '11:00', closesAt: '00:30', isClosed: false },
     ],
-    sections: [],
+    sections: [
+      {
+        name: 'Helado por kilo',
+        description: 'Hasta 4 gustos por pote',
+        items: [
+          {
+            name: '1 kg',
+            description: 'Hasta 4 gustos',
+            basePrice: 14500,
+          },
+          {
+            name: '1/2 kg',
+            description: 'Hasta 3 gustos',
+            basePrice: 8200,
+          },
+          {
+            name: '1/4 kg',
+            description: 'Hasta 2 gustos',
+            basePrice: 4700,
+          },
+        ],
+      },
+      {
+        name: 'Cucuruchos y vasitos',
+        description: '',
+        items: [
+          {
+            name: 'Cucurucho simple',
+            description: '1 bocha, cono de galleta',
+            basePrice: 2600,
+          },
+          {
+            name: 'Cucurucho doble',
+            description: '2 bochas con baño de chocolate',
+            basePrice: 3900,
+          },
+          {
+            name: 'Vasito',
+            description: '2 gustos',
+            basePrice: 3100,
+          },
+        ],
+      },
+      {
+        name: 'Postres helados',
+        description: '',
+        items: [
+          {
+            name: 'Almendrado',
+            description: 'Porción de almendrado con salsa de chocolate',
+            basePrice: 4300,
+          },
+          {
+            name: 'Bombón escocés',
+            description: 'Crema americana y chocolate, cubierto en chocolate',
+            basePrice: 2200,
+          },
+          {
+            name: 'Palito bombón',
+            description: 'Dulce de leche cubierto en chocolate',
+            basePrice: 1500,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'rotiseria-dona-clara',
+    name: 'Rotisería Doña Clara',
+    description:
+      'Comida casera para llevar: pollo al spiedo, milanesas, tartas y guarniciones. Menú del día de lunes a sábado.',
+    address: 'Estrada 612, Concepción del Uruguay',
+    phone: '+54 9 3442 559418',
+    category: 'rotiseria',
+    claimed: false,
+    coordinates: { lat: -32.4872, lng: -58.2391 },
+    banner:
+      'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=1600&q=80',
+    gallery: [
+      {
+        url: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Pollo grillado con limón y verduras',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Guiso de pollo con verduras',
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1200&q=80',
+        source: 'external',
+        alt: 'Mesa con platos para compartir',
+      },
+    ],
+    opener: [
+      { dayOfWeek: 0, opensAt: '11:00', closesAt: '14:30', isClosed: false },
+      { dayOfWeek: 1, opensAt: '11:00', closesAt: '21:30', isClosed: false },
+      { dayOfWeek: 2, opensAt: '11:00', closesAt: '21:30', isClosed: false },
+      { dayOfWeek: 3, opensAt: '11:00', closesAt: '21:30', isClosed: false },
+      { dayOfWeek: 4, opensAt: '11:00', closesAt: '21:30', isClosed: false },
+      { dayOfWeek: 5, opensAt: '11:00', closesAt: '22:00', isClosed: false },
+      { dayOfWeek: 6, opensAt: '11:00', closesAt: '22:00', isClosed: false },
+    ],
+    sections: [
+      {
+        name: 'Pollo',
+        description: 'Al spiedo, sale desde las 11',
+        items: [
+          {
+            name: 'Pollo al spiedo entero',
+            description: 'Con chimichurri de la casa',
+            basePrice: 13500,
+          },
+          {
+            name: 'Medio pollo',
+            description: 'Con chimichurri de la casa',
+            basePrice: 7200,
+          },
+        ],
+      },
+      {
+        name: 'Minutas',
+        description: '',
+        items: [
+          {
+            name: 'Milanesa de carne',
+            description: 'Nalga rebozada, frita o al horno',
+            basePrice: 6800,
+          },
+          {
+            name: 'Milanesa napolitana',
+            description: 'Jamón, muzzarella y salsa de tomate',
+            basePrice: 8400,
+          },
+          {
+            name: 'Tarta de jamón y queso',
+            description: 'Porción grande',
+            basePrice: 4200,
+          },
+          {
+            name: 'Tarta de verdura',
+            description: 'Acelga, cebolla y huevo',
+            basePrice: 3900,
+          },
+        ],
+      },
+      {
+        name: 'Guarniciones',
+        description: '',
+        items: [
+          {
+            name: 'Papas fritas',
+            description: 'Porción para 2',
+            basePrice: 4500,
+          },
+          {
+            name: 'Ensalada rusa',
+            description: 'Papa, zanahoria, arvejas y mayonesa casera',
+            basePrice: 3600,
+          },
+          {
+            name: 'Puré de papas',
+            description: '',
+            basePrice: 3200,
+          },
+        ],
+      },
+    ],
   },
   {
     slug: 'hamburgueseria-el-ojin',
@@ -94,7 +264,7 @@ const DEMOS: DemoLocalSeed[] = [
     address: 'General Urquiza 1243, Concepción del Uruguay',
     phone: '+54 9 3442 551204',
     category: 'hamburgueseria',
-    coordinates: { lat: -32.3213, lng: -58.2402 },
+    coordinates: { lat: -32.4861, lng: -58.2339 },
     banner:
       'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=1600&q=80',
     gallery: [
@@ -215,7 +385,7 @@ const DEMOS: DemoLocalSeed[] = [
     address: 'Almirante Brown 1890, Concepción del Uruguay',
     phone: '+54 9 3442 557703',
     category: 'pizzeria',
-    coordinates: { lat: -32.3195, lng: -58.2353 },
+    coordinates: { lat: -32.4789, lng: -58.2297 },
     banner:
       'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1600&q=80',
     gallery: [
@@ -319,6 +489,99 @@ const DEMOS: DemoLocalSeed[] = [
   },
 ];
 
+interface ProfilePatch {
+  slug: string;
+  set: Record<string, unknown>;
+  opener?: DemoLocalSeed['opener'];
+}
+
+const PATCHES: ProfilePatch[] = [
+  {
+    slug: 'leonardos',
+    set: {
+      category: 'pizzeria',
+      description:
+        'Pizzas grandes a la piedra con base de tomate o de cebolla, empanadas y calentitos. Pedidos para llevar y delivery.',
+      coordinates: { lat: -32.4808, lng: -58.2413 },
+      bannerUrl:
+        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1600&q=80',
+      photoGallery: [
+        {
+          url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1200&q=80',
+          source: 'external',
+          alt: 'Pizza con rodajas de tomate',
+        },
+        {
+          url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80',
+          source: 'external',
+          alt: 'Pizza muzzarella recién salida del horno',
+        },
+      ],
+    },
+    opener: [
+      { dayOfWeek: 0, opensAt: '19:30', closesAt: '23:59', isClosed: false },
+      { dayOfWeek: 1, opensAt: '', closesAt: '', isClosed: true },
+      { dayOfWeek: 2, opensAt: '19:30', closesAt: '23:30', isClosed: false },
+      { dayOfWeek: 3, opensAt: '19:30', closesAt: '23:30', isClosed: false },
+      { dayOfWeek: 4, opensAt: '19:30', closesAt: '23:30', isClosed: false },
+      { dayOfWeek: 5, opensAt: '19:30', closesAt: '01:00', isClosed: false },
+      { dayOfWeek: 6, opensAt: '19:30', closesAt: '01:00', isClosed: false },
+    ],
+  },
+  {
+    slug: 'la-famosa',
+    set: {
+      description:
+        'Hamburguesas, pizza dogs y pizzas para compartir. Combos para la noche y bebidas frías.',
+      coordinates: { lat: -32.3206, lng: -58.0795 },
+      bannerUrl:
+        'https://images.unsplash.com/photo-1547584370-2cc98b8b8dc8?auto=format&fit=crop&w=1600&q=80',
+      photoGallery: [
+        {
+          url: 'https://images.unsplash.com/photo-1547584370-2cc98b8b8dc8?auto=format&fit=crop&w=1200&q=80',
+          source: 'external',
+          alt: 'Hamburguesa con cheddar fundido',
+        },
+        {
+          url: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=1200&q=80',
+          source: 'external',
+          alt: 'Hamburguesa doble con papas',
+        },
+      ],
+    },
+    opener: [
+      { dayOfWeek: 0, opensAt: '19:00', closesAt: '23:59', isClosed: false },
+      { dayOfWeek: 1, opensAt: '19:00', closesAt: '23:59', isClosed: false },
+      { dayOfWeek: 2, opensAt: '19:00', closesAt: '23:59', isClosed: false },
+      { dayOfWeek: 3, opensAt: '19:00', closesAt: '23:59', isClosed: false },
+      { dayOfWeek: 4, opensAt: '19:00', closesAt: '23:59', isClosed: false },
+      { dayOfWeek: 5, opensAt: '19:00', closesAt: '02:00', isClosed: false },
+      { dayOfWeek: 6, opensAt: '19:00', closesAt: '02:00', isClosed: false },
+    ],
+  },
+  {
+    slug: 'pizza-libre',
+    set: {
+      category: 'pizzeria',
+      description:
+        'Pizzas artesanales, hamburguesas y pizza dogs. Pedí para llevar o a domicilio.',
+      coordinates: { lat: 5.0226, lng: -74.0057 },
+      photoGallery: [
+        {
+          url: 'https://images.unsplash.com/photo-1595854341625-f33ee10dbf94?auto=format&fit=crop&w=1200&q=80',
+          source: 'external',
+          alt: 'Pizza albahaca sobre la mesa de trabajo',
+        },
+        {
+          url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80',
+          source: 'external',
+          alt: 'Pizza muzzarella recién salida del horno',
+        },
+      ],
+    },
+  },
+];
+
 async function main(): Promise<void> {
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error('MONGODB_URI no está definida');
@@ -419,6 +682,35 @@ async function main(): Promise<void> {
 
     console.log(
       `Demo listo: ${demo.slug} (${String(restaurantId)}) con ${demo.sections.length} categorías`,
+    );
+  }
+
+  for (const patch of PATCHES) {
+    const existing = await restaurants.findOne({ slug: patch.slug });
+    if (!existing) {
+      console.log(`Patch omitido: ${patch.slug} no existe`);
+      continue;
+    }
+    await restaurants.updateOne(
+      { _id: existing._id },
+      { $set: { ...patch.set, updatedAt: new Date() } },
+    );
+    const hasHours =
+      (await hours.countDocuments({ restaurantId: existing._id })) > 0;
+    const addHours = Boolean(patch.opener) && !hasHours;
+    if (addHours && patch.opener) {
+      await hours.insertMany(
+        patch.opener.map((h) => ({
+          restaurantId: existing._id,
+          dayOfWeek: h.dayOfWeek,
+          opensAt: h.opensAt,
+          closesAt: h.closesAt,
+          isClosed: h.isClosed,
+        })),
+      );
+    }
+    console.log(
+      `Perfil completado: ${patch.slug}${addHours ? ' + horarios' : ''}`,
     );
   }
 

@@ -3,6 +3,7 @@ import type { StorefrontData } from "@/types";
 import { getCategoryDef } from "@/lib/restaurant-categories";
 import { FichaContactButtons } from "@/components/storefront/inventory-ficha";
 import { FichaGallery } from "@/components/storefront/ficha-gallery";
+import { FichaMenu } from "@/components/storefront/ficha-menu";
 import {
   countryLabel,
   subdivisionLabel,
@@ -11,7 +12,7 @@ import {
 /**
  * Ficha de inventario para locales SIN dueño (claimed=false): página pública
  * informativa con los datos que el equipo cargó + CTA de reclamo. NO es el
- * storefront de pedidos: no hay menú, carrito ni checkout.
+ * storefront de pedidos: el menú se muestra solo lectura, sin carrito ni checkout.
  * Le sirve a Google (landing indexable del negocio) y al dueño (descubre su
  * ficha y la reclama, con el pre-llenado ya hecho por el sistema).
  */
@@ -75,13 +76,17 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
         ) : null}
 
         {restaurant.photoGallery && restaurant.photoGallery.length > 0 ? (
-          <div className="order-3 mt-8">
+          <div className="order-4 mt-8">
             <FichaGallery
               images={restaurant.photoGallery}
               name={restaurant.name}
             />
           </div>
         ) : null}
+
+        <div className="order-3 mt-10 empty:hidden">
+          <FichaMenu data={data} slug={slug} />
+        </div>
 
         <div className="order-2 mt-8">
           <div className="flex flex-wrap items-center gap-2">
@@ -117,7 +122,12 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
                 <dt className="font-bold text-on-surface">Dirección:</dt>
                 <dd>
                   {restaurant.address}
-                  {restaurant.city ? `, ${restaurant.city}` : ""}
+                  {restaurant.city &&
+                  !restaurant.address
+                    .toLowerCase()
+                    .includes(restaurant.city.toLowerCase())
+                    ? `, ${restaurant.city}`
+                    : ""}
                 </dd>
               </div>
             ) : null}
