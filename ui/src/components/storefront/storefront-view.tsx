@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import type {
@@ -35,6 +35,7 @@ import {
   LastOrder,
 } from "@/lib/repeat-order";
 import { getApiBase } from "@/lib/storefront-context";
+import { formatArPhone, arPhoneToWhatsApp } from "@/lib/ar-phone";
 import { formatUpdatedDate } from "@/lib/restaurant-categories";
 
 type FullMenuItem = MenuItem & {
@@ -53,6 +54,43 @@ function useMediaQuery(query: string): boolean {
     return () => mql.removeEventListener("change", handler);
   }, [query]);
   return matches;
+}
+
+/**
+ * OnChange del telefono con mascara: formatea el valor tipeado y repone el
+ * cursor sobre el mismo digito del texto formateado (si no, borrar a mitad
+ * del numero encaballaba el caret al final del input).
+ */
+function handlePhoneChangeWithCaret(
+  ref: React.RefObject<HTMLInputElement | null>,
+  apply: (formatted: string) => void,
+) {
+  return (e: React.ChangeEvent<HTMLInputElement>) => {
+    const el = e.currentTarget;
+    const raw = el.value;
+    const caret = el.selectionStart ?? raw.length;
+    const digitsBefore =
+      raw.slice(0, Math.max(0, caret)).replace(/\D/g, "").length;
+    const formatted = formatArPhone(raw);
+    apply(formatted);
+    if (formatted === raw) return;
+    requestAnimationFrame(() => {
+      const input = ref.current;
+      if (!input) return;
+      let seen = 0;
+      let pos = formatted.length;
+      for (let i = 0; i < formatted.length; i++) {
+        if (/[0-9]/.test(formatted[i])) {
+          seen++;
+          if (seen >= digitsBefore) {
+            pos = i + 1;
+            break;
+          }
+        }
+      }
+      input.setSelectionRange(pos, pos);
+    });
+  };
 }
 
 export function StorefrontView({
@@ -74,6 +112,10 @@ export function StorefrontView({
   const cart = useCartStore();
   const router = useRouter();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const phoneInputRef = useRef<HTMLInputElement | null>(null);
+  const onPhoneChange = handlePhoneChangeWithCaret(phoneInputRef, (v) =>
+    cart.setCustomer({ customerPhone: v }),
+  );
 
   // ── Helpers ──
   const cleanPhone = restaurant.phone
@@ -464,7 +506,8 @@ export function StorefrontView({
           notes: i.notes,
         })),
         customerName: cart.customerName,
-        customerPhone: cart.customerPhone,
+        customerPhone:
+          arPhoneToWhatsApp(cart.customerPhone) || cart.customerPhone,
         customerAddress: cart.customerAddress || undefined,
         customerLatitude: cart.customerLatitude ?? undefined,
         customerLongitude: cart.customerLongitude ?? undefined,
@@ -521,6 +564,18 @@ export function StorefrontView({
       <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-50 h-16 border-b border-outline-variant/10">
         <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 min-w-0">
+            {/* Volver: si entró desde el buscador/directorio vuelve a donde estaba
+                (con la búsqueda intacta); si entró directo por QR o link, a /locales. */}
+            <button
+              onClick={() => {
+                if (window.history.length > 1) router.back();
+                else router.push("/locales");
+              }}
+              aria-label="Volver a la lista de locales"
+              className="-ml-2 shrink-0 rounded-full p-2 transition-colors hover:bg-surface-container-low"
+            >
+              <MaterialIcon name="arrow_back" size="md" className="text-on-surface" />
+            </button>
             {restaurant.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -1337,24 +1392,41 @@ export function StorefrontView({
 
             <div className="space-y-3 pt-2">
               <div className="space-y-2">
-                <Label>Nombre</Label>
+                <Label>
+                  Nombre <span className="text-on-surface-variant">(opcional)</span>
+                </Label>
                 <Input
                   value={cart.customerName}
                   onChange={(e) =>
                     cart.setCustomer({ customerName: e.target.value })
                   }
                   placeholder="Tu nombre"
+                  autoComplete="name"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Telefono</Label>
-                <Input
-                  value={cart.customerPhone}
-                  onChange={(e) =>
-                    cart.setCustomer({ customerPhone: e.target.value })
-                  }
-                  placeholder="Tu telefono"
-                />
+                <Label>Numero de WhatsApp</Label>
+                <div className="relative">
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-4 top-1/2 flex -translate-y-1/2 items-center"
+                  >
+                    <svg width="18" height="13" viewBox="0 0 18 13" className="rounded-[2px] shadow-sm">
+                      <rect width="18" height="13" fill="#74ACDF" />
+                      <rect y="4.33" width="18" height="4.34" fill="#fff" />
+                      <circle cx="9" cy="6.5" r="1.4" fill="#F6B40E" />
+                    </svg>
+                  </span>
+                  <Input
+                    ref={phoneInputRef}
+                    value={cart.customerPhone}
+                    onChange={onPhoneChange}
+                    placeholder="11 1234-5678"
+                    inputMode="tel"
+                    autoComplete="tel-national"
+                    className="pl-11"
+                  />
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -1574,8 +1646,7 @@ export function StorefrontView({
               disabled={
                 submitting ||
                 !isOpen ||
-                !cart.customerName ||
-                !cart.customerPhone
+                !arPhoneToWhatsApp(cart.customerPhone)
               }
               onClick={handleCheckout}
             >

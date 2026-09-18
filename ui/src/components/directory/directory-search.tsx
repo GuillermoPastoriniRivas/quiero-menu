@@ -15,6 +15,8 @@ import { isFeatured } from "@/lib/featured";
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_MS = 250;
 
+const EXAMPLE_CHIPS = ["pizza", "empanadas", "milanesa", "helado"];
+
 export interface DirectoryCityOption {
   slug: string;
   name: string;
@@ -58,7 +60,10 @@ export function DirectorySearch({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const listboxId = useId();
+  const [stickyBarVisible, setStickyBarVisible] = useState(false);
 
   const trimmed = q.trim();
   const effectiveCity = citySlug ?? selectedCity;
@@ -66,6 +71,31 @@ export function DirectorySearch({
     trimmed.length >= MIN_QUERY_LENGTH ||
     openNow ||
     (!citySlug && selectedCity.length > 0);
+
+  // Autofocus solo en desktop: en mobile el teclado abierto tapa los resultados.
+  useEffect(() => {
+    if (!window.matchMedia("(min-width: 640px)").matches) return;
+    inputRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  // Barra compacta fixed en mobile cuando el buscador hero sale del viewport.
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) =>
+        setStickyBarVisible(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    observer.observe(form);
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToHeroInput = () => {
+    setStickyBarVisible(false);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 350);
+  };
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -159,14 +189,15 @@ export function DirectorySearch({
           event.preventDefault();
           setSuggestionsOpen(false);
         }}
-        className="mt-8 rounded-3xl border border-outline-variant/40 bg-surface-container-low p-3 shadow-sm sm:p-4"
+        className="mt-8 rounded-3xl border border-outline-variant/50 bg-surface-container-lowest p-3 shadow-lg shadow-primary/5 sm:p-4"
       >
         <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
           <div className="relative flex-1">
-            <MaterialIcon name="search" size="md" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+            <MaterialIcon name="search" size="md" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant sm:left-5" />
             <input
               type="search"
               role="combobox"
+              ref={inputRef}
               value={q}
               onChange={(event) => {
                 setQ(event.target.value);
@@ -196,7 +227,7 @@ export function DirectorySearch({
               aria-expanded={showSuggestions}
               aria-controls={showSuggestions ? listboxId : undefined}
               aria-activedescendant={activeSuggestion >= 0 ? `${listboxId}-${activeSuggestion}` : undefined}
-              className="h-13 w-full rounded-2xl border border-outline-variant/50 bg-surface-container-lowest pl-12 pr-11 text-base text-on-surface outline-none transition-colors placeholder:text-on-surface-variant/70 focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              className="h-14 w-full rounded-2xl border-2 border-outline-variant/60 bg-surface-container-lowest pl-12 pr-11 text-base text-on-surface outline-none transition-colors placeholder:text-on-surface-variant/70 focus:border-primary/60 focus:ring-4 focus:ring-primary/15 sm:h-16 sm:pl-14 sm:text-lg"
             />
             {q ? (
               <button type="button" onClick={() => setQ("")} aria-label="Limpiar búsqueda" className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high">
@@ -231,7 +262,7 @@ export function DirectorySearch({
           {!citySlug && cities.length > 0 ? (
             <label className="relative min-w-56">
               <span className="sr-only">Ciudad</span>
-              <select value={selectedCity} onChange={(event) => setSelectedCity(event.target.value)} className="h-13 w-full appearance-none rounded-2xl border border-outline-variant/50 bg-surface-container-lowest px-4 pr-10 text-sm font-bold text-on-surface outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+              <select value={selectedCity} onChange={(event) => setSelectedCity(event.target.value)} className="h-14 w-full appearance-none rounded-2xl border-2 border-outline-variant/60 bg-surface-container-lowest px-4 pr-10 text-sm font-bold text-on-surface outline-none transition-colors focus:border-primary/60 focus:ring-4 focus:ring-primary/15 sm:h-16 sm:text-base">
                 <option value="">Todas las ciudades</option>
                 {cities.map((city) => (
                   <option key={city.slug} value={city.slug}>{city.name} ({city.count})</option>
@@ -241,12 +272,36 @@ export function DirectorySearch({
             </label>
           ) : null}
 
-          <button type="button" aria-pressed={openNow} onClick={() => setOpenNow((value) => !value)} className={`inline-flex h-13 shrink-0 items-center justify-center gap-2 rounded-2xl border px-5 text-sm font-bold transition-colors ${openNow ? "border-green-700/30 bg-green-600/15 text-green-800" : "border-outline-variant/50 bg-surface-container-lowest text-on-surface-variant hover:border-primary/40"}`}>
+          <button type="button" aria-pressed={openNow} onClick={() => setOpenNow((value) => !value)} className={`inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-sm font-bold transition-colors sm:h-16 ${openNow ? "border-green-700/30 bg-green-600/15 text-green-800" : "border-outline-variant/60 bg-surface-container-lowest text-on-surface-variant hover:border-primary/40"}`}>
             <span className={`h-2 w-2 rounded-full ${openNow ? "bg-green-600" : "bg-outline-variant"}`} />
             Abiertos ahora
           </button>
         </div>
-        <p className="px-2 pt-2 text-xs text-on-surface-variant">Buscá platos, locales o rubros. Los precios salen de las cartas publicadas.</p>
+        {!active ? (
+          <div className="flex flex-wrap items-center gap-2 px-1 pt-3 sm:px-2">
+            <span className="text-xs font-semibold text-on-surface-variant">
+              Probá con:
+            </span>
+            {EXAMPLE_CHIPS.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => {
+                  setQ(chip);
+                  setSuggestionsOpen(true);
+                  inputRef.current?.focus({ preventScroll: true });
+                }}
+                className="rounded-full border border-outline-variant/50 bg-surface-container-lowest px-3.5 py-1.5 text-sm font-semibold text-on-surface transition-colors hover:border-primary/50 hover:text-primary"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="px-2 pt-2 text-xs text-on-surface-variant">
+            Los precios salen de las cartas publicadas.
+          </p>
+        )}
       </form>
 
       {!active ? (
@@ -277,6 +332,22 @@ export function DirectorySearch({
           ) : null}
         </div>
       )}
+
+      {stickyBarVisible ? (
+        <div className="fixed inset-x-0 top-0 z-40 border-b border-outline-variant/40 bg-surface-container-lowest/95 px-3 py-2 shadow-md backdrop-blur sm:hidden">
+          <button
+            type="button"
+            onClick={scrollToHeroInput}
+            aria-label="Ir al buscador"
+            className="flex h-11 w-full items-center gap-2 rounded-2xl border border-outline-variant/50 bg-surface-container-low px-4 text-left text-sm text-on-surface-variant"
+          >
+            <MaterialIcon name="search" size="sm" />
+            <span className="truncate">
+              {trimmed.length >= MIN_QUERY_LENGTH ? trimmed : placeholder}
+            </span>
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

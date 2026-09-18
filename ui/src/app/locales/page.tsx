@@ -144,8 +144,6 @@ export default async function LocalesPage({
           </div>
         ) : null}
 
-        <NearbyStores entries={index} />
-
         <DirectorySearch
           placeholder="Buscá un plato o un local…"
           cities={cities}
@@ -153,6 +151,8 @@ export default async function LocalesPage({
           initialCitySlug={query.city ?? ""}
           initialOpenNow={query.open === "1"}
         >
+          <NearbyStores entries={index} />
+
           {groups.map((section) => (
             <section key={section.slug} className="mt-12">
               <div className="flex items-baseline justify-between gap-3">

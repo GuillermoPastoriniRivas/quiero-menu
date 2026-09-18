@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { ApiError } from '@/lib/api';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 const deriveSlug = (name: string) =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -22,7 +25,7 @@ function SignupForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signup } = useAuthStore();
+  const { signup, googleLogin } = useAuthStore();
   const router = useRouter();
 
   const pendingMenu = useOnboardingStore((s) => s.aiResult);
@@ -32,6 +35,27 @@ function SignupForm() {
   );
 
   const autoSlug = deriveSlug(restaurantName) || 'mi-menu';
+
+  const handleGoogleSuccess = async (response: { credential?: string }) => {
+    if (!response.credential) return;
+    setError('');
+    setLoading(true);
+    try {
+      await googleLogin(response.credential);
+      if (pendingMenu) {
+        try {
+          await useOnboardingStore.getState().importMenu();
+        } catch {
+          // Si el import falla, el menu se puede cargar despues desde /menu.
+        }
+      }
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al registrarte');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +149,26 @@ function SignupForm() {
 
       <form onSubmit={handleSubmit} className={`${pendingMenu ? '' : 'mt-6'} space-y-3`}>
         {error && <FormError message={error} />}
+
+        {GOOGLE_CLIENT_ID && (
+          <>
+            <div className={error ? 'mt-3 flex justify-center' : 'flex justify-center'}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError('No se pudo registrar con Google')}
+                width="340"
+                shape="pill"
+                size="large"
+                text="signup_with"
+              />
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <span className="h-px flex-1 bg-outline-variant/40" />
+              <span className="text-xs font-semibold text-on-surface-variant">o</span>
+              <span className="h-px flex-1 bg-outline-variant/40" />
+            </div>
+          </>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor="name" className="ml-1 text-xs font-bold text-on-surface-variant">
@@ -283,8 +327,10 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <GuestGate>
-      <SignupForm />
-    </GuestGate>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <GuestGate>
+        <SignupForm />
+      </GuestGate>
+    </GoogleOAuthProvider>
   );
 }

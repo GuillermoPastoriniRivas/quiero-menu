@@ -7,6 +7,7 @@ import { OrderStatus, DeliveryType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { WhatsAppIcon } from '@/components/ui/brand-icons';
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
 import { browserPathParam } from '@/lib/static-route-param';
 import { getRoomSocket } from '@/lib/socket';
@@ -312,10 +313,10 @@ export default function TrackingPage() {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 text-sm font-bold text-white hover:bg-green-700 transition-colors"
+            className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white hover:bg-[#1EBE5A] transition-colors"
           >
-            <MaterialIcon name="chat" size="sm" />
-            Confirmar por WhatsApp
+            <WhatsAppIcon className="size-5" />
+            Confirmar mi pedido por WhatsApp
           </a>
         )}
 

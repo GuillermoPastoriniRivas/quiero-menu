@@ -72,6 +72,7 @@ jobs:
           docker buildx build --platform linux/arm64 --push \
             --build-arg NEXT_PUBLIC_API_URL=https://quiero.menu/api \
             --build-arg NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }} \
+            --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }} \
             -t ${{ env.ECR_UI }}:${{ github.sha }} \
             -t ${{ env.ECR_UI }}:latest ./ui
 

@@ -22,6 +22,11 @@ export const SignupRequestSchema = z.object({
 });
 export type SignupRequestDto = z.infer<typeof SignupRequestSchema>;
 
+export const GoogleLoginRequestSchema = z.object({
+  credential: z.string().min(1),
+});
+export type GoogleLoginRequestDto = z.infer<typeof GoogleLoginRequestSchema>;
+
 export const RefreshTokenRequestSchema = z.object({
   refreshToken: z.string().min(1),
 });

@@ -9,6 +9,9 @@ import { AuthShell, FormError, IconInput } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -16,8 +19,22 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuthStore();
+  const { login, googleLogin } = useAuthStore();
   const router = useRouter();
+
+  const handleGoogleSuccess = async (response: { credential?: string }) => {
+    if (!response.credential) return;
+    setError('');
+    setLoading(true);
+    try {
+      await googleLogin(response.credential);
+      router.push('/dashboard');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +61,26 @@ function LoginForm() {
     >
       <form onSubmit={handleSubmit} className="mt-6 space-y-3">
         {error && <FormError message={error} />}
+
+        {GOOGLE_CLIENT_ID && (
+          <>
+            <div className={error ? 'mt-3 flex justify-center' : 'flex justify-center'}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError('No se pudo iniciar sesión con Google')}
+                width="340"
+                shape="pill"
+                size="large"
+                text="signin_with"
+              />
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <span className="h-px flex-1 bg-outline-variant/40" />
+              <span className="text-xs font-semibold text-on-surface-variant">o</span>
+              <span className="h-px flex-1 bg-outline-variant/40" />
+            </div>
+          </>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor="email" className="ml-1 text-xs font-bold text-on-surface-variant">
@@ -121,8 +158,10 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <GuestGate>
-      <LoginForm />
-    </GuestGate>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <GuestGate>
+        <LoginForm />
+      </GuestGate>
+    </GoogleOAuthProvider>
   );
 }

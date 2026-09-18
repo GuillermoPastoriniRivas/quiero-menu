@@ -9,6 +9,7 @@ import { LandingNav } from '@/components/landing/landing-nav';
 import { MenuDemo } from '@/components/landing/menu-demo';
 import { PanelMock } from '@/components/landing/panel-mock';
 import { StickyCta } from '@/components/landing/sticky-cta';
+import { SupportWhatsAppFloat } from '@/components/landing/support-whatsapp-float';
 import { getStorefrontIndex } from '@/lib/storefront-index';
 
 export const metadata: Metadata = {
@@ -554,9 +555,10 @@ export default async function LandingPage() {
       <JsonLd data={faqJsonLd} />
 
       <LandingNav />
-      <StickyCta />
+        <StickyCta />
+        <SupportWhatsAppFloat />
 
-      <main className="pt-16">
+        <main className="pt-16">
         {/* ── Hero ── */}
         <section className="relative overflow-hidden">
           <div aria-hidden className="absolute inset-0 -z-10">

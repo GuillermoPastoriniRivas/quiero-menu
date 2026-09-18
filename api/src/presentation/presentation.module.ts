@@ -35,6 +35,7 @@ import { InternalCustomDomainController } from './controllers/internal-custom-do
 // Use Cases — Auth
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
+import { GoogleLoginUseCase } from '../application/use-cases/auth/google-login.use-case.js';
 import { SignupUseCase } from '../application/use-cases/auth/signup.use-case.js';
 import { RefreshTokenUseCase } from '../application/use-cases/auth/refresh-token.use-case.js';
 import { LogoutUseCase } from '../application/use-cases/auth/logout.use-case.js';
@@ -181,6 +182,37 @@ const useCaseProviders = [
       'RefreshTokenRepository',
       'RestaurantRepository',
       'PasswordHasherPort',
+      'TokenProviderPort',
+      ConfigService,
+    ],
+  },
+  {
+    provide: 'GoogleLoginUseCase',
+    useFactory: (
+      userRepo: any,
+      restRepo: any,
+      urRepo: any,
+      rtRepo: any,
+      subRepo: any,
+      tokenProvider: any,
+      config: ConfigService,
+    ) =>
+      new GoogleLoginUseCase(
+        userRepo,
+        restRepo,
+        urRepo,
+        rtRepo,
+        subRepo,
+        tokenProvider,
+        config.get<string[]>('platformAdmin.emails') ?? [],
+        process.env.GOOGLE_CLIENT_ID ?? '',
+      ),
+    inject: [
+      'UserRepository',
+      'RestaurantRepository',
+      'UserRestaurantRepository',
+      'RefreshTokenRepository',
+      'SubscriptionRepository',
       'TokenProviderPort',
       ConfigService,
     ],

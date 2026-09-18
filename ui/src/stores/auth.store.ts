@@ -42,6 +42,7 @@ interface AuthState {
 
   hydrate: () => void;
   login: (email: string, password: string) => Promise<void>;
+  googleLogin: (credential: string) => Promise<void>;
   signup: (data: { name: string; email: string; password: string; restaurantName: string; restaurantSlug: string }) => Promise<void>;
   logout: () => void;
   setUser: (user: LoginResponse['user']) => void;
@@ -97,6 +98,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     clearStoredSession();
     const data = await api.post<LoginResponse>('/auth/login', { email, password });
+    api.setTokens(data.accessToken, data.refreshToken);
+    persistUser(data.user);
+    set({ user: data.user, isAuthenticated: true });
+  },
+
+  googleLogin: async (credential) => {
+    clearStoredSession();
+    const data = await api.post<LoginResponse>('/auth/google', { credential });
     api.setTokens(data.accessToken, data.refreshToken);
     persistUser(data.user);
     set({ user: data.user, isAuthenticated: true });

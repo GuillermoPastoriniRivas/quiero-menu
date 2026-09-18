@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { MaterialIcon } from "@/components/ui/material-icon";
+import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import type { StorefrontIndexEntry } from "@/types";
-import {
-  getCategoryDef,
-  formatUpdatedDate,
-} from "@/lib/restaurant-categories";
+import { getCategoryDef } from "@/lib/restaurant-categories";
 import { formatCurrency } from "@/lib/format";
 import type { StorefrontSearchMatch } from "@/lib/storefront-search";
 
@@ -42,7 +40,6 @@ export function StoreCard({
   distanceKm?: number | null;
 }) {
   const categoryDef = getCategoryDef(entry.category);
-  const updated = formatUpdatedDate(entry.updatedAt);
   const showDishChips = matchedItems && matchedItems.length > 0 && currency;
   const unclaimed = entry.claimed === false;
 
@@ -144,30 +141,25 @@ export function StoreCard({
           </div>
         ) : null}
 
-        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-          <span className="text-[11px] text-on-surface-variant/80">
-            {updated ? `Actualizado el ${updated}` : null}
-          </span>
-          <div className="flex items-center gap-2">
-            {waDigits(entry.phone) ? (
-              <a
-                href={`https://wa.me/${waDigits(entry.phone)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Escribirle por WhatsApp a ${entry.name}`}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-600/10 text-green-700 transition-colors hover:bg-green-600/20"
-              >
-                <MaterialIcon name="chat" size="sm" />
-              </a>
-            ) : null}
-            <Link
-              href={`/${entry.slug}`}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
+        <div className="mt-auto flex items-center justify-end gap-2 pt-2">
+          {waDigits(entry.phone) ? (
+            <a
+              href={`https://wa.me/${waDigits(entry.phone)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Escribirle por WhatsApp a ${entry.name}`}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#25D366]/15 text-[#128C4A] transition-colors hover:bg-[#25D366]/25"
             >
-              {unclaimed ? "Ver ficha" : "Ver menú"}
-              <MaterialIcon name="arrow_forward" size="xs" />
-            </Link>
-          </div>
+              <WhatsAppIcon className="size-4" />
+            </a>
+          ) : null}
+          <Link
+            href={`/${entry.slug}`}
+            className="gradient-cta inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-transform hover:scale-[1.03]"
+          >
+            {unclaimed ? "Ver ficha" : "Ver menú"}
+            <MaterialIcon name="arrow_forward" size="xs" />
+          </Link>
         </div>
       </div>
     </article>

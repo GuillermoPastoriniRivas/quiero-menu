@@ -30,8 +30,11 @@ import {
   ForgotPasswordRequestDto,
   ResetPasswordRequestSchema,
   ResetPasswordRequestDto,
+  GoogleLoginRequestSchema,
+  GoogleLoginRequestDto,
 } from '../request-dtos/auth.dto.js';
 import type { LoginUseCase } from '../../application/use-cases/auth/login.use-case.js';
+import type { GoogleLoginUseCase } from '../../application/use-cases/auth/google-login.use-case.js';
 import type { SignupUseCase } from '../../application/use-cases/auth/signup.use-case.js';
 import type { RefreshTokenUseCase } from '../../application/use-cases/auth/refresh-token.use-case.js';
 import type { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case.js';
@@ -45,6 +48,8 @@ import type { ResetPasswordUseCase } from '../../application/use-cases/auth/rese
 export class AuthController {
   constructor(
     @Inject('LoginUseCase') private readonly loginUseCase: LoginUseCase,
+    @Inject('GoogleLoginUseCase')
+    private readonly googleLoginUseCase: GoogleLoginUseCase,
     @Inject('SignupUseCase') private readonly signupUseCase: SignupUseCase,
     @Inject('RefreshTokenUseCase')
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
@@ -93,6 +98,24 @@ export class AuthController {
       result.value.user.id,
       result.value.user.restaurantId,
       { email: body.email, slug: body.restaurantSlug },
+    );
+    return result.value;
+  }
+
+  @Public()
+  @Throttle({ short: { limit: 10, ttl: 60_000 } })
+  @Post('google')
+  async googleLogin(
+    @Body(new ZodValidationPipe(GoogleLoginRequestSchema))
+    body: GoogleLoginRequestDto,
+  ) {
+    const result = await this.googleLoginUseCase.execute(body);
+    if (!result.ok) throw new UnauthorizedException(result.error.message);
+    this.audit.log(
+      'auth.google',
+      result.value.user.id,
+      result.value.user.restaurantId,
+      { email: result.value.user.email },
     );
     return result.value;
   }
