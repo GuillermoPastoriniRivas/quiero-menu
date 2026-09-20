@@ -35,9 +35,40 @@ export default function AccountPage() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
   useEffect(() => {
     fetchRestaurant();
+    api
+      .get<{ hasPassword: boolean }>("/auth/me")
+      .then((data) => setHasPassword(data.hasPassword))
+      .catch(() => setHasPassword(null));
   }, [fetchRestaurant]);
+
+  const handleSavePassword = async () => {
+    setSavingPassword(true);
+    try {
+      const data = await api.patch<{
+        accessToken: string;
+        refreshToken: string;
+      }>("/auth/password", {
+        password: newPassword,
+        ...(currentPassword ? { currentPassword } : {}),
+      });
+      api.setTokens(data.accessToken, data.refreshToken);
+      setHasPassword(true);
+      setCurrentPassword("");
+      setNewPassword("");
+      toast.success("Contraseña actualizada. Ya podés entrar con email también.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al guardar la contraseña");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
 
   const displayName = user?.name || restaurant?.name || "";
   const initials = displayName.slice(0, 2).toUpperCase();
@@ -64,10 +95,10 @@ export default function AccountPage() {
   };
 
   const handleDelete = async () => {
-    if (!deletePassword) return;
+    if (hasPassword && !deletePassword) return;
     setDeleting(true);
     try {
-      await api.delete("/account", { password: deletePassword });
+      await api.delete("/account", { password: hasPassword ? deletePassword : "ELIMINAR" });
       toast.success("Cuenta eliminada. Gracias por haber usado quiero.menu.");
       logout();
       router.replace("/");
@@ -104,6 +135,53 @@ export default function AccountPage() {
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Contraseña */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{hasPassword ? "Cambiar contraseña" : "Crear contraseña"}</CardTitle>
+          <CardDescription>
+            {hasPassword === false
+              ? "Tu cuenta se creó con Google. Agregá una contraseña para también poder entrar con email."
+              : "Podés usar email y contraseña o Google para entrar"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {hasPassword ? (
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Contraseña actual</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Tu contraseña actual"
+                autoComplete="current-password"
+              />
+            </div>
+          ) : null}
+          <div className="space-y-2">
+            <Label htmlFor="newPassword">
+              {hasPassword ? "Nueva contraseña" : "Nueva contraseña (mínimo 6 caracteres)"}
+            </Label>
+            <Input
+              id="newPassword"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Nueva contraseña"
+              autoComplete="new-password"
+              minLength={6}
+            />
+          </div>
+          <Button
+            onClick={handleSavePassword}
+            disabled={newPassword.length < 6 || (hasPassword && !currentPassword) || savingPassword}
+          >
+            {savingPassword ? "Guardando..." : hasPassword ? "Cambiar contraseña" : "Crear contraseña"}
+          </Button>
         </CardContent>
       </Card>
 
@@ -173,22 +251,33 @@ export default function AccountPage() {
           <div className="space-y-4 mt-2">
             <p className="text-sm text-muted-foreground">
               Se borran tu menú, tus pedidos, tus clientes y tu suscripción. Esta
-              acción no se puede deshacer. Confirmá tu contraseña para continuar.
+              acción no se puede deshacer. Confirmá
+              {hasPassword ? " tu contraseña" : " escribiendo ELIMINAR"} para
+              continuar.
             </p>
             <div className="space-y-2">
-              <Label>Contraseña</Label>
-              <Input
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                placeholder="Tu contraseña"
-                onKeyDown={(e) => e.key === "Enter" && handleDelete()}
-              />
+              <Label>{hasPassword ? "Contraseña" : "Confirmación"}</Label>
+              {hasPassword ? (
+                <Input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Tu contraseña"
+                  onKeyDown={(e) => e.key === "Enter" && handleDelete()}
+                />
+              ) : (
+                <Input
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Escribí ELIMINAR"
+                  onKeyDown={(e) => e.key === "Enter" && handleDelete()}
+                />
+              )}
             </div>
             <Button
               variant="destructive"
               className="w-full"
-              disabled={!deletePassword || deleting}
+              disabled={(hasPassword && !deletePassword) || (!hasPassword && deletePassword !== "ELIMINAR") || deleting}
               onClick={handleDelete}
             >
               {deleting ? "Eliminando..." : "Eliminar definitivamente"}

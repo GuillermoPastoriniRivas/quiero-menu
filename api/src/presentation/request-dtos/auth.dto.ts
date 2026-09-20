@@ -27,6 +27,12 @@ export const GoogleLoginRequestSchema = z.object({
 });
 export type GoogleLoginRequestDto = z.infer<typeof GoogleLoginRequestSchema>;
 
+export const SetPasswordRequestSchema = z.object({
+  password: z.string().min(6),
+  currentPassword: z.string().min(1).optional(),
+});
+export type SetPasswordRequestDto = z.infer<typeof SetPasswordRequestSchema>;
+
 export const RefreshTokenRequestSchema = z.object({
   refreshToken: z.string().min(1),
 });

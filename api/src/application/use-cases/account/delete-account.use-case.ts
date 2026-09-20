@@ -66,11 +66,13 @@ export class DeleteAccountUseCase {
     const user = await this.userRepo.findById(userId);
     if (!user) return err(new UserNotFoundError());
 
-    const passwordOk = await this.passwordHasher.verify(
-      password,
-      user.passwordHash,
-    );
-    if (!passwordOk) return err(new InvalidCredentialsError());
+    if (user.passwordHash !== '') {
+      const passwordOk = await this.passwordHasher.verify(
+        password,
+        user.passwordHash,
+      );
+      if (!passwordOk) return err(new InvalidCredentialsError());
+    }
 
     const links = await this.userRestaurantRepo.findByUserId(userId);
 

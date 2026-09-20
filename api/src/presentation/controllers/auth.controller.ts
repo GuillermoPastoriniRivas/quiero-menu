@@ -4,6 +4,7 @@ import {
   Get,
   Body,
   Inject,
+  Patch,
   ConflictException,
   UnauthorizedException,
   BadRequestException,
@@ -32,9 +33,12 @@ import {
   ResetPasswordRequestDto,
   GoogleLoginRequestSchema,
   GoogleLoginRequestDto,
+  SetPasswordRequestSchema,
+  SetPasswordRequestDto,
 } from '../request-dtos/auth.dto.js';
 import type { LoginUseCase } from '../../application/use-cases/auth/login.use-case.js';
 import type { GoogleLoginUseCase } from '../../application/use-cases/auth/google-login.use-case.js';
+import type { SetPasswordUseCase } from '../../application/use-cases/auth/set-password.use-case.js';
 import type { SignupUseCase } from '../../application/use-cases/auth/signup.use-case.js';
 import type { RefreshTokenUseCase } from '../../application/use-cases/auth/refresh-token.use-case.js';
 import type { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case.js';
@@ -50,6 +54,8 @@ export class AuthController {
     @Inject('LoginUseCase') private readonly loginUseCase: LoginUseCase,
     @Inject('GoogleLoginUseCase')
     private readonly googleLoginUseCase: GoogleLoginUseCase,
+    @Inject('SetPasswordUseCase')
+    private readonly setPasswordUseCase: SetPasswordUseCase,
     @Inject('SignupUseCase') private readonly signupUseCase: SignupUseCase,
     @Inject('RefreshTokenUseCase')
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
@@ -191,6 +197,22 @@ export class AuthController {
     if (!result.ok) throw new NotFoundException(result.error.message);
     this.audit.log('auth.resend_verification', user._id, user.restaurantId);
     return { ok: true };
+  }
+
+  @Patch('password')
+  async setPassword(
+    @CurrentUser() user: RequestUser,
+    @Body(new ZodValidationPipe(SetPasswordRequestSchema))
+    body: SetPasswordRequestDto,
+  ) {
+    const result = await this.setPasswordUseCase.execute(
+      user._id,
+      body.password,
+      body.currentPassword,
+    );
+    if (!result.ok) throw new UnauthorizedException(result.error.message);
+    this.audit.log('auth.password_set', user._id, user.restaurantId);
+    return result.value;
   }
 
   @Get('me')

@@ -36,6 +36,7 @@ import { InternalCustomDomainController } from './controllers/internal-custom-do
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
 import { GoogleLoginUseCase } from '../application/use-cases/auth/google-login.use-case.js';
+import { SetPasswordUseCase } from '../application/use-cases/auth/set-password.use-case.js';
 import { SignupUseCase } from '../application/use-cases/auth/signup.use-case.js';
 import { RefreshTokenUseCase } from '../application/use-cases/auth/refresh-token.use-case.js';
 import { LogoutUseCase } from '../application/use-cases/auth/logout.use-case.js';
@@ -254,6 +255,36 @@ const useCaseProviders = [
       'SubscriptionRepository',
       'VerificationTokenRepository',
       'EmailServicePort',
+      ConfigService,
+    ],
+  },
+  {
+    provide: 'SetPasswordUseCase',
+    useFactory: (
+      userRepo: any,
+      urRepo: any,
+      rtRepo: any,
+      restRepo: any,
+      hasher: any,
+      tokenProvider: any,
+      config: ConfigService,
+    ) =>
+      new SetPasswordUseCase(
+        userRepo,
+        urRepo,
+        rtRepo,
+        restRepo,
+        hasher,
+        tokenProvider,
+        config.get<string[]>('platformAdmin.emails') ?? [],
+      ),
+    inject: [
+      'UserRepository',
+      'UserRestaurantRepository',
+      'RefreshTokenRepository',
+      'RestaurantRepository',
+      'PasswordHasherPort',
+      'TokenProviderPort',
       ConfigService,
     ],
   },

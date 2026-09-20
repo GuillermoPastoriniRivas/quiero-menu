@@ -9,6 +9,7 @@ export interface CurrentUserOutput {
   id: string;
   name: string;
   email: string;
+  hasPassword: boolean;
   restaurants: { id: string; slug: string; name: string; role: string }[];
   platformAdmin?: boolean;
 }
@@ -44,6 +45,7 @@ export class GetCurrentUserUseCase {
       id: user.id,
       name: user.name,
       email: user.email,
+      hasPassword: user.passwordHash !== '',
       restaurants,
       ...(isPlatformAdminEmail(user.email, this.platformAdminEmails)
         ? { platformAdmin: true }
