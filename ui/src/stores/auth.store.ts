@@ -35,6 +35,15 @@ function clearStoredSession(): void {
   }
 }
 
+export interface GoogleSignupRestaurant {
+  name?: string;
+  city?: string;
+}
+
+export type AcceptInvitationBody =
+  | { kind: 'google'; credential: string }
+  | { kind: 'password'; name: string; email: string; password: string };
+
 interface AuthState {
   user: LoginResponse['user'] | null;
   isLoading: boolean;
@@ -42,7 +51,8 @@ interface AuthState {
 
   hydrate: () => void;
   login: (email: string, password: string) => Promise<void>;
-  googleLogin: (credential: string) => Promise<void>;
+  googleLogin: (credential: string, restaurant?: GoogleSignupRestaurant) => Promise<void>;
+  acceptInvitation: (token: string, body: AcceptInvitationBody) => Promise<LoginResponse['user']>;
   signup: (data: { name: string; email: string; password: string; restaurantName: string; restaurantSlug: string }) => Promise<void>;
   logout: () => void;
   setUser: (user: LoginResponse['user']) => void;
@@ -66,7 +76,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       return;
     }
     // Sesión sin usuario cacheado (de antes de persistirlo): rehidratar por API.
-    api.get<{ id: string; name: string; email: string; restaurants: { id: string; slug: string; name: string; role: string }[]; platformAdmin?: boolean }>('/auth/me')
+    api.get<{ id: string; name: string; email: string; restaurants: { id: string; slug: string; name: string; role: string }[]; platformAdmin?: boolean; operating?: boolean }>('/auth/me')
       .then((data) => {
         const r = data.restaurants[0];
         const user = {
@@ -76,7 +86,9 @@ export const useAuthStore = create<AuthState>((set) => ({
           role: r?.role ?? '',
           restaurantId: r?.id ?? '',
           restaurantSlug: r?.slug ?? '',
+          restaurantName: r?.name ?? '',
           ...(data.platformAdmin ? { platformAdmin: true as const } : {}),
+          ...(data.operating ? { operating: true as const } : {}),
         };
         persistUser(user);
         set({ user, isAuthenticated: true, isLoading: false });
@@ -103,12 +115,27 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: data.user, isAuthenticated: true });
   },
 
-  googleLogin: async (credential) => {
+  googleLogin: async (credential, restaurant) => {
     clearStoredSession();
-    const data = await api.post<LoginResponse>('/auth/google', { credential });
+    const data = await api.post<LoginResponse>('/auth/google', {
+      credential,
+      ...(restaurant ? { restaurant } : {}),
+    });
     api.setTokens(data.accessToken, data.refreshToken);
     persistUser(data.user);
     set({ user: data.user, isAuthenticated: true });
+  },
+
+  acceptInvitation: async (token, body) => {
+    clearStoredSession();
+    const data = await api.post<LoginResponse>(
+      `/invitations/${encodeURIComponent(token)}/accept`,
+      body,
+    );
+    api.setTokens(data.accessToken, data.refreshToken);
+    persistUser(data.user);
+    set({ user: data.user, isAuthenticated: true });
+    return data.user;
   },
 
   signup: async (input) => {

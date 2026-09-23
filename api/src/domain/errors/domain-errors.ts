@@ -223,3 +223,40 @@ export class RestaurantNotFeatureableError extends DomainError {
     );
   }
 }
+
+export class InvitationNotFoundError extends DomainError {
+  constructor() {
+    super('INVITATION_NOT_FOUND', 'Esta invitación no existe.');
+  }
+}
+
+export class InvitationNotActiveError extends DomainError {
+  constructor(public readonly reason: 'expired' | 'accepted' | 'revoked') {
+    super(
+      'INVITATION_NOT_ACTIVE',
+      reason === 'expired'
+        ? 'Esta invitación venció. Pedile un link nuevo a quien te la mandó.'
+        : reason === 'accepted'
+          ? 'Esta invitación ya se usó.'
+          : 'Esta invitación fue cancelada. Pedile un link nuevo a quien te la mandó.',
+    );
+  }
+}
+
+export class InvitationEmailMismatchError extends DomainError {
+  constructor() {
+    super(
+      'INVITATION_EMAIL_MISMATCH',
+      'Esta invitación es para otro email. Entrá con la cuenta a la que te la mandaron.',
+    );
+  }
+}
+
+export class AccountHasRestaurantError extends DomainError {
+  constructor() {
+    super(
+      'ACCOUNT_HAS_RESTAURANT',
+      'Esa cuenta ya administra otro local. Entrá con otra cuenta de Google o escribinos.',
+    );
+  }
+}

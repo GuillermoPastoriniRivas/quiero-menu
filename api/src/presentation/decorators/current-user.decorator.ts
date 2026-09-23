@@ -7,6 +7,7 @@ export interface RequestUser {
   role: string;
   platformAdmin?: boolean;
   impersonating?: boolean;
+  operating?: boolean;
 }
 
 export const CurrentUser = createParamDecorator(

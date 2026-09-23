@@ -6,6 +6,7 @@ export interface TokenPayload {
   plat?: boolean;
   /** Session issued via admin impersonation. */
   imp?: boolean;
+  act?: boolean;
 }
 
 export interface TokenProviderPort {

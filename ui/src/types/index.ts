@@ -346,7 +346,9 @@ export interface LoginResponse {
     role: string;
     restaurantId: string;
     restaurantSlug: string;
+    restaurantName?: string;
     platformAdmin?: boolean;
+    operating?: boolean;
   };
 }
 
@@ -640,4 +642,44 @@ export interface AnalyticsOverview {
     minMinutes: number;
     maxMinutes: number;
   }[];
+}
+
+export type InvitationStatus = 'active' | 'accepted' | 'revoked' | 'expired';
+
+export interface AdminInvitation {
+  id: string;
+  email: string | null;
+  status: InvitationStatus;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  acceptedByEmail: string | null;
+  revokedAt: string | null;
+}
+
+export interface CreatedInvitation {
+  id: string;
+  url: string;
+  email: string | null;
+  expiresAt: string;
+  emailSent: boolean;
+}
+
+export interface InvitationPreview {
+  status: InvitationStatus;
+  expiresAt: string;
+  emailHint: string | null;
+  restaurant: {
+    name: string;
+    slug: string;
+    description: string;
+    city: string;
+    category: string;
+    logoUrl: string;
+    bannerUrl: string;
+    photos: string[];
+    categories: number;
+    items: number;
+    hasHours: boolean;
+  };
 }

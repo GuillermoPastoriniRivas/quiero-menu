@@ -6,7 +6,9 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
+import { OwnSessionGuard } from '../guards/own-session.guard.js';
 import {
   CurrentUser,
   RequestUser,
@@ -21,6 +23,7 @@ import type { GetAccountDataUseCase } from '../../application/use-cases/account/
 import type { DeleteAccountUseCase } from '../../application/use-cases/account/delete-account.use-case.js';
 
 @Controller('account')
+@UseGuards(OwnSessionGuard)
 export class AccountController {
   constructor(
     @Inject('GetAccountDataUseCase')

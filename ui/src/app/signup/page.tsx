@@ -41,7 +41,12 @@ function SignupForm() {
     setError('');
     setLoading(true);
     try {
-      await googleLogin(response.credential);
+      const name = restaurantName.trim() || pendingMenu?.restaurant.name;
+      const city = pendingMenu?.restaurant.city;
+      await googleLogin(
+        response.credential,
+        name || city ? { ...(name ? { name } : {}), ...(city ? { city } : {}) } : undefined,
+      );
       if (pendingMenu) {
         try {
           await useOnboardingStore.getState().importMenu();

@@ -149,4 +149,60 @@ describe('RefreshTokenUseCase', () => {
     if (result.ok) return;
     expect(result.error).toBeInstanceOf(InvalidCredentialsError);
   });
+
+  it('conserva la sesión de edición del admin sobre el local operado', async () => {
+    const { userRepo, userRestaurantRepo, refreshTokenRepo, tokenProvider } =
+      buildUseCase({
+        tokenProvider: {
+          verifyRefresh: jest.fn().mockReturnValue({
+            sub: 'u1',
+            restaurantId: 'r-operado',
+            role: UserRole.OWNER,
+            plat: true,
+            act: true,
+          }),
+        },
+      });
+    const restaurantRepo = {
+      findById: jest.fn().mockResolvedValue({ id: 'r-operado' }),
+    };
+    const useCase = new RefreshTokenUseCase(
+      refreshTokenRepo,
+      userRepo,
+      userRestaurantRepo,
+      tokenProvider,
+      ['owner@test.com'],
+      restaurantRepo as never,
+    );
+
+    const result = await useCase.execute('refresh-token');
+
+    expect(result.ok).toBe(true);
+    expect(tokenProvider.signAccess).toHaveBeenCalledWith({
+      sub: 'u1',
+      restaurantId: 'r-operado',
+      role: UserRole.OWNER,
+      plat: true,
+      act: true,
+    });
+  });
+
+  it('corta la sesión de edición si el usuario ya no es admin', async () => {
+    const { useCase } = buildUseCase({
+      tokenProvider: {
+        verifyRefresh: jest.fn().mockReturnValue({
+          sub: 'u1',
+          restaurantId: 'r-operado',
+          role: UserRole.OWNER,
+          act: true,
+        }),
+      },
+    });
+
+    const result = await useCase.execute('refresh-token');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBeInstanceOf(InvalidCredentialsError);
+  });
 });

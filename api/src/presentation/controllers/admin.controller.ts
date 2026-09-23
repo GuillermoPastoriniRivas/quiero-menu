@@ -37,6 +37,8 @@ import {
   AdminSearchTermsRequestDto,
   AdminUpdateRestaurantRequestSchema,
   AdminUpdateRestaurantRequestDto,
+  AdminCreateInvitationRequestSchema,
+  AdminCreateInvitationRequestDto,
 } from '../request-dtos/admin.dto.js';
 import type { SearchRestaurantsUseCase } from '../../application/use-cases/admin/search-restaurants.use-case.js';
 import type { GetRestaurantDetailUseCase } from '../../application/use-cases/admin/get-restaurant-detail.use-case.js';
@@ -55,6 +57,10 @@ import { RestaurantNotFeatureableError } from '../../domain/errors/domain-errors
 import type { ApproveStoreClaimUseCase } from '../../application/use-cases/claims/approve-store-claim.use-case.js';
 import type { RejectStoreClaimUseCase } from '../../application/use-cases/claims/reject-store-claim.use-case.js';
 import type { StoreClaimStatus } from '../../domain/entities/store-claim.entity.js';
+import type { OperateRestaurantUseCase } from '../../application/use-cases/admin/operate-restaurant.use-case.js';
+import type { CreateInvitationUseCase } from '../../application/use-cases/invitations/create-invitation.use-case.js';
+import type { ListInvitationsUseCase } from '../../application/use-cases/invitations/list-invitations.use-case.js';
+import type { RevokeInvitationUseCase } from '../../application/use-cases/invitations/revoke-invitation.use-case.js';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -88,6 +94,14 @@ export class AdminController {
     private readonly deactivateFeaturedSlotUseCase: DeactivateFeaturedSlotUseCase,
     @Inject('UpdateRestaurantUseCase')
     private readonly updateRestaurantUseCase: UpdateRestaurantUseCase,
+    @Inject('OperateRestaurantUseCase')
+    private readonly operateRestaurantUseCase: OperateRestaurantUseCase,
+    @Inject('CreateInvitationUseCase')
+    private readonly createInvitationUseCase: CreateInvitationUseCase,
+    @Inject('ListInvitationsUseCase')
+    private readonly listInvitationsUseCase: ListInvitationsUseCase,
+    @Inject('RevokeInvitationUseCase')
+    private readonly revokeInvitationUseCase: RevokeInvitationUseCase,
     private readonly audit: AuditService,
   ) {}
 
@@ -149,6 +163,67 @@ export class AdminController {
       targetEmail: result.value.user.email,
     });
     return result.value;
+  }
+
+  @Throttle({ short: { limit: 20, ttl: 60_000 } })
+  @Post('restaurants/:id/operate')
+  async operate(
+    @CurrentUser() admin: RequestUser,
+    @Param('id') restaurantId: string,
+  ) {
+    const result = await this.operateRestaurantUseCase.execute(
+      admin._id,
+      restaurantId,
+    );
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    this.audit.log('admin.operate_started', admin._id, restaurantId);
+    return result.value;
+  }
+
+  @Get('restaurants/:id/invitations')
+  async listInvitations(@Param('id') restaurantId: string) {
+    return {
+      invitations: await this.listInvitationsUseCase.execute(restaurantId),
+    };
+  }
+
+  @Throttle({ short: { limit: 20, ttl: 60_000 } })
+  @Post('restaurants/:id/invitations')
+  async createInvitation(
+    @CurrentUser() admin: RequestUser,
+    @Param('id') restaurantId: string,
+    @Body(new ZodValidationPipe(AdminCreateInvitationRequestSchema))
+    body: AdminCreateInvitationRequestDto,
+  ) {
+    const result = await this.createInvitationUseCase.execute({
+      restaurantId,
+      adminUserId: admin._id,
+      email: body.email || null,
+      sendEmail: body.sendEmail,
+    });
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    this.audit.log('admin.invitation_created', admin._id, restaurantId, {
+      invitationId: result.value.id,
+      email: result.value.email,
+      emailSent: result.value.emailSent,
+    });
+    return result.value;
+  }
+
+  @Post('invitations/:id/revoke')
+  async revokeInvitation(
+    @CurrentUser() admin: RequestUser,
+    @Param('id') invitationId: string,
+  ) {
+    const result = await this.revokeInvitationUseCase.execute(invitationId);
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    this.audit.log(
+      'admin.invitation_revoked',
+      admin._id,
+      result.value.restaurantId,
+      { invitationId },
+    );
+    return { ok: true };
   }
 
   @Get('audit-logs')

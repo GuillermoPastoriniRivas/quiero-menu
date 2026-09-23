@@ -23,6 +23,11 @@ import { SubscriptionStatus } from '../../../domain/enums/subscription-status.en
 import { PaymentProvider } from '../../../domain/enums/payment-provider.enum.js';
 import { welcomeTemplate } from '../../../infrastructure/email/templates/welcome.template.js';
 import { verifyEmailTemplate } from '../../../infrastructure/email/templates/verify-email.template.js';
+import {
+  DEFAULT_RESTAURANT_COUNTRY,
+  DEFAULT_RESTAURANT_CURRENCY,
+  DEFAULT_RESTAURANT_TIMEZONE,
+} from '../../../domain/constants/restaurant-defaults.js';
 
 export class SignupUseCase {
   constructor(
@@ -69,11 +74,11 @@ export class SignupUseCase {
       bannerUrl: '',
       address: '',
       city: '',
-      country: '',
+      country: DEFAULT_RESTAURANT_COUNTRY,
       coordinates: null,
       phone: '',
-      timezone: 'America/Bogota',
-      currency: 'COP',
+      timezone: DEFAULT_RESTAURANT_TIMEZONE,
+      currency: DEFAULT_RESTAURANT_CURRENCY,
       status: RestaurantStatus.ACTIVE,
       openOverride: null,
       customDomain: null,

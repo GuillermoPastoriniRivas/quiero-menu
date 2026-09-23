@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { browserPathParam } from '@/lib/static-route-param';
 import { backupSessionForImpersonation } from '@/lib/admin-session';
-import type { AdminRestaurantDetail, ImpersonateResponse } from '@/types';
+import type { AdminRestaurantDetail, LoginResponse } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { formatDate } from '@/lib/format';
 import { RESTAURANT_CATEGORIES } from '@/lib/restaurant-categories';
+import { InvitationPanel } from '@/components/admin/invitation-panel';
 
 const NOT_FOUND_FALLBACK = 'unknown';
 
@@ -61,7 +62,7 @@ export default function AdminLocalDetailPage() {
   const [detail, setDetail] = useState<AdminRestaurantDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [impersonating, setImpersonating] = useState(false);
+  const [operating, setOperating] = useState(false);
   const [featScope, setFeatScope] = useState<'category' | 'home'>('category');
   const [featDays, setFeatDays] = useState('30');
   const [featuring, setFeaturing] = useState(false);
@@ -126,12 +127,12 @@ export default function AdminLocalDetailPage() {
     load();
   }, [load]);
 
-  const handleImpersonate = async () => {
+  const handleOperate = async () => {
     if (!detail) return;
-    setImpersonating(true);
+    setOperating(true);
     try {
-      const session = await api.post<ImpersonateResponse>(
-        `/admin/restaurants/${detail.restaurant.id}/impersonate`,
+      const session = await api.post<LoginResponse>(
+        `/admin/restaurants/${detail.restaurant.id}/operate`,
         {},
       );
       backupSessionForImpersonation();
@@ -139,8 +140,8 @@ export default function AdminLocalDetailPage() {
       useAuthStore.getState().setUser(session.user);
       router.push('/dashboard');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo entrar al local');
-      setImpersonating(false);
+      setError(e instanceof Error ? e.message : 'No se pudo abrir el local');
+      setOperating(false);
     }
   };
 
@@ -325,9 +326,9 @@ export default function AdminLocalDetailPage() {
               {r.country || '—'} · alta {formatDate(r.createdAt)}
             </p>
           </div>
-          <Button onClick={handleImpersonate} disabled={impersonating}>
-            <MaterialIcon name="login" size="sm" />
-            {impersonating ? 'Entrando...' : 'Entrar como dueño'}
+          <Button onClick={handleOperate} disabled={operating}>
+            <MaterialIcon name="edit" size="sm" />
+            {operating ? 'Abriendo...' : 'Editar como admin'}
           </Button>
         </div>
 
@@ -337,6 +338,12 @@ export default function AdminLocalDetailPage() {
           </div>
         )}
       </div>
+
+      <InvitationPanel
+        restaurantId={r.id}
+        restaurantName={r.name}
+        phone={r.phone ?? ''}
+      />
 
       <div className="grid sm:grid-cols-2 gap-4 mb-4">
         <InfoCard title="Dueño">

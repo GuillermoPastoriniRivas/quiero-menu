@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RestaurantCategory } from '../../domain/enums/restaurant-category.enum.js';
 
 export const LoginRequestSchema = z.object({
   email: z.string().email(),
@@ -24,6 +25,13 @@ export type SignupRequestDto = z.infer<typeof SignupRequestSchema>;
 
 export const GoogleLoginRequestSchema = z.object({
   credential: z.string().min(1),
+  restaurant: z
+    .object({
+      name: z.string().max(120).optional(),
+      city: z.string().max(80).optional(),
+      category: z.nativeEnum(RestaurantCategory).optional(),
+    })
+    .optional(),
 });
 export type GoogleLoginRequestDto = z.infer<typeof GoogleLoginRequestSchema>;
 

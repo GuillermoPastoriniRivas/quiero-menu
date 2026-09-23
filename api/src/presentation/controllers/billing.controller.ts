@@ -4,7 +4,9 @@ import {
   Post,
   Inject,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
+import { OwnSessionGuard } from '../guards/own-session.guard.js';
 import {
   CurrentUser,
   RequestUser,
@@ -38,6 +40,7 @@ export class BillingController {
     return this.getSubscription.execute(user.restaurantId);
   }
 
+  @UseGuards(OwnSessionGuard)
   @Post('checkout')
   @Roles('owner')
   async checkout(@CurrentUser() user: RequestUser) {

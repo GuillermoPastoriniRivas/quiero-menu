@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useOrderStore } from '@/stores/order.store';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { useAuthStore } from '@/stores/auth.store';
@@ -14,6 +15,27 @@ import { Money } from '@/components/ui/money';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import Link from 'next/link';
+
+function WelcomeBanner({ name }: { name?: string }) {
+  const params = useSearchParams();
+  if (params.get('bienvenida') !== '1') return null;
+  return (
+    <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+      <div className="flex items-start gap-3">
+        <MaterialIcon name="rocket_launch" size="md" className="text-primary shrink-0" />
+        <div>
+          <p className="font-bold text-on-surface">
+            {name ? `${name} ya es tuyo.` : 'Tu local ya es tuyo.'}
+          </p>
+          <p className="text-sm text-on-surface-variant mt-1">
+            Antes de compartir tu link, revisá los pasos de abajo: horarios, métodos de pago y tu
+            menú. Desde ahora los pedidos te llegan acá.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 interface ChecklistStep {
   key: string;
@@ -139,6 +161,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <Suspense fallback={null}>
+        <WelcomeBanner name={restaurant?.name} />
+      </Suspense>
       {/* Welcome */}
       <section className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -9,7 +9,9 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
+import { OwnSessionGuard } from '../guards/own-session.guard.js';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../decorators/public.decorator.js';
 import {
@@ -191,6 +193,7 @@ export class AuthController {
   }
 
   @Throttle({ short: { limit: 5, ttl: 60_000 } })
+  @UseGuards(OwnSessionGuard)
   @Post('resend-verification')
   async resendVerification(@CurrentUser() user: RequestUser) {
     const result = await this.resendVerificationUseCase.execute(user._id);
@@ -199,6 +202,7 @@ export class AuthController {
     return { ok: true };
   }
 
+  @UseGuards(OwnSessionGuard)
   @Patch('password')
   async setPassword(
     @CurrentUser() user: RequestUser,
@@ -217,7 +221,10 @@ export class AuthController {
 
   @Get('me')
   async me(@CurrentUser() user: RequestUser) {
-    const result = await this.getCurrentUserUseCase.execute(user._id);
+    const result = await this.getCurrentUserUseCase.execute(user._id, {
+      restaurantId: user.restaurantId,
+      operating: user.operating,
+    });
     if (!result.ok) throw new UnauthorizedException(result.error.message);
     return result.value;
   }

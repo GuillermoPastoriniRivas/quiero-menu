@@ -109,3 +109,11 @@ export const AdminAssignFeaturedRequestSchema = z.object({
 export type AdminAssignFeaturedRequestDto = z.infer<
   typeof AdminAssignFeaturedRequestSchema
 >;
+
+export const AdminCreateInvitationRequestSchema = z.object({
+  email: z.union([z.string().trim().email(), z.literal('')]).optional(),
+  sendEmail: z.boolean().optional(),
+});
+export type AdminCreateInvitationRequestDto = z.infer<
+  typeof AdminCreateInvitationRequestSchema
+>;

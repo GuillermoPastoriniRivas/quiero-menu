@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import { InfrastructureModule } from '../infrastructure/infrastructure.module.js';
@@ -36,11 +36,20 @@ import { InternalCustomDomainController } from './controllers/internal-custom-do
 // Use Cases — Auth
 import { LoginUseCase } from '../application/use-cases/auth/login.use-case.js';
 import { GoogleLoginUseCase } from '../application/use-cases/auth/google-login.use-case.js';
+import { GoogleIdTokenVerifier } from '../application/common/google-identity.js';
 import { SetPasswordUseCase } from '../application/use-cases/auth/set-password.use-case.js';
 import { SignupUseCase } from '../application/use-cases/auth/signup.use-case.js';
 import { RefreshTokenUseCase } from '../application/use-cases/auth/refresh-token.use-case.js';
 import { LogoutUseCase } from '../application/use-cases/auth/logout.use-case.js';
 import { AuditService } from './services/audit.service.js';
+import { OperateRestaurantUseCase } from '../application/use-cases/admin/operate-restaurant.use-case.js';
+import { CreateInvitationUseCase } from '../application/use-cases/invitations/create-invitation.use-case.js';
+import { ListInvitationsUseCase } from '../application/use-cases/invitations/list-invitations.use-case.js';
+import { RevokeInvitationUseCase } from '../application/use-cases/invitations/revoke-invitation.use-case.js';
+import { GetInvitationPreviewUseCase } from '../application/use-cases/invitations/get-invitation-preview.use-case.js';
+import { AcceptInvitationUseCase } from '../application/use-cases/invitations/accept-invitation.use-case.js';
+import { InvitationController } from './controllers/invitation.controller.js';
+import { OperateAuditInterceptor } from './interceptors/operate-audit.interceptor.js';
 
 // Use Cases — Admin
 import { SearchRestaurantsUseCase } from '../application/use-cases/admin/search-restaurants.use-case.js';
@@ -206,7 +215,7 @@ const useCaseProviders = [
         subRepo,
         tokenProvider,
         config.get<string[]>('platformAdmin.emails') ?? [],
-        process.env.GOOGLE_CLIENT_ID ?? '',
+        new GoogleIdTokenVerifier(process.env.GOOGLE_CLIENT_ID ?? ''),
       ),
     inject: [
       'UserRepository',
@@ -296,16 +305,23 @@ const useCaseProviders = [
       urRepo: any,
       tokenProvider: any,
       config: ConfigService,
+      restRepo: any,
     ) =>
-      new RefreshTokenUseCase(rtRepo, userRepo, urRepo, tokenProvider, [
-        ...(config.get<string[]>('platformAdmin.emails') ?? []),
-      ]),
+      new RefreshTokenUseCase(
+        rtRepo,
+        userRepo,
+        urRepo,
+        tokenProvider,
+        [...(config.get<string[]>('platformAdmin.emails') ?? [])],
+        restRepo,
+      ),
     inject: [
       'RefreshTokenRepository',
       'UserRepository',
       'UserRestaurantRepository',
       'TokenProviderPort',
       ConfigService,
+      'RestaurantRepository',
     ],
   },
   {
@@ -484,6 +500,125 @@ const useCaseProviders = [
       'VerificationTokenRepository',
       'PasswordHasherPort',
       'EmailServicePort',
+      ConfigService,
+    ],
+  },
+  {
+    provide: 'OperateRestaurantUseCase',
+    useFactory: (
+      restRepo: any,
+      userRepo: any,
+      rtRepo: any,
+      tokenProvider: any,
+    ) =>
+      new OperateRestaurantUseCase(restRepo, userRepo, rtRepo, tokenProvider),
+    inject: [
+      'RestaurantRepository',
+      'UserRepository',
+      'RefreshTokenRepository',
+      'TokenProviderPort',
+    ],
+  },
+  {
+    provide: 'CreateInvitationUseCase',
+    useFactory: (
+      invitationRepo: any,
+      restRepo: any,
+      emailService: any,
+      config: ConfigService,
+    ) =>
+      new CreateInvitationUseCase(
+        invitationRepo,
+        restRepo,
+        emailService,
+        config.get<string>('frontendUrl')!,
+      ),
+    inject: [
+      'InvitationRepository',
+      'RestaurantRepository',
+      'EmailServicePort',
+      ConfigService,
+    ],
+  },
+  {
+    provide: 'ListInvitationsUseCase',
+    useFactory: (invitationRepo: any, userRepo: any) =>
+      new ListInvitationsUseCase(invitationRepo, userRepo),
+    inject: ['InvitationRepository', 'UserRepository'],
+  },
+  {
+    provide: 'RevokeInvitationUseCase',
+    useFactory: (invitationRepo: any) =>
+      new RevokeInvitationUseCase(invitationRepo),
+    inject: ['InvitationRepository'],
+  },
+  {
+    provide: 'GetInvitationPreviewUseCase',
+    useFactory: (
+      invitationRepo: any,
+      restRepo: any,
+      categoryRepo: any,
+      itemRepo: any,
+      hoursRepo: any,
+    ) =>
+      new GetInvitationPreviewUseCase(
+        invitationRepo,
+        restRepo,
+        categoryRepo,
+        itemRepo,
+        hoursRepo,
+      ),
+    inject: [
+      'InvitationRepository',
+      'RestaurantRepository',
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+      'OperatingHoursRepository',
+    ],
+  },
+  {
+    provide: 'AcceptInvitationUseCase',
+    useFactory: (
+      invitationRepo: any,
+      restRepo: any,
+      userRepo: any,
+      urRepo: any,
+      subRepo: any,
+      categoryRepo: any,
+      itemRepo: any,
+      orderRepo: any,
+      rtRepo: any,
+      tokenProvider: any,
+      hasher: any,
+      config: ConfigService,
+    ) =>
+      new AcceptInvitationUseCase(
+        invitationRepo,
+        restRepo,
+        userRepo,
+        urRepo,
+        subRepo,
+        categoryRepo,
+        itemRepo,
+        orderRepo,
+        rtRepo,
+        tokenProvider,
+        hasher,
+        new GoogleIdTokenVerifier(process.env.GOOGLE_CLIENT_ID ?? ''),
+        config.get<string[]>('platformAdmin.emails') ?? [],
+      ),
+    inject: [
+      'InvitationRepository',
+      'RestaurantRepository',
+      'UserRepository',
+      'UserRestaurantRepository',
+      'SubscriptionRepository',
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+      'OrderRepository',
+      'RefreshTokenRepository',
+      'TokenProviderPort',
+      'PasswordHasherPort',
       ConfigService,
     ],
   },
@@ -1347,6 +1482,7 @@ const useCaseProviders = [
     HealthController,
     AuthController,
     AdminController,
+    InvitationController,
     StorefrontController,
     TrackingController,
     StorefrontsIndexController,
@@ -1373,6 +1509,7 @@ const useCaseProviders = [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_INTERCEPTOR, useClass: OperateAuditInterceptor },
   ],
 })
 export class PresentationModule {}
