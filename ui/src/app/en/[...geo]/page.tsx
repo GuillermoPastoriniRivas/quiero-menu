@@ -94,7 +94,7 @@ function signupCta(cityName: string, copy: string) {
       </h2>
       <p className="mx-auto mt-2 max-w-xl text-on-surface-variant">{copy}</p>
       <Link
-        href="/signup"
+        href="/onboarding"
         className="mt-5 inline-block rounded-full bg-primary px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
       >
         Crear mi menú gratis

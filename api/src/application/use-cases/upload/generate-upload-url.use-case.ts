@@ -6,7 +6,13 @@ import type {
 import { Result, ok, err } from '../../common/result.js';
 
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const ALLOWED_IMAGE_TYPES: ImageType[] = ['menu', 'logo', 'banner', 'receipt'];
+const ALLOWED_IMAGE_TYPES: ImageType[] = [
+  'menu',
+  'logo',
+  'banner',
+  'gallery',
+  'receipt',
+];
 
 export class GenerateUploadUrlUseCase {
   constructor(private readonly storage: StoragePort) {}

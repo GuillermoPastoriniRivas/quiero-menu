@@ -4,11 +4,9 @@ import { RejectStoreClaimUseCase } from './reject-store-claim.use-case.js';
 import { Restaurant } from '../../../domain/entities/restaurant.entity.js';
 import { StoreClaim } from '../../../domain/entities/store-claim.entity.js';
 import { RestaurantStatus } from '../../../domain/enums/restaurant-status.enum.js';
-import { UserRole } from '../../../domain/enums/user-role.enum.js';
 import {
   RestaurantNotFoundError,
   StoreAlreadyClaimedError,
-  EmailAlreadyExistsError,
   ClaimNotPendingError,
 } from '../../../domain/errors/domain-errors.js';
 
@@ -145,110 +143,89 @@ describe('RequestStoreClaimUseCase', () => {
 });
 
 describe('ApproveStoreClaimUseCase', () => {
-  function deps(opts: { emailExists: boolean; subscriptionExists: boolean }) {
+  function deps(claim: StoreClaim | null = makeClaim()) {
     const claimRepo: any = {
-      findById: jest.fn().mockResolvedValue(makeClaim()),
+      findById: jest.fn().mockResolvedValue(claim),
       updateStatus: jest.fn(),
     };
-    const restaurantRepo: any = {
-      findById: jest.fn().mockResolvedValue(makeRestaurant(false)),
-      update: jest.fn(),
+    const invitation = {
+      id: 'inv1',
+      url: 'https://quiero.menu/invitacion/tok',
+      email: 'juan@local.com',
+      expiresAt: new Date('2026-10-08'),
+      emailSent: true,
     };
-    const userRepo: any = {
-      findByEmail: jest
-        .fn()
-        .mockResolvedValue(opts.emailExists ? { id: 'u0' } : null),
-      create: jest.fn((d: any) => Promise.resolve({ id: 'u1', ...d })),
+    const createInvitation: any = {
+      execute: jest.fn().mockResolvedValue({ ok: true, value: invitation }),
     };
-    const userRestaurantRepo: any = { create: jest.fn() };
-    const subscriptionRepo: any = {
-      findByRestaurantId: jest
-        .fn()
-        .mockResolvedValue(opts.subscriptionExists ? { id: 's1' } : null),
-      create: jest.fn(),
-    };
-    const verificationTokenRepo: any = {
-      deleteAllByUserId: jest.fn(),
-      create: jest.fn(),
-    };
-    const passwordHasher: any = {
-      hash: jest.fn(() => Promise.resolve('hashed')),
-    };
-    const emailService: any = { send: jest.fn() };
-    return {
-      claimRepo,
-      restaurantRepo,
-      userRepo,
-      userRestaurantRepo,
-      subscriptionRepo,
-      verificationTokenRepo,
-      passwordHasher,
-      emailService,
-    };
+    return { claimRepo, createInvitation, invitation };
   }
 
-  function makeApprove(d: ReturnType<typeof deps>) {
-    return new ApproveStoreClaimUseCase(
+  it('genera una invitación atada al email del solicitante y aprueba el pedido', async () => {
+    const d = deps();
+    const out = await new ApproveStoreClaimUseCase(
       d.claimRepo,
-      d.restaurantRepo,
-      d.userRepo,
-      d.userRestaurantRepo,
-      d.subscriptionRepo,
-      d.verificationTokenRepo,
-      d.passwordHasher,
-      d.emailService,
-      'https://quiero.menu',
-    );
-  }
-
-  it('rechaza si el email ya existe (modelo single-tenant por usuario)', async () => {
-    const d = deps({ emailExists: true, subscriptionExists: true });
-    const out = await makeApprove(d).execute('c1', {
-      ownerName: 'Juan',
-      email: 'juan@local.com',
-    });
-    expect(out.ok).toBe(false);
-    if (!out.ok) expect(out.error).toBeInstanceOf(EmailAlreadyExistsError);
-    expect(d.userRestaurantRepo.create).not.toHaveBeenCalled();
-  });
-
-  it('crea usuario OWNER, marca claimed y manda email de contraseña', async () => {
-    const d = deps({ emailExists: false, subscriptionExists: false });
-    const out = await makeApprove(d).execute('c1', {
-      ownerName: 'Juan',
-      email: 'juan@local.com',
-    });
+      d.createInvitation,
+    ).execute('c1', { adminUserId: 'admin1' });
     expect(out).toEqual({
       ok: true,
-      value: { userId: 'u1', restaurantId: 'r1' },
+      value: {
+        restaurantId: 'r1',
+        claimant: {
+          name: 'Juan',
+          phone: '+59899111111',
+          email: 'juan@local.com',
+        },
+        invitation: d.invitation,
+      },
     });
-    expect(d.userRestaurantRepo.create).toHaveBeenCalledWith({
-      userId: 'u1',
+    expect(d.createInvitation.execute).toHaveBeenCalledWith({
       restaurantId: 'r1',
-      role: UserRole.OWNER,
-    });
-    expect(d.subscriptionRepo.create).toHaveBeenCalled();
-    expect(d.restaurantRepo.update).toHaveBeenCalledWith('r1', {
-      claimed: true,
+      adminUserId: 'admin1',
+      email: 'juan@local.com',
+      sendEmail: true,
     });
     expect(d.claimRepo.updateStatus).toHaveBeenCalledWith('c1', 'approved');
-    expect(d.verificationTokenRepo.create).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'u1', type: 'password_reset' }),
+  });
+
+  it('usa el email corregido por el admin, normalizado', async () => {
+    const d = deps();
+    await new ApproveStoreClaimUseCase(d.claimRepo, d.createInvitation).execute(
+      'c1',
+      {
+        adminUserId: 'admin1',
+        email: '  Dueno@Local.com ',
+      },
     );
-    expect(d.emailService.send).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'juan@local.com' }),
+    expect(d.createInvitation.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'dueno@local.com' }),
     );
+  });
+
+  it('no aprueba si la invitación falla', async () => {
+    const d = deps();
+    d.createInvitation.execute.mockResolvedValue({
+      ok: false,
+      error: new RestaurantNotFoundError(),
+    });
+    const out = await new ApproveStoreClaimUseCase(
+      d.claimRepo,
+      d.createInvitation,
+    ).execute('c1', { adminUserId: 'admin1' });
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.error).toBeInstanceOf(RestaurantNotFoundError);
+    expect(d.claimRepo.updateStatus).not.toHaveBeenCalled();
   });
 
   it('error si el pedido no está pendiente', async () => {
-    const d = deps({ emailExists: false, subscriptionExists: true });
-    d.claimRepo.findById.mockResolvedValue(makeClaim('approved'));
-    const out = await makeApprove(d).execute('c1', {
-      ownerName: 'Juan',
-      email: 'juan@local.com',
-    });
+    const d = deps(makeClaim('approved'));
+    const out = await new ApproveStoreClaimUseCase(
+      d.claimRepo,
+      d.createInvitation,
+    ).execute('c1', { adminUserId: 'admin1' });
     expect(out.ok).toBe(false);
     if (!out.ok) expect(out.error).toBeInstanceOf(ClaimNotPendingError);
+    expect(d.createInvitation.execute).not.toHaveBeenCalled();
   });
 });
 

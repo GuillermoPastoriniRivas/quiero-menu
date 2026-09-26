@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import { RestaurantCategory } from '../../domain/enums/restaurant-category.enum.js';
+
+const KNOWN_CATEGORIES = new Set<string>(
+  Object.values(RestaurantCategory).filter(Boolean),
+);
 
 const MenuVisionItemSchema = z.object({
   name: z.string().min(1),
@@ -38,6 +43,15 @@ export const ImportMenuRequestSchema = z.object({
       address: z.string().optional(),
       city: z.string().optional(),
       currency: z.string().optional(),
+      category: z
+        .string()
+        .nullish()
+        .transform((value) =>
+          value && KNOWN_CATEGORIES.has(value)
+            ? (value as RestaurantCategory)
+            : undefined,
+        )
+        .optional(),
     })
     .default({}),
   operatingHours: z

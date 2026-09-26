@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { useActivationStore } from '@/stores/activation.store';
+import { WhatsAppIcon } from '@/components/ui/brand-icons';
 import { ApiError } from '@/lib/api';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { Button } from '@/components/ui/button';
@@ -136,6 +138,7 @@ function MiMenuPageInner() {
         theme: { primaryColor: draft.primaryColor },
       });
       setPublished(draft);
+      useActivationStore.getState().fetch();
       toast.success('Cambios publicados. Tu menú ya se ve así para tus clientes.');
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Error al publicar los cambios';
@@ -151,9 +154,33 @@ function MiMenuPageInner() {
     toast.info('Cambios descartados');
   };
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(menuUrl);
-    toast.success('Link copiado');
+  const markShared = () => useActivationStore.getState().markShared();
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(menuUrl);
+      toast.success('Link copiado. Pegalo en tu Instagram o mandalo por WhatsApp.');
+      markShared();
+    } catch {
+      toast.error('No se pudo copiar. Mantené apretado el link para copiarlo.');
+    }
+  };
+
+  const shareText = restaurant
+    ? `Mirá la carta de ${restaurant.name} y hacé tu pedido acá: ${menuUrl}`
+    : '';
+
+  const shareNative = async () => {
+    if (!navigator.share) {
+      copyLink();
+      return;
+    }
+    try {
+      await navigator.share({ title: restaurant?.name, text: shareText, url: menuUrl });
+      markShared();
+    } catch {
+      return;
+    }
   };
 
   const openMenu = () => {
@@ -181,6 +208,7 @@ function MiMenuPageInner() {
       link.download = `menu-qr-${restaurant?.slug || 'code'}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+      markShared();
     };
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
@@ -206,7 +234,7 @@ function MiMenuPageInner() {
       toast.success('URL actualizada');
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
-        toast.error('Esa URL ya esta en uso. Proba con otra.');
+        toast.error('Esa URL ya está en uso. Probá con otra.');
       } else {
         toast.error(
           e instanceof Error ? e.message : 'Error al actualizar la URL',
@@ -404,16 +432,33 @@ function MiMenuPageInner() {
                     </span>
                   </div>
 
-                  <div className="flex gap-3">
-                    <Button onClick={copyLink} className="flex-1 gradient-cta text-white font-bold">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button onClick={copyLink} className="gradient-cta text-white font-bold">
                       <MaterialIcon name="content_copy" size="sm" />
                       Copiar link
                     </Button>
-                    <Button onClick={openMenu} variant="outline" className="flex-1 font-bold">
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={markShared}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white transition-colors hover:bg-[#1EBE5A]"
+                    >
+                      <WhatsAppIcon className="size-4" />
+                      WhatsApp
+                    </a>
+                    <Button onClick={shareNative} variant="outline" className="font-bold">
+                      <MaterialIcon name="share" size="sm" />
+                      Compartir
+                    </Button>
+                    <Button onClick={openMenu} variant="outline" className="font-bold">
                       <MaterialIcon name="open_in_new" size="sm" />
                       Abrir
                     </Button>
                   </div>
+                  <p className="text-xs text-on-surface-variant">
+                    Tip: poné el link en la bio de Instagram y mandalo a tus clientes de siempre. Los primeros pedidos casi siempre llegan de ahí.
+                  </p>
                 </CardContent>
               </Card>
 
@@ -425,7 +470,7 @@ function MiMenuPageInner() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
                       quiero.menu/
                     </span>
@@ -433,7 +478,7 @@ function MiMenuPageInner() {
                       value={slug}
                       onChange={(e) => setSlug(e.target.value)}
                       placeholder="mi-restaurante"
-                      className="flex-1"
+                      className="min-w-[9rem] flex-1"
                     />
                     <Button
                       variant="outline"
@@ -468,13 +513,14 @@ function MiMenuPageInner() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
                     <Button onClick={downloadQR} variant="outline" className="font-bold">
                       <MaterialIcon name="download" size="sm" />
                       Descargar QR
                     </Button>
                     <Link
                       href="/publicar/imprimir"
+                      onClick={markShared}
                       className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-border bg-background px-4 text-sm font-bold transition-colors hover:bg-muted"
                     >
                       <MaterialIcon name="print" size="sm" />

@@ -49,17 +49,19 @@ function SettingsPageInner() {
   return (
     <div className="min-w-0 w-full space-y-6 overflow-hidden">
       <div>
-        <h1 className="text-2xl font-bold">Ajustes</h1>
-        <p className="text-sm text-muted-foreground">
-          Configurá tu restaurante una vez y olvidate
+        <h1 className="font-[family-name:var(--font-heading)] text-3xl font-extrabold tracking-tight text-on-background">
+          Ajustes
+        </h1>
+        <p className="text-on-surface-variant">
+          Los datos de tu local, cómo cobrás y cuándo abrís.
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <div className="overflow-x-auto overflow-y-hidden -mx-1 px-1">
           <TabsList>
-            <TabsTrigger value="datos">Datos del restaurante</TabsTrigger>
-            <TabsTrigger value="pagos">Pagos</TabsTrigger>
+            <TabsTrigger value="datos">Datos del local</TabsTrigger>
+            <TabsTrigger value="pagos">Cobro</TabsTrigger>
             <TabsTrigger value="horarios">Horarios</TabsTrigger>
           </TabsList>
         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { getApiBase } from "@/lib/storefront-context";
+import { toWhatsAppNumber } from "@/lib/ar-phone";
 
 /**
  * Pings de la ficha de inventario: vista por sesión + clicks de contacto
@@ -40,7 +41,7 @@ export function FichaContactButtons({
     }
   };
 
-  const digits = phone.replace(/\D/g, "");
+  const digits = toWhatsAppNumber(phone) ?? "";
   const waHref = digits ? `https://wa.me/${digits}` : "";
   const mapsHref = address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`

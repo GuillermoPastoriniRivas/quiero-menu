@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/auth.store";
@@ -9,6 +9,8 @@ import { PanelLogo } from "@/components/layout/panel-logo";
 import { MaterialIcon } from "@/components/ui/material-icon";
 import { OpenStatusBadge } from "@/components/layout/open-status-badge";
 import { NAV_SECTIONS, NAV_SETTINGS_ITEM } from "@/components/layout/nav-items";
+import { ActivationNavCard } from "@/components/activation/activation-panel";
+import { useActivationStore } from "@/stores/activation.store";
 import { cn } from "@/lib/utils";
 
 export function AdminSidebar() {
@@ -16,6 +18,12 @@ export function AdminSidebar() {
   const { user, logout } = useAuthStore();
   const { restaurant } = useRestaurantStore();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const activation = useActivationStore((s) => s.status);
+  const fetchActivation = useActivationStore((s) => s.fetch);
+
+  useEffect(() => {
+    if (!useActivationStore.getState().status) fetchActivation();
+  }, [fetchActivation]);
 
   const displayName = restaurant?.name || user?.name || "Mi Restaurante";
   const initials = displayName.slice(0, 2).toUpperCase();
@@ -110,6 +118,7 @@ export function AdminSidebar() {
 
       {/* User card at bottom */}
       <div className="p-4 space-y-3">
+        <ActivationNavCard status={activation} />
         <OpenStatusBadge />
         <div className="bg-surface-container-low rounded-xl p-4">
           <div className="flex items-center gap-3">
@@ -149,7 +158,7 @@ export function AdminSidebar() {
               className="mt-1 flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors w-full"
             >
               <MaterialIcon name="logout" size="sm" />
-              Cerrar sesion
+              Cerrar sesión
             </button>
           </div>
         </div>

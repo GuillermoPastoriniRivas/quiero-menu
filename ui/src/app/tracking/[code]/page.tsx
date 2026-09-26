@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { WhatsAppIcon } from '@/components/ui/brand-icons';
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
+import { toWhatsAppNumber } from '@/lib/ar-phone';
 import { browserPathParam } from '@/lib/static-route-param';
 import { getRoomSocket } from '@/lib/socket';
 import { subscribeOrderPush, isPushSupported, isPushSubscribed } from '@/lib/push';
@@ -239,8 +240,9 @@ export default function TrackingPage() {
   const pm = restaurant.paymentMethods;
   const cancelled = order.status === OrderStatus.CANCELLED;
   const currentStep = STATUS_STEPS.indexOf(order.status);
-  const whatsappUrl = restaurant.phone
-    ? `https://wa.me/${restaurant.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola! Quiero confirmar mi pedido (${order.code}).`)}`
+  const restaurantWhatsapp = toWhatsAppNumber(restaurant.phone);
+  const whatsappUrl = restaurantWhatsapp
+    ? `https://wa.me/${restaurantWhatsapp}?text=${encodeURIComponent(`Hola! Quiero confirmar mi pedido (${order.code}).`)}`
     : '';
   const showTransfer = order.paymentMethod === 'transferencia' && pm.transferEnabled;
 

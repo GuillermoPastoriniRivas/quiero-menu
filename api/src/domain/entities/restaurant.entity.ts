@@ -37,6 +37,10 @@ export interface PhotoGalleryImage {
   alt?: string;
 }
 
+export interface RestaurantActivation {
+  sharedAt?: Date | null;
+}
+
 export class Restaurant {
   constructor(
     public readonly id: string,
@@ -88,5 +92,6 @@ export class Restaurant {
     public readonly claimed?: boolean,
     /** Galería de fotos de la ficha (inventario; la gestiona el equipo/scraper). */
     public readonly photoGallery?: PhotoGalleryImage[],
+    public readonly activation?: RestaurantActivation,
   ) {}
 }

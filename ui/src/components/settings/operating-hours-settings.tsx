@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRestaurantStore } from "@/stores/restaurant.store";
+import { useActivationStore } from "@/stores/activation.store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,6 +119,7 @@ export function OperatingHoursSettings() {
     setSaving(true);
     try {
       await updateHours(flattenSchedules(schedules));
+      useActivationStore.getState().fetch();
       toast.success("Horarios guardados");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error al guardar horarios");

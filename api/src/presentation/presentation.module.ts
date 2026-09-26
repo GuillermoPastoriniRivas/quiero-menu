@@ -52,7 +52,14 @@ import { InvitationController } from './controllers/invitation.controller.js';
 import { OperateAuditInterceptor } from './interceptors/operate-audit.interceptor.js';
 
 // Use Cases — Admin
-import { SearchRestaurantsUseCase } from '../application/use-cases/admin/search-restaurants.use-case.js';
+import { AdminRestaurantIndex } from '../application/use-cases/admin/admin-restaurant-index.js';
+import { ListAdminRestaurantsUseCase } from '../application/use-cases/admin/list-admin-restaurants.use-case.js';
+import { GetAdminOverviewUseCase } from '../application/use-cases/admin/get-admin-overview.use-case.js';
+import { ListAdminActivityUseCase } from '../application/use-cases/admin/admin-activity.js';
+import {
+  GetActivationUseCase,
+  MarkRestaurantSharedUseCase,
+} from '../application/use-cases/restaurant/get-activation.use-case.js';
 import { GetRestaurantDetailUseCase } from '../application/use-cases/admin/get-restaurant-detail.use-case.js';
 import { CreateRestaurantAccountUseCase } from '../application/use-cases/admin/create-restaurant-account.use-case.js';
 import { RequestStoreClaimUseCase } from '../application/use-cases/claims/request-store-claim.use-case.js';
@@ -350,15 +357,46 @@ const useCaseProviders = [
 
   // Use Cases — Admin
   {
-    provide: 'SearchRestaurantsUseCase',
-    useFactory: (restRepo: any, userRepo: any, urRepo: any, subRepo: any) =>
-      new SearchRestaurantsUseCase(restRepo, userRepo, urRepo, subRepo),
+    provide: 'AdminRestaurantIndex',
+    useFactory: (insights: any) => new AdminRestaurantIndex(insights),
+    inject: ['RestaurantInsightsQuery'],
+  },
+  {
+    provide: 'ListAdminRestaurantsUseCase',
+    useFactory: (index: any, insights: any) =>
+      new ListAdminRestaurantsUseCase(index, insights),
+    inject: ['AdminRestaurantIndex', 'RestaurantInsightsQuery'],
+  },
+  {
+    provide: 'GetAdminOverviewUseCase',
+    useFactory: (index: any, insights: any) =>
+      new GetAdminOverviewUseCase(index, insights),
+    inject: ['AdminRestaurantIndex', 'RestaurantInsightsQuery'],
+  },
+  {
+    provide: 'ListAdminActivityUseCase',
+    useFactory: (insights: any) => new ListAdminActivityUseCase(insights),
+    inject: ['RestaurantInsightsQuery'],
+  },
+  {
+    provide: 'GetActivationUseCase',
+    useFactory: (
+      restRepo: any,
+      itemRepo: any,
+      hoursRepo: any,
+      orderRepo: any,
+    ) => new GetActivationUseCase(restRepo, itemRepo, hoursRepo, orderRepo),
     inject: [
       'RestaurantRepository',
-      'UserRepository',
-      'UserRestaurantRepository',
-      'SubscriptionRepository',
+      'MenuItemRepository',
+      'OperatingHoursRepository',
+      'OrderRepository',
     ],
+  },
+  {
+    provide: 'MarkRestaurantSharedUseCase',
+    useFactory: (restRepo: any) => new MarkRestaurantSharedUseCase(restRepo),
+    inject: ['RestaurantRepository'],
   },
   {
     provide: 'SearchStorefrontsUseCase',
@@ -391,30 +429,33 @@ const useCaseProviders = [
     provide: 'GetRestaurantDetailUseCase',
     useFactory: (
       restRepo: any,
-      urRepo: any,
       userRepo: any,
       subRepo: any,
       orderRepo: any,
       catRepo: any,
-      itemRepo: any,
+      claimRepo: any,
+      index: any,
+      insights: any,
     ) =>
       new GetRestaurantDetailUseCase(
         restRepo,
-        urRepo,
         userRepo,
         subRepo,
         orderRepo,
         catRepo,
-        itemRepo,
+        claimRepo,
+        index,
+        insights,
       ),
     inject: [
       'RestaurantRepository',
-      'UserRestaurantRepository',
       'UserRepository',
       'SubscriptionRepository',
       'OrderRepository',
       'MenuCategoryRepository',
-      'MenuItemRepository',
+      'StoreClaimRepository',
+      'AdminRestaurantIndex',
+      'RestaurantInsightsQuery',
     ],
   },
   {
@@ -469,39 +510,9 @@ const useCaseProviders = [
   },
   {
     provide: 'ApproveStoreClaimUseCase',
-    useFactory: (
-      claimRepo: any,
-      restRepo: any,
-      userRepo: any,
-      urRepo: any,
-      subRepo: any,
-      vtRepo: any,
-      hasher: any,
-      emailService: any,
-      config: ConfigService,
-    ) =>
-      new ApproveStoreClaimUseCase(
-        claimRepo,
-        restRepo,
-        userRepo,
-        urRepo,
-        subRepo,
-        vtRepo,
-        hasher,
-        emailService,
-        config.get<string>('frontendUrl')!,
-      ),
-    inject: [
-      'StoreClaimRepository',
-      'RestaurantRepository',
-      'UserRepository',
-      'UserRestaurantRepository',
-      'SubscriptionRepository',
-      'VerificationTokenRepository',
-      'PasswordHasherPort',
-      'EmailServicePort',
-      ConfigService,
-    ],
+    useFactory: (claimRepo: any, createInvitation: any) =>
+      new ApproveStoreClaimUseCase(claimRepo, createInvitation),
+    inject: ['StoreClaimRepository', 'CreateInvitationUseCase'],
   },
   {
     provide: 'OperateRestaurantUseCase',

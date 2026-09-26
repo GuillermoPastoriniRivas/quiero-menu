@@ -40,7 +40,14 @@ import {
   AdminCreateInvitationRequestSchema,
   AdminCreateInvitationRequestDto,
 } from '../request-dtos/admin.dto.js';
-import type { SearchRestaurantsUseCase } from '../../application/use-cases/admin/search-restaurants.use-case.js';
+import type { ListAdminRestaurantsUseCase } from '../../application/use-cases/admin/list-admin-restaurants.use-case.js';
+import type { GetAdminOverviewUseCase } from '../../application/use-cases/admin/get-admin-overview.use-case.js';
+import type { ListAdminActivityUseCase } from '../../application/use-cases/admin/admin-activity.js';
+import type { GenerateUploadUrlUseCase } from '../../application/use-cases/upload/generate-upload-url.use-case.js';
+import {
+  PresignedUrlRequestSchema,
+  PresignedUrlRequestDto,
+} from '../request-dtos/upload.dto.js';
 import type { GetRestaurantDetailUseCase } from '../../application/use-cases/admin/get-restaurant-detail.use-case.js';
 import type { UpdateRestaurantUseCase } from '../../application/use-cases/restaurant/update-restaurant.use-case.js';
 import type { CreateRestaurantAccountUseCase } from '../../application/use-cases/admin/create-restaurant-account.use-case.js';
@@ -66,8 +73,14 @@ import type { RevokeInvitationUseCase } from '../../application/use-cases/invita
 @UseGuards(AdminGuard)
 export class AdminController {
   constructor(
-    @Inject('SearchRestaurantsUseCase')
-    private readonly searchRestaurantsUseCase: SearchRestaurantsUseCase,
+    @Inject('ListAdminRestaurantsUseCase')
+    private readonly listRestaurantsUseCase: ListAdminRestaurantsUseCase,
+    @Inject('GetAdminOverviewUseCase')
+    private readonly overviewUseCase: GetAdminOverviewUseCase,
+    @Inject('ListAdminActivityUseCase')
+    private readonly activityUseCase: ListAdminActivityUseCase,
+    @Inject('GenerateUploadUrlUseCase')
+    private readonly generateUploadUrl: GenerateUploadUrlUseCase,
     @Inject('GetRestaurantDetailUseCase')
     private readonly getRestaurantDetailUseCase: GetRestaurantDetailUseCase,
     @Inject('CreateRestaurantAccountUseCase')
@@ -105,13 +118,25 @@ export class AdminController {
     private readonly audit: AuditService,
   ) {}
 
+  @Get('overview')
+  async overview() {
+    return this.overviewUseCase.execute();
+  }
+
   @Get('restaurants')
   async search(
     @Query(new ZodValidationPipe(AdminSearchRequestSchema))
     query: AdminSearchRequestDto,
   ) {
-    const results = await this.searchRestaurantsUseCase.execute(query.q ?? '');
-    return { results };
+    return this.listRestaurantsUseCase.execute({
+      q: query.q,
+      stage: query.stage,
+      citySlug: query.city,
+      category: query.category,
+      sort: query.sort,
+      page: query.page,
+      limit: query.limit,
+    });
   }
 
   @Get('restaurants/:id')
@@ -180,6 +205,22 @@ export class AdminController {
     return result.value;
   }
 
+  @Throttle({ short: { limit: 30, ttl: 60_000 } })
+  @Post('restaurants/:id/uploads/presigned-url')
+  async presignedUpload(
+    @Param('id') restaurantId: string,
+    @Body(new ZodValidationPipe(PresignedUrlRequestSchema))
+    body: PresignedUrlRequestDto,
+  ) {
+    const result = await this.generateUploadUrl.execute({
+      restaurantId,
+      type: body.type,
+      contentType: body.contentType,
+    });
+    if (!result.ok) throw new BadRequestException(result.error.message);
+    return result.value;
+  }
+
   @Get('restaurants/:id/invitations')
   async listInvitations(@Param('id') restaurantId: string) {
     return {
@@ -224,6 +265,14 @@ export class AdminController {
       { invitationId },
     );
     return { ok: true };
+  }
+
+  @Get('activity')
+  async activity(
+    @Query(new ZodValidationPipe(AdminAuditLogsRequestSchema))
+    query: AdminAuditLogsRequestDto,
+  ) {
+    return { entries: await this.activityUseCase.execute(query.limit) };
   }
 
   @Get('audit-logs')
@@ -317,8 +366,8 @@ export class AdminController {
     body: AdminApproveClaimRequestDto,
   ) {
     const result = await this.approveStoreClaimUseCase.execute(id, {
-      ownerName: body.ownerName,
-      email: body.email,
+      adminUserId: admin._id,
+      email: body.email || undefined,
     });
     if (!result.ok) throw new ConflictException(result.error.message);
     this.audit.log(
@@ -327,7 +376,9 @@ export class AdminController {
       result.value.restaurantId,
       {
         claimId: id,
-        email: body.email,
+        email: result.value.invitation.email,
+        invitationId: result.value.invitation.id,
+        emailSent: result.value.invitation.emailSent,
       },
     );
     return result.value;

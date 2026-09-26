@@ -6,6 +6,7 @@ import {
   StorefrontTheme,
   CustomDomainStatus,
   PhotoGalleryImage,
+  RestaurantActivation,
 } from '../../../../domain/entities/restaurant.entity.js';
 
 export type RestaurantDocument = HydratedDocument<RestaurantModel>;
@@ -134,6 +135,9 @@ export class RestaurantModel {
     default: { primaryColor: '#E8532C' },
   })
   theme: StorefrontTheme;
+
+  @Prop({ type: Object, default: null })
+  activation: RestaurantActivation | null;
 
   createdAt: Date;
   updatedAt: Date;

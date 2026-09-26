@@ -58,11 +58,13 @@ export default function AdminDestacadosPage() {
   };
 
   return (
-    <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold text-on-surface mb-1">Destacados</h1>
-      <p className="text-sm text-on-surface-variant mb-6">
-        Lugares pagos arriba del directorio: máx 3 por rubro y ciudad, 3 en
-        home por ciudad. Se asignan desde el detalle de cada local.
+    <div className="mx-auto max-w-4xl">
+      <h1 className="mb-1 font-[family-name:var(--font-heading)] text-3xl font-extrabold tracking-tight text-on-surface">
+        Destacados
+      </h1>
+      <p className="mb-6 text-sm text-on-surface-variant">
+        Lugares arriba del buscador: hasta 3 por rubro y ciudad, y 3 en la portada de cada ciudad. Se asignan desde la
+        página de cada local.
       </p>
 
       {error && (
@@ -85,7 +87,7 @@ export default function AdminDestacadosPage() {
           {slots.map((s) => (
             <div
               key={s.id}
-              className="flex items-center gap-4 bg-white rounded-2xl border border-amber-400/40 px-5 py-4"
+              className="flex items-center gap-4 rounded-2xl border border-amber-400/40 bg-surface-container-lowest px-5 py-4 shadow-sm"
             >
               <span className="w-10 h-10 rounded-xl bg-amber-400/15 text-amber-700 flex items-center justify-center shrink-0">
                 <MaterialIcon name="star" size="sm" />
@@ -104,7 +106,7 @@ export default function AdminDestacadosPage() {
                   )}
                 </span>
                 <span className="block text-xs text-on-surface-variant truncate mt-0.5">
-                  {s.scope === 'home' ? 'Home' : `Rubro ${s.category}`} ·{' '}
+                  {s.scope === 'home' ? 'Portada de la ciudad' : `Rubro ${s.category}`} ·{' '}
                   {s.citySlug} · hasta el {formatDate(s.endsAt)}
                 </span>
               </span>

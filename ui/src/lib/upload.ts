@@ -1,7 +1,7 @@
 import imageCompression from 'browser-image-compression';
 import { api } from './api';
 
-export type ImageType = 'menu' | 'logo' | 'banner' | 'receipt';
+export type ImageType = 'menu' | 'logo' | 'banner' | 'gallery' | 'receipt';
 
 interface PresignedUrlResponse {
   uploadUrl: string;
@@ -13,6 +13,7 @@ const COMPRESSION_OPTIONS: Record<ImageType, { maxSizeMB: number; maxWidthOrHeig
   menu: { maxSizeMB: 0.5, maxWidthOrHeight: 1200 },
   logo: { maxSizeMB: 0.3, maxWidthOrHeight: 512 },
   banner: { maxSizeMB: 0.8, maxWidthOrHeight: 1920 },
+  gallery: { maxSizeMB: 0.6, maxWidthOrHeight: 1600 },
   receipt: { maxSizeMB: 1, maxWidthOrHeight: 1600 },
 };
 
@@ -20,6 +21,7 @@ export async function uploadImage(
   file: File,
   type: ImageType,
   onProgress?: (percent: number) => void,
+  presignPath = '/uploads/presigned-url',
 ): Promise<string> {
   onProgress?.(10);
 
@@ -33,7 +35,7 @@ export async function uploadImage(
 
   onProgress?.(30);
 
-  const { uploadUrl, publicUrl } = await api.post<PresignedUrlResponse>('/uploads/presigned-url', {
+  const { uploadUrl, publicUrl } = await api.post<PresignedUrlResponse>(presignPath, {
     type,
     contentType: 'image/webp',
   });
@@ -50,4 +52,8 @@ export async function uploadImage(
 
   onProgress?.(100);
   return publicUrl;
+}
+
+export function uploadImageForRestaurant(restaurantId: string, file: File, type: ImageType): Promise<string> {
+  return uploadImage(file, type, undefined, `/admin/restaurants/${restaurantId}/uploads/presigned-url`);
 }

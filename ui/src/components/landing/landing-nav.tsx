@@ -77,7 +77,7 @@ export function LandingNav() {
             <span className="hidden sm:inline">Entrar</span>
           </Link>
           <Link
-            href="/signup"
+            href="/onboarding"
             className="gradient-cta hidden rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-transform hover:scale-[1.03] sm:inline-block"
           >
             Crear mi menú gratis
@@ -127,7 +127,7 @@ export function LandingNav() {
             </Link>
           </div>
           <Link
-            href="/signup"
+            href="/onboarding"
             onClick={() => setOpen(false)}
             className="gradient-cta mt-5 block rounded-2xl py-4 text-center text-base font-bold text-white"
           >

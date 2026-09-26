@@ -4,10 +4,11 @@ import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import type { StorefrontIndexEntry } from "@/types";
 import { getCategoryDef } from "@/lib/restaurant-categories";
 import { formatCurrency } from "@/lib/format";
+import { toWhatsAppNumber } from "@/lib/ar-phone";
 import type { StorefrontSearchMatch } from "@/lib/storefront-search";
 
 function waDigits(phone: string | undefined): string {
-  return (phone ?? "").replace(/\D/g, "");
+  return toWhatsAppNumber(phone) ?? "";
 }
 
 /** Ícono del placeholder cuando el local no tiene foto, por rubro. */

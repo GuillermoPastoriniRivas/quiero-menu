@@ -22,7 +22,7 @@ export function formatARS(amount: number): string {
 }
 
 export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat('es-CO', {
+  return new Intl.DateTimeFormat('es-AR', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(date));
@@ -37,7 +37,14 @@ export function formatRelativeTime(date: string | Date): string {
   if (diffMins < 60) return `hace ${diffMins}min`;
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `hace ${diffHours}h`;
-  return formatDate(date);
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return 'ayer';
+  if (diffDays < 7) return `hace ${diffDays} días`;
+  return formatShortDate(date);
+}
+
+export function formatShortDate(date: string | Date): string {
+  return new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'short' }).format(new Date(date));
 }
 
 export function formatMinutes(min: number): string {

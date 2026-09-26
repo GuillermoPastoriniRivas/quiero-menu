@@ -35,7 +35,7 @@ import {
   LastOrder,
 } from "@/lib/repeat-order";
 import { getApiBase } from "@/lib/storefront-context";
-import { formatArPhone, arPhoneToWhatsApp } from "@/lib/ar-phone";
+import { formatArPhone, arPhoneToWhatsApp, toWhatsAppNumber } from "@/lib/ar-phone";
 import { formatUpdatedDate } from "@/lib/restaurant-categories";
 
 type FullMenuItem = MenuItem & {
@@ -118,9 +118,7 @@ export function StorefrontView({
   );
 
   // ── Helpers ──
-  const cleanPhone = restaurant.phone
-    ? restaurant.phone.replace(/\D/g, "")
-    : "";
+  const cleanPhone = toWhatsAppNumber(restaurant.phone) ?? "";
   const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : "";
   const googleMapsUrl = restaurant.coordinates
     ? `https://www.google.com/maps?q=${restaurant.coordinates.lat},${restaurant.coordinates.lng}`

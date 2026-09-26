@@ -1,4 +1,4 @@
-export type ImageType = 'menu' | 'logo' | 'banner' | 'receipt';
+export type ImageType = 'menu' | 'logo' | 'banner' | 'gallery' | 'receipt';
 
 export interface PresignedUrlRequest {
   restaurantId: string;

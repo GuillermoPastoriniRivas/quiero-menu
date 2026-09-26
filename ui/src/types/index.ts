@@ -73,7 +73,7 @@ export interface Restaurant {
    * bucket público; 'external' = link validado 200 image/* al insertarse.
    * Una imagen que falla al renderizar se oculta (el fetch es del cliente).
    */
-  photoGallery?: { url: string; source: "s3" | "external"; alt?: string }[];
+  photoGallery?: PhotoGalleryImage[];
   country: string;
   coordinates: { lat: number; lng: number } | null;
   phone: string;
@@ -353,17 +353,101 @@ export interface LoginResponse {
 }
 
 // Admin (panel interno)
+export type ReadinessStep =
+  | "menu"
+  | "whatsapp"
+  | "hours"
+  | "look"
+  | "location"
+  | "payments"
+  | "shared"
+  | "firstOrder";
+
+export type ReadinessChecks = Record<ReadinessStep, boolean>;
+
+export interface ReadinessSummary {
+  done: number;
+  total: number;
+  percent: number;
+  missing: ReadinessStep[];
+  next: ReadinessStep | null;
+}
+
+export type AdminStage = "ficha" | "invitado" | "activo" | "pro" | "pausado";
+export type AdminListSort = "recent" | "demand" | "readiness" | "name";
+
+export interface Demand {
+  views: number;
+  whatsapp: number;
+  maps: number;
+  instagram: number;
+}
+
 export interface AdminRestaurantListItem {
   id: string;
   slug: string;
   name: string;
   city: string;
+  citySlug: string;
+  category: string;
+  logoUrl: string;
   status: string;
-  plan: string | null;
+  claimed: boolean;
+  stage: AdminStage;
   createdAt: string;
-  ownerName: string;
-  ownerEmail: string;
+  owner: { name: string; email: string } | null;
+  plan: string | null;
+  invitation: { expiresAt: string; email: string | null } | null;
+  menuItems: number;
+  listing: ReadinessSummary;
+  activation: ReadinessSummary;
+  demand30d: Demand;
+  orders30d: number;
+  ordersWithoutOwner: boolean;
 }
+
+export interface AdminCityFacet {
+  citySlug: string;
+  city: string;
+  count: number;
+}
+
+export interface AdminRestaurantListResponse {
+  items: AdminRestaurantListItem[];
+  total: number;
+  page: number;
+  pages: number;
+  stages: Record<AdminStage | "all", number>;
+  cities: AdminCityFacet[];
+}
+
+export interface AdminActivityEntry {
+  id: string;
+  event: string;
+  createdAt: string;
+  count: number;
+  actor: { name: string; email: string } | null;
+  restaurant: { id: string; name: string; slug: string } | null;
+  metadata: Record<string, unknown> | null;
+}
+
+export interface AdminOverview {
+  generatedAt: string;
+  pipeline: Record<AdminStage | "all", number>;
+  inventory: { withMenu: number; listingReady: number; ordersWithoutOwner: number };
+  platform: { ordersLast7d: number; ordersPrev7d: number; activeRestaurants7d: number };
+  pendingClaims: number;
+  lists: {
+    expiringInvitations: AdminRestaurantListItem[];
+    readyToInvite: AdminRestaurantListItem[];
+    hotLeads: AdminRestaurantListItem[];
+    stalledOwners: AdminRestaurantListItem[];
+    ordersWithoutOwner: AdminRestaurantListItem[];
+  };
+  activity: AdminActivityEntry[];
+}
+
+export type PhotoGalleryImage = { url: string; source: "s3" | "external"; alt?: string };
 
 export interface AdminRestaurantDetail {
   restaurant: {
@@ -371,27 +455,30 @@ export interface AdminRestaurantDetail {
     slug: string;
     name: string;
     description: string;
-    city: string;
-    country: string;
+    logoUrl: string;
+    bannerUrl: string;
     address: string;
+    city: string;
+    region: string;
+    country: string;
+    category: string;
+    coordinates: { lat: number; lng: number } | null;
     phone: string;
+    whatsapp: string | null;
     currency: string;
     timezone: string;
     status: string;
+    claimed: boolean;
     openOverride: "open" | "closed" | null;
     customDomain: string | null;
-    /** Coordenadas del local (para el orden por cercanía). */
-    coordinates?: { lat: number; lng: number } | null;
-    customDomainStatus: unknown;
+    photoGallery: PhotoGalleryImage[];
+    socialLinks: { instagram?: string; facebook?: string; tiktok?: string } | null;
+    paymentMethods: PaymentMethodsConfig;
     createdAt: string;
     updatedAt: string;
   };
-  owner: {
-    id: string;
-    name: string;
-    email: string;
-    emailVerified: boolean;
-  } | null;
+  stage: AdminStage;
+  owner: { id: string; name: string; email: string; emailVerified: boolean } | null;
   subscription: {
     plan: string;
     status: string;
@@ -399,12 +486,50 @@ export interface AdminRestaurantDetail {
     paymentProvider: string;
     canceledAt: string | null;
   } | null;
+  invitation: { id: string; email: string | null; expiresAt: string; createdAt: string } | null;
+  readiness: {
+    checks: ReadinessChecks;
+    listing: ReadinessSummary;
+    activation: ReadinessSummary;
+  };
   stats: {
     ordersTotal: number;
     ordersLast30d: number;
     categories: number;
     products: number;
+    openDays: number;
   };
+  demand30d: Demand;
+  pendingClaims: {
+    id: string;
+    name: string;
+    phone: string;
+    email: string;
+    message: string;
+    createdAt: string;
+  }[];
+  timeline: AdminActivityEntry[];
+  flags: { ordersWithoutOwner: boolean };
+}
+
+export interface ActivationStatus {
+  slug: string;
+  checks: ReadinessChecks;
+  summary: ReadinessSummary;
+  details: {
+    menuItems: number;
+    openDays: number;
+    orders: number;
+    whatsapp: string | null;
+    transferMissingAccount: boolean;
+    sharedAt: string | null;
+  };
+}
+
+export interface ApprovedClaim {
+  restaurantId: string;
+  claimant: { name: string; phone: string; email: string };
+  invitation: CreatedInvitation;
 }
 
 export interface AdminAuditLogEntry {
@@ -435,8 +560,7 @@ export interface StoreClaimListItem {
   owners: { name: string; email: string }[];
 }
 
-export interface AdminCreateRestaurantResponse {
-  userId: string;
+export interface AdminCreateUnclaimedResponse {
   restaurantId: string;
   slug: string;
 }

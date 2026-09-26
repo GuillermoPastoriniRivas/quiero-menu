@@ -57,7 +57,7 @@ function LoginForm() {
       subtitle="Mirá los pedidos de hoy y mové los estados para que tu cliente vea todo en vivo."
       swapText="¿No tenés cuenta?"
       swapLabel="Creá una gratis"
-      swapHref="/signup"
+      swapHref="/onboarding"
     >
       <form onSubmit={handleSubmit} className="mt-6 space-y-3">
         {error && <FormError message={error} />}

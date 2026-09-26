@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { RestaurantCategory } from '../../domain/enums/restaurant-category.enum.js';
+import { ADMIN_STAGES } from '../../application/use-cases/admin/admin-restaurant-index.js';
+import { ADMIN_LIST_SORTS } from '../../application/use-cases/admin/list-admin-restaurants.use-case.js';
 
 /** Imagen de la galería de la ficha. El loader valida la URL antes de enviar. */
 export const PhotoGalleryImageSchema = z.object({
@@ -8,10 +10,19 @@ export const PhotoGalleryImageSchema = z.object({
   alt: z.string().max(120).optional(),
 });
 export type PhotoGalleryImageDto = z.infer<typeof PhotoGalleryImageSchema>;
-const PhotoGallerySchema = z.array(PhotoGalleryImageSchema).max(12).optional();
+export const PhotoGallerySchema = z
+  .array(PhotoGalleryImageSchema)
+  .max(12)
+  .optional();
 
 export const AdminSearchRequestSchema = z.object({
   q: z.string().max(120).optional().default(''),
+  stage: z.enum(ADMIN_STAGES).optional(),
+  city: z.string().max(80).optional(),
+  category: z.nativeEnum(RestaurantCategory).optional(),
+  sort: z.enum(ADMIN_LIST_SORTS).optional().default('recent'),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(25),
 });
 export type AdminSearchRequestDto = z.infer<typeof AdminSearchRequestSchema>;
 
@@ -53,8 +64,7 @@ export type AdminSearchTermsRequestDto = z.infer<
 >;
 
 export const AdminApproveClaimRequestSchema = z.object({
-  ownerName: z.string().min(1).max(120),
-  email: z.string().email(),
+  email: z.union([z.string().trim().email(), z.literal('')]).optional(),
 });
 export type AdminApproveClaimRequestDto = z.infer<
   typeof AdminApproveClaimRequestSchema
@@ -94,7 +104,13 @@ export const AdminUpdateRestaurantRequestSchema = z.object({
   country: z.string().max(60).optional(),
   category: z.nativeEnum(RestaurantCategory).optional(),
   phone: z.string().max(30).optional(),
-  /** Reemplazo total de la galería: array completo o campo ausente = sin tocar. */
+  coordinates: z
+    .object({
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+    })
+    .nullable()
+    .optional(),
   photoGallery: PhotoGallerySchema,
 });
 export type AdminUpdateRestaurantRequestDto = z.infer<

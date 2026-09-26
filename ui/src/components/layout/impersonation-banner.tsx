@@ -1,60 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
-import { restoreBackedUpSession } from '@/lib/admin-session';
+import { hasAdminBackup, restoreBackedUpSession } from '@/lib/admin-session';
 import { MaterialIcon } from '@/components/ui/material-icon';
 
-/**
- * Barra visible cuando un admin está impersonando un local.
- * Permite volver a la sesión del admin sin reloguear.
- */
 export function ImpersonationBanner() {
   const [active, setActive] = useState(false);
-  const setUser = useAuthStore((s) => s.setUser);
+  const [leaving, setLeaving] = useState(false);
   const user = useAuthStore((s) => s.user);
-  const router = useRouter();
 
-  const hasBackup =
-    typeof window !== 'undefined' &&
-    sessionStorage.getItem('qm-admin-session-backup') !== null;
-  if (hasBackup && !active) {
+  if (!active && hasAdminBackup()) {
     setActive(true);
   }
 
   if (!active) return null;
 
   const handleReturn = () => {
-    if (restoreBackedUpSession()) {
-      const rawUser =
-        typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-      if (rawUser) {
-        try {
-          setUser(JSON.parse(rawUser));
-        } catch {
-          // Usuario corrupto: hydrate lo va a arreglar con /auth/me.
-        }
-      }
-      router.push('/admin/locales');
-    }
+    setLeaving(true);
+    const { restored, returnTo } = restoreBackedUpSession();
+    window.location.assign(restored ? returnTo : '/login');
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-20 lg:bottom-4 z-50 flex justify-center px-4 pointer-events-none">
-      <div className="pointer-events-auto flex items-center gap-3 bg-on-surface text-surface rounded-full pl-4 pr-2 py-2 shadow-ambient-lg max-w-md w-full sm:w-auto">
+    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex justify-center px-4 lg:bottom-4">
+      <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-full bg-on-surface py-2 pl-4 pr-2 text-surface shadow-ambient-lg sm:w-auto">
         <MaterialIcon name={user?.operating ? 'edit' : 'swap_horiz'} size="sm" />
-        <span className="text-xs font-semibold truncate flex-1">
+        <span className="flex-1 truncate text-xs font-semibold">
           {user?.operating
-            ? `Estás editando ${user.restaurantName || 'este local'} como admin`
+            ? `Editando ${user.restaurantName || 'este local'} como admin`
             : 'Estás viendo el panel del local como soporte'}
         </span>
         <button
           type="button"
           onClick={handleReturn}
-          className="shrink-0 text-xs font-bold bg-surface-container-lowest text-on-surface rounded-full px-3 py-1.5 hover:bg-surface-container-low transition-colors"
+          disabled={leaving}
+          className="shrink-0 rounded-full bg-surface-container-lowest px-3 py-1.5 text-xs font-bold text-on-surface transition-colors hover:bg-surface-container-low disabled:opacity-60"
         >
-          {user?.operating ? 'Volver al admin' : 'Volver a mi cuenta'}
+          {leaving ? 'Volviendo...' : user?.operating ? 'Volver al admin' : 'Volver a mi cuenta'}
         </button>
       </div>
     </div>

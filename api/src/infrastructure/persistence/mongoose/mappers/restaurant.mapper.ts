@@ -39,6 +39,7 @@ export class RestaurantMapper {
       doc.regionSlug ?? '',
       doc.claimed ?? true,
       doc.photoGallery ?? [],
+      doc.activation ?? undefined,
     );
   }
 }

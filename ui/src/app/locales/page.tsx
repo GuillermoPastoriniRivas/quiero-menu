@@ -100,7 +100,7 @@ export default async function LocalesPage({
             quiero<span className="text-primary">.menu</span>
           </Link>
           <Link
-            href="/signup"
+            href="/onboarding"
             className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
             Crear mi menú gratis
@@ -136,7 +136,7 @@ export default async function LocalesPage({
               Todavía no hay locales publicados.
             </p>
             <Link
-              href="/signup"
+              href="/onboarding"
               className="mt-4 inline-block rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white"
             >
               Sé el primero
@@ -209,7 +209,7 @@ export default async function LocalesPage({
             IA lo carga solo. Empieza gratis, sin tarjeta.
           </p>
           <Link
-            href="/signup"
+            href="/onboarding"
             className="mt-5 inline-block rounded-full bg-primary px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
             Crear mi menú gratis

@@ -265,7 +265,7 @@ function PrimaryCta({
 }) {
   return (
     <Link
-      href="/signup"
+      href="/onboarding"
       className={`btn-shimmer gradient-cta group relative flex items-center justify-center gap-2 overflow-hidden rounded-2xl font-bold text-white shadow-xl shadow-primary/25 transition-transform hover:scale-[1.02] ${
         size === 'lg' ? 'px-8 py-4 text-lg' : 'px-6 py-3.5'
       } ${className}`}
@@ -958,7 +958,7 @@ export default async function LandingPage() {
                   ))}
                 </ul>
                 <Link
-                  href="/signup"
+                  href="/onboarding"
                   className="mt-6 rounded-2xl border-2 border-primary py-3.5 text-center font-bold text-primary transition-colors hover:bg-primary/5"
                 >
                   Empezar gratis
@@ -997,7 +997,7 @@ export default async function LandingPage() {
                   ))}
                 </ul>
                 <Link
-                  href="/signup"
+                  href="/onboarding"
                   className="btn-shimmer gradient-cta relative mt-6 overflow-hidden rounded-2xl py-3.5 text-center font-bold text-white transition-transform hover:scale-[1.02]"
                 >
                   <span className="relative">Empezar con Pro</span>
@@ -1117,7 +1117,7 @@ export default async function LandingPage() {
             <div>
               <p className="font-[family-name:var(--font-heading)] text-sm font-bold">Empezar</p>
               <div className="mt-3 flex flex-col gap-2.5 text-sm text-on-surface-variant">
-                <Link className="hover:text-primary" href="/signup">Crear mi menú gratis</Link>
+                <Link className="hover:text-primary" href="/onboarding">Crear mi menú gratis</Link>
                 <Link className="hover:text-primary" href="/login">Entrar a mi panel</Link>
                 <Link className="hover:text-primary" href="/locales">Directorio de locales</Link>
                 <Link className="hover:text-primary" href="/status">Estado del servicio</Link>

@@ -35,7 +35,9 @@ export function MobileBottomNav() {
             onClick={() => setMoreOpen(true)}
             className={cn(
               'flex flex-col items-center gap-0.5 py-2.5 px-2 flex-1 text-[10px] font-semibold',
-              NAV_SECTIONS.some((s) => s.items.some((i) => isActive(i.href)))
+              NAV_SECTIONS.some((s) =>
+                s.items.some((i) => isActive(i.href) && !MOBILE_PRIMARY.some((p) => p.href === i.href)),
+              ) || isActive(NAV_SETTINGS_ITEM.href)
                 ? 'text-primary'
                 : 'text-on-surface-variant'
             )}

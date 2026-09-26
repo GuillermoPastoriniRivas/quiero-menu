@@ -127,6 +127,7 @@ import { MongoFeaturedSlotRepository } from './mongoose/repositories/mongo-featu
 import { MongoStoreClaimRepository } from './mongoose/repositories/mongo-store-claim.repository.js';
 import { MongoInvitationRepository } from './mongoose/repositories/mongo-invitation.repository.js';
 import { MongoOrderFeedbackRepository } from './mongoose/repositories/mongo-order-feedback.repository.js';
+import { MongoRestaurantInsightsQuery } from './mongoose/queries/mongo-restaurant-insights.query.js';
 
 const schemas = MongooseModule.forFeature([
   { name: RestaurantModel.name, schema: RestaurantSchema },
@@ -225,6 +226,10 @@ const repositories = [
     useClass: MongoOrderFeedbackRepository,
   },
   { provide: 'AnalyticsRepository', useClass: MongoAnalyticsRepository },
+  {
+    provide: 'RestaurantInsightsQuery',
+    useClass: MongoRestaurantInsightsQuery,
+  },
 ];
 
 @Module({

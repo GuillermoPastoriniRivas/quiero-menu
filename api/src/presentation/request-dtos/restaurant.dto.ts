@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { RestaurantStatus } from '../../domain/enums/restaurant-status.enum.js';
 import { RestaurantCategory } from '../../domain/enums/restaurant-category.enum.js';
+import { PhotoGallerySchema } from './admin.dto.js';
 
 export const UpdateRestaurantRequestSchema = z.object({
   name: z.string().min(1).optional(),
@@ -50,6 +51,7 @@ export const UpdateRestaurantRequestSchema = z.object({
       transferNotes: z.string().optional(),
     })
     .optional(),
+  photoGallery: PhotoGallerySchema,
   theme: z
     .object({
       primaryColor: z

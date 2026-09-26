@@ -1,592 +1,522 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { browserPathParam } from '@/lib/static-route-param';
-import { backupSessionForImpersonation } from '@/lib/admin-session';
-import type { AdminRestaurantDetail, LoginResponse } from '@/types';
-import { useAuthStore } from '@/stores/auth.store';
+import { operateRestaurant } from '@/lib/admin-session';
+import { READINESS_STEPS } from '@/lib/readiness';
+import { getCategoryDef } from '@/lib/restaurant-categories';
+import { formatShortDate } from '@/lib/format';
+import { toWhatsAppNumber } from '@/lib/ar-phone';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { MaterialIcon } from '@/components/ui/material-icon';
-import { formatDate } from '@/lib/format';
-import { RESTAURANT_CATEGORIES } from '@/lib/restaurant-categories';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { WhatsAppIcon } from '@/components/ui/brand-icons';
+import { StageBadge, STAGE_META, expiryLabel } from '@/components/admin/stage';
+import { RestaurantAvatar } from '@/components/admin/restaurant-row';
 import { InvitationPanel } from '@/components/admin/invitation-panel';
+import { FichaEditor } from '@/components/admin/ficha-editor';
+import { ActivityFeed } from '@/components/admin/activity-feed';
+import { useAdminStore } from '@/stores/admin.store';
+import { cn } from '@/lib/utils';
+import type { AdminRestaurantDetail, ApprovedClaim, ReadinessStep } from '@/types';
 
-const NOT_FOUND_FALLBACK = 'unknown';
+const NOT_FOUND = 'unknown';
 
-type GalleryImage = { url: string; source: 's3' | 'external'; alt?: string };
+const PLAN_LABELS: Record<string, string> = { free: 'Gratis', pro: 'Pro' };
+const STATUS_LABELS: Record<string, string> = {
+  active: 'activa',
+  canceled: 'cancelada',
+  past_due: 'pago vencido',
+  expired: 'vencida',
+};
 
-/** Serializa la galería al formato editable (s3:URL y `URL | alt` por línea). */
-function galleryToText(images: GalleryImage[]): string {
-  return images
-    .map((img) => {
-      const prefix = img.source === 's3' ? 's3:' : '';
-      return img.alt ? `${prefix}${img.url} | ${img.alt}` : `${prefix}${img.url}`;
-    })
-    .join('\n');
+function Card({ title, icon, children, action }: { title: string; icon: string; children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-lowest p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <MaterialIcon name={icon} size="sm" className="text-on-surface-variant" />
+        <h2 className="flex-1 font-[family-name:var(--font-heading)] text-sm font-bold text-on-surface">{title}</h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
 }
 
-/**
- * Galería lista para el PATCH, o undefined si la entrada no es parseable
- * (mejor no tocar el campo que mandar basura al PATCH).
- */
-function parseGallery(text: string): GalleryImage[] | undefined {
-  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
-  const images: GalleryImage[] = [];
-  for (const line of lines) {
-    const source = line.toLowerCase().startsWith('s3:') ? 's3' : 'external';
-    const [urlPart, ...altParts] = line
-      .replace(/^s3:/i, '')
-      .split('|')
-      .map((p) => p.trim());
-    if (!urlPart) return undefined;
+function Stat({ label, value, icon }: { label: string; value: number; icon: string }) {
+  return (
+    <div className="rounded-xl bg-surface-container-low p-3">
+      <p className="flex items-center gap-1 text-[11px] font-bold text-on-surface-variant">
+        <MaterialIcon name={icon} size="xs" className="size-3.5" />
+        {label}
+      </p>
+      <p className={cn('mt-1 font-[family-name:var(--font-heading)] text-xl font-extrabold', value === 0 ? 'text-outline' : 'text-on-surface')}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function ClaimCard({
+  claim,
+  onDone,
+}: {
+  claim: AdminRestaurantDetail['pendingClaims'][number];
+  onDone: (approved?: ApprovedClaim) => void;
+}) {
+  const [email, setEmail] = useState(claim.email);
+  const [working, setWorking] = useState(false);
+  const whatsapp = toWhatsAppNumber(claim.phone);
+
+  const approve = async () => {
+    setWorking(true);
     try {
-      new URL(urlPart);
-    } catch {
-      return undefined;
+      const out = await api.post<ApprovedClaim>(`/admin/claims/${claim.id}/approve`, { email });
+      onDone(out);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo aprobar');
+      setWorking(false);
     }
-    const alt = altParts.join(' | ').trim();
-    images.push({ url: urlPart, source: source as GalleryImage['source'], ...(alt ? { alt: alt.slice(0, 120) } : {}) });
-  }
-  return images;
+  };
+
+  const reject = async () => {
+    setWorking(true);
+    try {
+      await api.post(`/admin/claims/${claim.id}/reject`, {});
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo rechazar');
+      setWorking(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
+      <div>
+        <p className="font-bold text-on-surface">{claim.name}</p>
+        <p className="text-xs text-on-surface-variant">
+          {claim.phone} · pidió el {formatShortDate(claim.createdAt)}
+        </p>
+        {claim.message && <p className="mt-1 text-sm italic text-on-surface-variant">“{claim.message}”</p>}
+      </div>
+      {whatsapp && (
+        <a
+          href={`https://wa.me/${whatsapp}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-sm font-bold text-[#128C4B] hover:underline"
+        >
+          <WhatsAppIcon className="size-4" />
+          Verificar por WhatsApp
+        </a>
+      )}
+      <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="bg-surface-container-lowest" />
+      <div className="flex gap-2">
+        <Button size="sm" onClick={approve} disabled={working}>
+          <MaterialIcon name="check" size="sm" />
+          Aprobar e invitar
+        </Button>
+        <Button size="sm" variant="ghost" onClick={reject} disabled={working}>
+          Rechazar
+        </Button>
+      </div>
+    </div>
+  );
 }
 
-
-export default function AdminLocalDetailPage() {
-  const id = browserPathParam('', NOT_FOUND_FALLBACK);
-  const router = useRouter();
+function Detail() {
+  const params = useSearchParams();
+  const justCreated = params.get('nuevo') === '1';
+  const routeParams = useParams<{ id: string }>();
+  const id =
+    routeParams.id && routeParams.id !== '__dynamic__'
+      ? routeParams.id
+      : browserPathParam('', NOT_FOUND);
   const [detail, setDetail] = useState<AdminRestaurantDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [operating, setOperating] = useState(false);
+  const [operating, setOperating] = useState<string | null>(null);
+  const [showFicha, setShowFicha] = useState(false);
   const [featScope, setFeatScope] = useState<'category' | 'home'>('category');
   const [featDays, setFeatDays] = useState('30');
   const [featuring, setFeaturing] = useState(false);
-  const [featMsg, setFeatMsg] = useState('');
-  // Edición de ficha (herramienta de carga y corrección del inventario).
-  const [ficha, setFicha] = useState({
-    name: '',
-    description: '',
-    address: '',
-    city: '',
-    region: '',
-    country: '',
-    category: '',
-    phone: '',
-    lat: '',
-    lng: '',
-    gallery: '',
-  });
-  const [fichaSaving, setFichaSaving] = useState(false);
-  const [fichaMsg, setFichaMsg] = useState('');
-  const [geocoding, setGeocoding] = useState(false);
+  const refreshPendingClaims = useAdminStore((s) => s.refreshPendingClaims);
 
   const load = useCallback(async () => {
-    if (!id || id === NOT_FOUND_FALLBACK) {
-      setError('ID de local inválido');
-      setLoading(false);
-      return;
-    }
     try {
-      const data = await api.get<AdminRestaurantDetail>(
-        `/admin/restaurants/${id}`,
-      );
+      const data = await api.get<AdminRestaurantDetail>(`/admin/restaurants/${id}`);
       setDetail(data);
-      setFicha({
-        name: data.restaurant.name ?? '',
-        description: data.restaurant.description ?? '',
-        address: data.restaurant.address ?? '',
-        city: data.restaurant.city ?? '',
-        region: (data.restaurant as { region?: string }).region ?? '',
-        country: data.restaurant.country ?? '',
-        category: (data.restaurant as { category?: string }).category ?? '',
-        phone: data.restaurant.phone ?? '',
-        lat: data.restaurant.coordinates?.lat != null
-          ? String(data.restaurant.coordinates.lat)
-          : '',
-        lng: data.restaurant.coordinates?.lng != null
-          ? String(data.restaurant.coordinates.lng)
-          : '',
-        gallery: galleryToText(
-          (data.restaurant as { photoGallery?: GalleryImage[] }).photoGallery ??
-            [],
-        ),
-      });
+      setError('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar el local');
-    } finally {
-      setLoading(false);
+      setError(e instanceof Error ? e.message : 'No se pudo cargar el local');
     }
   }, [id]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
+    if (id === NOT_FOUND) return;
+    api
+      .get<AdminRestaurantDetail>(`/admin/restaurants/${id}`)
+      .then((data) => {
+        if (!cancelled) setDetail(data);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'No se pudo cargar el local');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-  const handleOperate = async () => {
-    if (!detail) return;
-    setOperating(true);
+  const operate = async (target: string, key: string) => {
+    setOperating(key);
     try {
-      const session = await api.post<LoginResponse>(
-        `/admin/restaurants/${detail.restaurant.id}/operate`,
-        {},
-      );
-      backupSessionForImpersonation();
-      api.setTokens(session.accessToken, session.refreshToken);
-      useAuthStore.getState().setUser(session.user);
-      router.push('/dashboard');
+      await operateRestaurant(id, target);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo abrir el local');
-      setOperating(false);
+      toast.error(e instanceof Error ? e.message : 'No se pudo abrir el local');
+      setOperating(null);
     }
   };
 
-  const handleSaveFicha = async () => {
-    if (!detail) return;
-    setFichaSaving(true);
-    setFichaMsg('');
-    try {
-      const patch: Record<string, unknown> = {};
-      if (ficha.name && ficha.name !== detail.restaurant.name) patch.name = ficha.name;
-      if (ficha.description !== (detail.restaurant.description ?? '')) patch.description = ficha.description;
-      if (ficha.address !== (detail.restaurant.address ?? '')) patch.address = ficha.address;
-      if (ficha.city !== (detail.restaurant.city ?? '')) patch.city = ficha.city;
-      if (ficha.region !== ((detail.restaurant as { region?: string }).region ?? '')) patch.region = ficha.region;
-      if (ficha.country !== (detail.restaurant.country ?? '')) patch.country = ficha.country;
-      if (ficha.category !== ((detail.restaurant as { category?: string }).category ?? '')) patch.category = ficha.category;
-      if (ficha.phone !== (detail.restaurant.phone ?? '')) patch.phone = ficha.phone;
-      const gallery = parseGallery(ficha.gallery);
-      if (gallery === undefined) {
-        setFichaMsg(
-          'La galería tiene una línea inválida (URL mal formada): no se guardó',
-        );
-        setFichaSaving(false);
-        return;
-      }
-      if (
-        gallery !== undefined &&
-        JSON.stringify(gallery) !==
-          JSON.stringify(
-            (detail.restaurant as { photoGallery?: GalleryImage[] }).photoGallery ??
-              [],
-          )
-      ) {
-        patch.photoGallery = gallery;
-      }
-      const nextCoords = parseCoords(ficha.lat, ficha.lng);
-      if (
-        nextCoords !== undefined &&
-        JSON.stringify(nextCoords) !== JSON.stringify(detail.restaurant.coordinates ?? null)
-      ) {
-        patch.coordinates = nextCoords;
-      }
-      if (Object.keys(patch).length === 0) {
-        setFichaMsg('Sin cambios que guardar');
-        return;
-      }
-      await api.patch(`/admin/restaurants/${detail.restaurant.id}`, patch);
-      setFichaMsg('Ficha actualizada: los slugs geo se recalculan la totalidad');
-      await load();
-    } catch (e) {
-      setFichaMsg(e instanceof Error ? e.message : 'No se pudo actualizar');
-    } finally {
-      setFichaSaving(false);
-    }
-  };
-
-  const handleGeocode = async () => {
-    const q = [ficha.address, ficha.city, ficha.region, ficha.country]
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .join(', ');
-    if (!q) {
-      setFichaMsg('Cargá la dirección y ciudad para buscar coordenadas');
-      return;
-    }
-    setGeocoding(true);
-    setFichaMsg('');
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
-        { headers: { Accept: 'application/json' } },
-      );
-      const results = (await res.json()) as { lat: string; lon: string }[];
-      if (!results.length) {
-        setFichaMsg('No se encontró la dirección; probá completarla mejor o usá tu ubicación');
-        return;
-      }
-      setFicha({ ...ficha, lat: results[0].lat, lng: results[0].lon });
-      setFichaMsg('Coordenadas encontradas: guardá la ficha para aplicarlas');
-    } catch {
-      setFichaMsg('No se pudo contactar el geocodificador');
-    } finally {
-      setGeocoding(false);
-    }
-  };
-
-  const handleMyLocation = () => {
-    if (!navigator.geolocation) {
-      setFichaMsg('El navegador no soporta geolocalización');
-      return;
-    }
-    setGeocoding(true);
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setFicha((f) => ({
-          ...f,
-          lat: String(p.coords.latitude),
-          lng: String(p.coords.longitude),
-        }));
-        setGeocoding(false);
-        setFichaMsg('Coordenadas tomadas de tu ubicación: guardá la ficha');
-      },
-      () => {
-        setGeocoding(false);
-        setFichaMsg('No se pudo usar tu ubicación');
-      },
-      { timeout: 10_000 },
-    );
-  };
-
-  const handleFeature = async () => {
-    if (!detail) return;
+  const feature = async () => {
     setFeaturing(true);
-    setFeatMsg('');
     try {
-      const out = await api.post<{ slotId: string; endsAt: string }>(
-        '/admin/featured',
-        {
-          restaurantId: detail.restaurant.id,
-          scope: featScope,
-          days: Number(featDays) || 30,
-        },
-      );
-      setFeatMsg(`Destacado hasta el ${formatDate(out.endsAt)}`);
+      const out = await api.post<{ slotId: string; endsAt: string }>('/admin/featured', {
+        restaurantId: id,
+        scope: featScope,
+        days: Number(featDays) || 30,
+      });
+      toast.success(`Destacado hasta el ${formatShortDate(out.endsAt)}`);
+      load();
     } catch (e) {
-      setFeatMsg(e instanceof Error ? e.message : 'No se pudo destacar');
+      toast.error(e instanceof Error ? e.message : 'No se pudo destacar');
     } finally {
       setFeaturing(false);
     }
   };
 
-  if (loading) {
+  if (id === NOT_FOUND || (error && !detail)) {
     return (
-      <div className="flex justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="space-y-4">
+        <Link href="/admin/locales" className="inline-flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-primary">
+          <MaterialIcon name="arrow_back" size="sm" />
+          Locales
+        </Link>
+        <div className="rounded-xl bg-error-container/40 px-4 py-3 text-sm text-on-error-container">
+          {error || 'No encontramos ese local.'}
+        </div>
       </div>
     );
   }
 
-  if (error && !detail) {
+  if (!detail) {
     return (
-      <div className="bg-error-container/30 text-on-error-container px-4 py-3 rounded-xl text-sm">
-        {error}
+      <div className="space-y-4">
+        <div className="h-28 animate-pulse rounded-2xl bg-surface-container-high/60" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="h-80 animate-pulse rounded-2xl bg-surface-container-high/60 lg:col-span-2" />
+          <div className="h-80 animate-pulse rounded-2xl bg-surface-container-high/60" />
+        </div>
       </div>
     );
   }
-
-  if (!detail) return null;
 
   const r = detail.restaurant;
-  const s = detail.subscription;
+  const category = getCategoryDef(r.category)?.label;
+  const listing = detail.readiness.listing;
+  const activation = detail.readiness.activation;
+  const hasOwner = detail.owner !== null;
+  const progress = hasOwner ? activation : listing;
+  const planLabel = detail.subscription
+    ? `${PLAN_LABELS[detail.subscription.plan] ?? detail.subscription.plan} · ${STATUS_LABELS[detail.subscription.status] ?? detail.subscription.status}`
+    : 'Sin suscripción';
 
   return (
-    <div className="max-w-3xl">
-      <Link
-        href="/admin/locales"
-        className="flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors mb-4"
-      >
+    <div className="space-y-5">
+      <Link href="/admin/locales" className="inline-flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-primary">
         <MaterialIcon name="arrow_back" size="sm" />
         Locales
       </Link>
 
-      <div className="bg-white rounded-2xl border border-outline-variant/40 p-6 mb-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-on-surface truncate">{r.name}</h1>
-              <span className="text-xs font-bold uppercase tracking-wide text-on-surface-variant bg-surface-container-high rounded-full px-2 py-0.5">
-                {s?.plan ?? '?'}
-              </span>
+      {justCreated && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-success/30 bg-success-container/60 p-4">
+          <MaterialIcon name="check_circle" size="md" className="text-success" />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-on-surface">Ficha creada</p>
+            <p className="text-sm text-on-surface-variant">
+              Lo siguiente es la carta: sacale una foto y la IA carga los platos con sus precios.
+            </p>
+          </div>
+          <Button onClick={() => operate('/onboarding?from=menu', 'ai')} disabled={operating !== null}>
+            <MaterialIcon name="auto_awesome" size="sm" />
+            {operating === 'ai' ? 'Abriendo...' : 'Cargar carta con IA'}
+          </Button>
+        </div>
+      )}
+
+      <header className="rounded-2xl border border-outline-variant/20 bg-surface-container-lowest p-5 shadow-sm">
+        <div className="flex flex-wrap items-start gap-4">
+          <RestaurantAvatar name={r.name} logoUrl={r.logoUrl} size="lg" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-[family-name:var(--font-heading)] text-2xl font-extrabold tracking-tight text-on-surface">
+                {r.name}
+              </h1>
+              <StageBadge stage={detail.stage} />
             </div>
+            <p className="mt-0.5 text-sm text-on-surface-variant">
+              {[r.city, r.region, category].filter(Boolean).join(' · ') || 'Sin ciudad ni rubro'}
+            </p>
             <a
               href={`/${r.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline"
+              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
             >
-              quiero.menu/{r.slug} ↗
+              quiero.menu/{r.slug}
+              <MaterialIcon name="open_in_new" size="xs" />
             </a>
-            <p className="text-xs text-on-surface-variant mt-2">
-              {r.city ? `${r.city}, ` : ''}
-              {r.country || '—'} · alta {formatDate(r.createdAt)}
-            </p>
           </div>
-          <Button onClick={handleOperate} disabled={operating}>
-            <MaterialIcon name="edit" size="sm" />
-            {operating ? 'Abriendo...' : 'Editar como admin'}
-          </Button>
-        </div>
-
-        {error && (
-          <div className="mt-4 bg-error-container/30 text-on-error-container px-4 py-3 rounded-xl text-sm">
-            {error}
-          </div>
-        )}
-      </div>
-
-      <InvitationPanel
-        restaurantId={r.id}
-        restaurantName={r.name}
-        phone={r.phone ?? ''}
-      />
-
-      <div className="grid sm:grid-cols-2 gap-4 mb-4">
-        <InfoCard title="Dueño">
-          <p className="font-semibold text-on-surface">{detail.owner?.name || '—'}</p>
-          <p className="text-sm text-on-surface-variant">{detail.owner?.email}</p>
-          <p className="text-xs mt-1">
-            {detail.owner?.emailVerified ? (
-              <span className="text-success font-bold">Email verificado</span>
-            ) : (
-              <span className="text-on-surface-variant">Email sin verificar</span>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Button onClick={() => operate('/dashboard', 'panel')} disabled={operating !== null} className="flex-1 sm:flex-none">
+              <MaterialIcon name="edit" size="sm" />
+              {operating === 'panel' ? 'Abriendo...' : 'Editar como admin'}
+            </Button>
+            {!hasOwner && (
+              <a
+                href="#invitar"
+                className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-outline-variant/40 px-4 text-sm font-bold text-on-surface hover:border-primary/40 sm:flex-none"
+              >
+                <MaterialIcon name="link" size="sm" />
+                Invitar
+              </a>
             )}
-          </p>
-        </InfoCard>
-
-        <InfoCard title="Suscripción">
-          <p className="font-semibold text-on-surface capitalize">{s?.plan ?? '—'}</p>
-          <p className="text-sm text-on-surface-variant capitalize">{s?.status ?? 'sin datos'}</p>
-          {s?.canceledAt && (
-            <p className="text-xs text-error mt-1">
-              Cancelada el {formatDate(s.canceledAt)}
-            </p>
-          )}
-        </InfoCard>
-
-        <InfoCard title="Pedidos">
-          <p className="text-2xl font-extrabold text-on-surface">{detail.stats.ordersTotal}</p>
-          <p className="text-xs text-on-surface-variant">
-            {detail.stats.ordersLast30d} en los últimos 30 días
-          </p>
-        </InfoCard>
-
-        <InfoCard title="Menú">
-          <p className="text-sm text-on-surface">
-            {detail.stats.categories} categorías · {detail.stats.products} productos
-          </p>
-          {detail.stats.categories === 0 && (
-            <p className="text-xs text-on-surface-variant mt-1">
-              Sin menú cargado todavía
-            </p>
-          )}
-        </InfoCard>
-      </div>
-
-      <InfoCard title="Contacto y dominio">
-        <dl className="text-sm space-y-1">
-          <Row label="Teléfono" value={r.phone || '—'} />
-          <Row label="Dirección" value={r.address || '—'} />
-          <Row label="Moneda" value={r.currency} />
-          <Row label="Timezone" value={r.timezone} />
-          <Row label="Dominio custom" value={r.customDomain ?? '—'} />
-          <Row label="Estado" value={r.status} />
-        </dl>
-      </InfoCard>
-
-      <div className="bg-white rounded-2xl border border-outline-variant/40 p-5 mt-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-          Ficha pública (Inventario)
+          </div>
+        </div>
+        <p className="mt-4 border-t border-outline-variant/20 pt-3 text-xs text-on-surface-variant">
+          {STAGE_META[detail.stage].hint}
+          {detail.invitation && ` · invitación ${expiryLabel(detail.invitation.expiresAt)}`}
+          {` · cargado el ${formatShortDate(r.createdAt)}`}
         </p>
-        <div className="grid sm:grid-cols-2 gap-3 mb-3">
-          <div className="space-y-1">
-            <Label className="text-xs text-on-surface-variant">Nombre</Label>
-            <Input value={ficha.name} onChange={(e) => setFicha({ ...ficha, name: e.target.value })} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-on-surface-variant">Rubro</Label>
-            <select
-              value={ficha.category}
-              onChange={(e) => setFicha({ ...ficha, category: e.target.value })}
-              className="h-10 w-full rounded-xl border-none bg-surface-container-low px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              <option value="">Sin clasificar</option>
-              {RESTAURANT_CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-on-surface-variant">Dirección</Label>
-            <Input value={ficha.address} onChange={(e) => setFicha({ ...ficha, address: e.target.value })} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-on-surface-variant">
-              Coordenadas (para el orden por cercanía)
-            </Label>
-            <div className="flex gap-1.5">
-              <Input
-                value={ficha.lat}
-                onChange={(e) => setFicha({ ...ficha, lat: e.target.value })}
-                placeholder="-32.48"
-                inputMode="decimal"
-                className="flex-1"
-              />
-              <Input
-                value={ficha.lng}
-                onChange={(e) => setFicha({ ...ficha, lng: e.target.value })}
-                placeholder="-58.23"
-                inputMode="decimal"
-                className="flex-1"
-              />
-              <button
-                type="button"
-                onClick={handleGeocode}
-                disabled={geocoding}
-                title="Buscar por la dirección"
-                className="h-10 shrink-0 rounded-xl bg-primary/10 px-2 text-sm font-bold text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
-              >
-                Buscar
-              </button>
-              <button
-                type="button"
-                onClick={handleMyLocation}
-                disabled={geocoding}
-                title="Usar mi ubicación actual"
-                className="h-10 shrink-0 rounded-xl bg-primary/10 px-2 items-center inline-flex text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
-              >
-                <MaterialIcon name="my_location" size="sm" />
-              </button>
+      </header>
+
+      {detail.flags.ordersWithoutOwner && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <MaterialIcon name="warning" size="md" className="shrink-0" />
+          <p>
+            <span className="font-bold">Este local toma pedidos y no tiene dueño.</span> Su página muestra el carrito, pero
+            ningún panel recibe esos pedidos. Invitá al dueño cuanto antes.
+          </p>
+        </div>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
+          <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-lowest p-5 shadow-sm">
+            <div className="mb-4 flex items-center gap-4">
+              <ProgressRing value={progress.percent} size={56} stroke={5}>
+                <span className="text-xs font-extrabold text-on-surface">{progress.percent}%</span>
+              </ProgressRing>
+              <div>
+                <h2 className="font-[family-name:var(--font-heading)] text-base font-bold text-on-surface">
+                  {hasOwner
+                    ? activation.percent === 100
+                      ? 'Puesta en marcha completa'
+                      : 'Puesta en marcha del dueño'
+                    : listing.percent === 100
+                      ? 'Ficha completa'
+                      : 'Qué le falta a la ficha'}
+                </h2>
+                <p className="text-sm text-on-surface-variant">
+                  {hasOwner
+                    ? `El dueño lleva ${activation.done} de ${activation.total} pasos de la puesta en marcha.`
+                    : listing.percent === 100
+                      ? 'Lista para mostrársela al dueño.'
+                      : detail.stage === 'invitado'
+                        ? 'Mientras el dueño no entra, podés seguir completándola.'
+                        : 'Completala antes de invitar: el dueño tiene que ver su local armado.'}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-on-surface-variant">Teléfono</Label>
-            <Input value={ficha.phone} onChange={(e) => setFicha({ ...ficha, phone: e.target.value })} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-on-surface-variant">Ciudad</Label>
-            <Input value={ficha.city} onChange={(e) => setFicha({ ...ficha, city: e.target.value })} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-on-surface-variant">
-              Provincia/departamento ({ficha.region || 'consultar'})
-            </Label>
-            <Input value={ficha.region} onChange={(e) => setFicha({ ...ficha, region: e.target.value })} />
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs text-on-surface-variant">Descripción</Label>
-            <textarea
-              value={ficha.description}
-              onChange={(e) => setFicha({ ...ficha, description: e.target.value })}
-              rows={2}
-              maxLength={500}
-              className="h-20 w-full rounded-xl border-none bg-surface-container-low px-4 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30"
-            />
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs text-on-surface-variant">
-              Galería de fotos (por línea: URL o s3:URL; alt opcional con ` | texto`)
-            </Label>
-            <textarea
-              value={ficha.gallery}
-              onChange={(e) => setFicha({ ...ficha, gallery: e.target.value })}
-              rows={3}
-              placeholder={
-                's3:https://images.quiero.menu/locales/lorso/fachada.jpg\nhttps://fotos.com/blabla.jpg | sala interior'
-              }
-              className="w-full rounded-xl border-none bg-surface-container-low px-4 py-2 font-mono text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/30"
-            />
-          </div>
+            <ul className="divide-y divide-outline-variant/20">
+              {READINESS_STEPS.filter((s) => hasOwner || ['menu', 'whatsapp', 'hours', 'look', 'location'].includes(s.key)).map(
+                (meta) => {
+                  const done = detail.readiness.checks[meta.key as ReadinessStep];
+                  const canFix = !['shared', 'firstOrder'].includes(meta.key);
+                  return (
+                    <li key={meta.key} className="flex items-center gap-3 py-2.5">
+                      <span
+                        className={cn(
+                          'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
+                          done ? 'bg-success-container text-success' : 'bg-surface-container-high text-on-surface-variant',
+                        )}
+                      >
+                        <MaterialIcon name={done ? 'check' : meta.icon} size="xs" />
+                      </span>
+                      <span className={cn('flex-1 text-sm', done ? 'text-on-surface-variant' : 'font-semibold text-on-surface')}>
+                        {done ? meta.doneTitle : meta.label}
+                        {meta.key === 'menu' && detail.stats.products > 0 && (
+                          <span className="font-normal text-on-surface-variant"> · {detail.stats.products} platos</span>
+                        )}
+                        {meta.key === 'hours' && detail.stats.openDays > 0 && (
+                          <span className="font-normal text-on-surface-variant"> · {detail.stats.openDays} días</span>
+                        )}
+                      </span>
+                      {!done && canFix && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={operating !== null}
+                          onClick={() =>
+                            meta.key === 'menu' && detail.stats.products === 0
+                              ? operate('/onboarding?from=menu', meta.key)
+                              : operate(meta.href, meta.key)
+                          }
+                        >
+                          {operating === meta.key ? 'Abriendo...' : 'Completar'}
+                        </Button>
+                      )}
+                    </li>
+                  );
+                },
+              )}
+            </ul>
+          </section>
+
+          {detail.pendingClaims.length > 0 && (
+            <Card title="Reclamos pendientes" icon="mark_email_unread">
+              <div className="space-y-3">
+                {detail.pendingClaims.map((claim) => (
+                  <ClaimCard
+                    key={claim.id}
+                    claim={claim}
+                    onDone={(approved) => {
+                      if (approved) {
+                        toast.success(
+                          approved.invitation.emailSent
+                            ? `Invitación enviada a ${approved.claimant.email}`
+                            : 'Reclamo aprobado. Mandale el link por WhatsApp desde Invitaciones.',
+                        );
+                      }
+                      load();
+                      refreshPendingClaims();
+                    }}
+                  />
+                ))}
+              </div>
+            </Card>
+          )}
+
+          <InvitationPanel
+            key={`${detail.stage}-${detail.invitation?.id ?? 'none'}`}
+            restaurantId={r.id}
+            restaurantName={r.name}
+            phone={r.phone}
+            hasOwner={hasOwner}
+            onChanged={load}
+          />
+
+          <Card
+            title="Datos de la ficha"
+            icon="edit_note"
+            action={
+              <Button variant="ghost" size="sm" onClick={() => setShowFicha((v) => !v)}>
+                {showFicha ? 'Cerrar' : 'Editar'}
+              </Button>
+            }
+          >
+            {showFicha ? (
+              <FichaEditor key={r.updatedAt} restaurant={r} onSaved={load} />
+            ) : (
+              <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                {[
+                  ['Teléfono', r.phone || '—'],
+                  ['Dirección', r.address || '—'],
+                  ['Ciudad', [r.city, r.region].filter(Boolean).join(', ') || '—'],
+                  ['Ubicación', r.coordinates ? 'Marcada en el mapa' : 'Sin marcar'],
+                  ['Fotos', `${r.photoGallery.length}`],
+                  ['Moneda', r.currency],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-4 border-b border-outline-variant/10 py-1.5">
+                    <dt className="text-on-surface-variant">{label}</dt>
+                    <dd className="truncate text-right font-semibold text-on-surface">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </Card>
+
+          <Card title="Historial" icon="history">
+            <ActivityFeed entries={detail.timeline} />
+          </Card>
         </div>
-        <Button size="sm" onClick={handleSaveFicha} disabled={fichaSaving}>
-          {fichaSaving ? 'Guardando...' : 'Guardar ficha'}
-        </Button>
-        {fichaMsg && <p className="text-xs text-on-surface-variant mt-2">{fichaMsg}</p>}
-      </div>
 
-      <div className="bg-white rounded-2xl border border-amber-400/40 p-5 mt-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-          Destacar en el directorio
-        </p>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-on-surface-variant">
-              Lugar
-            </Label>
-            <select
-              value={featScope}
-              onChange={(e) =>
-                setFeatScope(e.target.value as 'category' | 'home')
-              }
-              className="h-10 rounded-xl border-none bg-surface-container-low px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              <option value="category">Arriba del rubro</option>
-              <option value="home">Home de la ciudad</option>
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-on-surface-variant">
-              Días
-            </Label>
-            <Input
-              value={featDays}
-              onChange={(e) => setFeatDays(e.target.value)}
-              inputMode="numeric"
-              className="h-10 w-24"
-            />
-          </div>
-          <Button size="sm" onClick={handleFeature} disabled={featuring}>
-            <MaterialIcon name="star" size="sm" />
-            {featuring ? 'Asignando...' : 'Destacar'}
-          </Button>
+        <div className="space-y-5">
+          <Card title="Últimos 30 días" icon="insights">
+            <div className="grid grid-cols-2 gap-2">
+              <Stat label="Visitas" value={detail.demand30d.views} icon="visibility" />
+              <Stat label="WhatsApp" value={detail.demand30d.whatsapp} icon="chat" />
+              <Stat label="Cómo llegar" value={detail.demand30d.maps} icon="map" />
+              <Stat label="Pedidos" value={detail.stats.ordersLast30d} icon="receipt_long" />
+            </div>
+            <p className="mt-3 text-xs text-on-surface-variant">
+              {detail.stats.ordersTotal} {detail.stats.ordersTotal === 1 ? 'pedido' : 'pedidos'} en total ·{' '}
+              {detail.stats.categories} {detail.stats.categories === 1 ? 'categoría' : 'categorías'} en la carta
+            </p>
+          </Card>
+
+          <Card title="Dueño y plan" icon="person">
+            {detail.owner ? (
+              <div className="space-y-1">
+                <p className="font-semibold text-on-surface">{detail.owner.name || 'Sin nombre'}</p>
+                <p className="break-all text-sm text-on-surface-variant">{detail.owner.email}</p>
+                <p className={cn('text-xs font-bold', detail.owner.emailVerified ? 'text-success' : 'text-on-surface-variant')}>
+                  {detail.owner.emailVerified ? 'Email verificado' : 'Email sin verificar'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-on-surface-variant">Todavía no tiene dueño.</p>
+            )}
+            <div className="mt-4 flex items-center justify-between rounded-xl bg-surface-container-low px-3 py-2.5 text-sm">
+              <span className="text-on-surface-variant">Plan</span>
+              <span className="font-bold text-on-surface">{planLabel}</span>
+            </div>
+          </Card>
+
+          <Card title="Destacar en el buscador" icon="star">
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <select
+                value={featScope}
+                onChange={(e) => setFeatScope(e.target.value as 'category' | 'home')}
+                className="h-10 rounded-xl border-none bg-surface-container-low px-3 text-sm outline-none"
+              >
+                <option value="category">Arriba de su rubro</option>
+                <option value="home">En la portada de la ciudad</option>
+              </select>
+              <div className="flex items-center gap-1.5">
+                <Input value={featDays} onChange={(e) => setFeatDays(e.target.value)} inputMode="numeric" className="h-10 w-16" />
+                <span className="text-xs text-on-surface-variant">días</span>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" onClick={feature} disabled={featuring} className="mt-3 w-full">
+              <MaterialIcon name="star" size="sm" />
+              {featuring ? 'Asignando...' : 'Destacar'}
+            </Button>
+          </Card>
         </div>
-        {featMsg && (
-          <p className="text-xs text-on-surface-variant mt-2">{featMsg}</p>
-        )}
       </div>
     </div>
   );
 }
 
-function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
+export default function AdminLocalDetailPage() {
   return (
-    <div className="bg-white rounded-2xl border border-outline-variant/40 p-5">
-      <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-        {title}
-      </p>
-      {children}
-    </div>
+    <Suspense fallback={null}>
+      <Detail />
+    </Suspense>
   );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <dt className="text-on-surface-variant">{label}</dt>
-      <dd className="font-semibold text-on-surface truncate">{value}</dd>
-    </div>
-  );
-}
-
-/**
- * Coordenadas listas para guardar. undefined = no tocar; null = borrar
- * (los dos campos vacíos); invalida si falta uno no matchea.
- */
-function parseCoords(
-  lat: string,
-  lng: string,
-): { lat: number; lng: number } | null | undefined {
-  const latTrim = lat.trim();
-  const lngTrim = lng.trim();
-  if (!latTrim && !lngTrim) return null;
-  if (!latTrim || !lngTrim) return undefined;
-  const la = Number(latTrim);
-  const ln = Number(lngTrim);
-  if (!Number.isFinite(la) || !Number.isFinite(ln)) return undefined;
-  if (Math.abs(la) > 90 || Math.abs(ln) > 180) return undefined;
-  return { lat: la, lng: ln };
 }

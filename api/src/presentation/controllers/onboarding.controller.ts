@@ -4,6 +4,8 @@ import {
   Body,
   Inject,
   BadRequestException,
+  Logger,
+  ServiceUnavailableException,
   UseInterceptors,
   UploadedFiles,
 } from '@nestjs/common';
@@ -26,6 +28,8 @@ const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 
 @Controller('onboarding')
 export class OnboardingController {
+  private readonly logger = new Logger(OnboardingController.name);
+
   constructor(
     @Inject('AnalyzeMenuUseCase')
     private readonly analyzeMenu: AnalyzeMenuUseCase,
@@ -40,7 +44,7 @@ export class OnboardingController {
   })
   @Post('analyze')
   @UseInterceptors(
-    FilesInterceptor('images', 2, {
+    FilesInterceptor('images', 4, {
       limits: { fileSize: 10 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         cb(null, ALLOWED_MIMES.includes(file.mimetype));
@@ -52,15 +56,27 @@ export class OnboardingController {
     @Body() body: { text?: string; currency?: string },
   ) {
     if (!files || files.length === 0) {
-      throw new BadRequestException('At least one menu image is required');
+      throw new BadRequestException(
+        'Subí al menos una foto de la carta (JPG, PNG o WebP).',
+      );
     }
 
-    const result = await this.analyzeMenu.execute({
-      imageBuffers: files.map((f) => f.buffer),
-      imageMimeTypes: files.map((f) => f.mimetype),
-      additionalText: body.text || undefined,
-      currency: body.currency || undefined,
-    });
+    const result = await this.analyzeMenu
+      .execute({
+        imageBuffers: files.map((f) => f.buffer),
+        imageMimeTypes: files.map((f) => f.mimetype),
+        additionalText: body.text || undefined,
+        currency: body.currency || undefined,
+      })
+      .catch((error: unknown) => {
+        this.logger.error(
+          'Menu analysis failed',
+          error instanceof Error ? error.stack : String(error),
+        );
+        throw new ServiceUnavailableException(
+          'No pudimos leer la carta en este momento. Probá de nuevo en un rato o cargala a mano.',
+        );
+      });
 
     if (!result.ok) {
       throw new BadRequestException(result.error.message);

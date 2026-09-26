@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
   Body,
   Inject,
   NotFoundException,
@@ -26,6 +27,10 @@ import type { UpdateRestaurantUseCase } from '../../application/use-cases/restau
 import type { UpdateOperatingHoursUseCase } from '../../application/use-cases/restaurant/update-operating-hours.use-case.js';
 import type { GetRestaurantOperatingHoursUseCase } from '../../application/use-cases/restaurant/get-restaurant-operating-hours.use-case.js';
 import type { UpdateOpenStatusUseCase } from '../../application/use-cases/restaurant/update-open-status.use-case.js';
+import type {
+  GetActivationUseCase,
+  MarkRestaurantSharedUseCase,
+} from '../../application/use-cases/restaurant/get-activation.use-case.js';
 
 @Controller('restaurants')
 export class RestaurantController {
@@ -40,7 +45,25 @@ export class RestaurantController {
     private readonly hoursInfo: GetRestaurantOperatingHoursUseCase,
     @Inject('UpdateOpenStatusUseCase')
     private readonly updateOpenStatus: UpdateOpenStatusUseCase,
+    @Inject('GetActivationUseCase')
+    private readonly getActivation: GetActivationUseCase,
+    @Inject('MarkRestaurantSharedUseCase')
+    private readonly markShared: MarkRestaurantSharedUseCase,
   ) {}
+
+  @Get('current/activation')
+  async activation(@CurrentUser() user: RequestUser) {
+    const result = await this.getActivation.execute(user.restaurantId);
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    return result.value;
+  }
+
+  @Post('current/activation/shared')
+  async shared(@CurrentUser() user: RequestUser) {
+    const result = await this.markShared.execute(user.restaurantId);
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    return result.value;
+  }
 
   @Get('current')
   async getCurrent(@CurrentUser() user: RequestUser) {

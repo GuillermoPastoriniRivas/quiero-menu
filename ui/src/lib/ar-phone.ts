@@ -40,23 +40,55 @@ export function arPhoneToNational(value: string): string {
  * resto asumimos 3 (las de 4 muestran mal el guion pero los digitos no se
  * pierden).
  */
+const THREE_DIGIT_AREAS = new Set([
+  "220", "221", "223", "230", "236", "237", "249", "260", "261", "263", "264", "266",
+  "280", "291", "294", "297", "298", "299", "336", "341", "342", "343", "345", "348",
+  "351", "353", "358", "362", "364", "370", "376", "379", "380", "381", "383", "385",
+  "387", "388",
+]);
+
+function areaLength(national: string): number {
+  if (national.startsWith("11")) return 2;
+  if (THREE_DIGIT_AREAS.has(national.slice(0, 3))) return 3;
+  return 4;
+}
+
 export function formatArPhone(value: string): string {
   const d = arPhoneToNational(value).slice(0, 10);
   if (!d) return "";
-  let out = d;
-  if (d.startsWith("11")) {
-    out = d.slice(0, 2);
-    if (d.length > 2) out += " " + d.slice(2, 6);
-    if (d.length > 6) out += "-" + d.slice(6);
-    return out;
-  }
-  if (d.length > 3) out = d.slice(0, 3) + " " + d.slice(3, 6);
-  if (d.length > 6) out += "-" + d.slice(6);
-  return out;
+  const area = areaLength(d);
+  if (d.length <= area) return d;
+  const local = d.slice(area);
+  const split = 10 - area - 4;
+  const head = local.slice(0, split);
+  const tail = local.slice(split);
+  return `${d.slice(0, area)} ${head}${tail ? `-${tail}` : ""}`;
 }
 
 /** Formato WhatsApp (549 + 10) o null si el input no esta completo. */
 export function arPhoneToWhatsApp(value: string): string | null {
   const d = arPhoneToNational(value);
   return d.length === 10 ? `549${d}` : null;
+}
+
+export function toWhatsAppNumber(value: string | null | undefined): string | null {
+  const digits = (value ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+  const argentine = arPhoneToWhatsApp(digits);
+  if (argentine) return argentine;
+  const international = digits.replace(/^0+/, "");
+  return international.length >= 11 && international.length <= 15 ? international : null;
+}
+
+export function whatsAppLink(value: string | null | undefined, text?: string): string {
+  const number = toWhatsAppNumber(value) ?? "";
+  const query = text ? `?text=${encodeURIComponent(text)}` : "";
+  return `https://wa.me/${number}${query}`;
+}
+
+export function formatWhatsAppDisplay(number: string): string {
+  if (number.startsWith("549") && number.length === 13) {
+    return `+54 9 ${formatArPhone(number.slice(3))}`;
+  }
+  return `+${number}`;
 }

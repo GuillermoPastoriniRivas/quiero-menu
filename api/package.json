@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "backfill:tracking-tokens": "node dist/scripts/backfill-tracking-tokens.js",
+    "seed:concepcion": "nest build && node dist/scripts/seed-concepcion-uruguay.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
