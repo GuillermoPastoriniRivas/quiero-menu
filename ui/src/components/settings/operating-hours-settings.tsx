@@ -185,85 +185,89 @@ export function OperatingHoursSettings() {
           Configurá los horarios de apertura y cierre para cada día. Podés agregar dos rangos (ej 08:00–12:00 y 16:00–20:00) para locales con corte.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 min-w-0">
-        {schedules.map((s, i) => (
-          <div
-            key={s.dayOfWeek}
-            className="flex flex-col gap-3 rounded-md border p-3 min-w-0 sm:gap-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-medium shrink-0">{DAY_NAMES[i]}</span>
-              <div className="flex items-center gap-2 shrink-0">
-                <Switch
-                  checked={s.isClosed}
-                  onCheckedChange={(checked) => toggleClosed(i, checked)}
-                />
-                <Label className="text-sm text-muted-foreground">
-                  Cerrado
-                </Label>
+      <CardContent className="min-w-0">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 items-start">
+          {schedules.map((s, i) => (
+            <div
+              key={s.dayOfWeek}
+              className="flex flex-col gap-3 rounded-md border p-3 min-w-0"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium shrink-0">{DAY_NAMES[i]}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Switch
+                    checked={s.isClosed}
+                    onCheckedChange={(checked) => toggleClosed(i, checked)}
+                  />
+                  <Label className="text-sm text-muted-foreground">
+                    Cerrado
+                  </Label>
+                </div>
               </div>
+
+              {!s.isClosed && (
+                <div className="space-y-2">
+                  {s.ranges.map((r, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 w-full min-w-0"
+                    >
+                      <Input
+                        type="time"
+                        value={r.opensAt}
+                        className="min-w-0 flex-1 sm:flex-none sm:w-32"
+                        onChange={(e) => updateRange(i, idx, { opensAt: e.target.value })}
+                      />
+                      <span className="text-muted-foreground shrink-0 text-sm">a</span>
+                      <Input
+                        type="time"
+                        value={r.closesAt}
+                        className="min-w-0 flex-1 sm:flex-none sm:w-32"
+                        onChange={(e) => updateRange(i, idx, { closesAt: e.target.value })}
+                      />
+                      {s.ranges.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => removeRange(i, idx)}
+                          aria-label="Quitar horario"
+                        >
+                          <MaterialIcon name="close" size="sm" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+
+                  {s.ranges.length < MAX_RANGES && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => addRange(i)}
+                    >
+                      <MaterialIcon name="add" size="xs" className="mr-1" />
+                      Agregar horario
+                    </Button>
+                  )}
+
+                  {s.ranges.length === 1 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Ej: 08:00 a 12:00 y 16:00 a 20:00 para corte al mediodía.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-
-            {!s.isClosed && (
-              <div className="space-y-2">
-                {s.ranges.map((r, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 w-full min-w-0"
-                  >
-                    <Input
-                      type="time"
-                      value={r.opensAt}
-                      className="min-w-0 flex-1 sm:flex-none sm:w-28"
-                      onChange={(e) => updateRange(i, idx, { opensAt: e.target.value })}
-                    />
-                    <span className="text-muted-foreground shrink-0 text-sm">a</span>
-                    <Input
-                      type="time"
-                      value={r.closesAt}
-                      className="min-w-0 flex-1 sm:flex-none sm:w-28"
-                      onChange={(e) => updateRange(i, idx, { closesAt: e.target.value })}
-                    />
-                    {s.ranges.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        className="shrink-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeRange(i, idx)}
-                        aria-label="Quitar horario"
-                      >
-                        <MaterialIcon name="close" size="sm" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-
-                {s.ranges.length < MAX_RANGES && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => addRange(i)}
-                  >
-                    <MaterialIcon name="add" size="xs" className="mr-1" />
-                    Agregar horario
-                  </Button>
-                )}
-
-                {s.ranges.length === 1 && (
-                  <p className="text-[11px] text-muted-foreground">
-                    Ej: 08:00 a 12:00 y 16:00 a 20:00 para corte al mediodía.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-        <Button disabled={saving || hasValidationIssue} onClick={handleSave}>
-          {saving ? "Guardando..." : "Guardar horarios"}
-        </Button>
+          ))}
+        </div>
+        <div className="mt-4">
+          <Button disabled={saving || hasValidationIssue} onClick={handleSave}>
+            {saving ? "Guardando..." : "Guardar horarios"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
