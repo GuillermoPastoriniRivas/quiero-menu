@@ -76,14 +76,24 @@ export class RefreshTokenUseCase {
   }
 
   private async ownPayload(user: User): Promise<TokenPayload | null> {
+    const isAdmin = this.isPlatformAdmin(user);
     const userRestaurants = await this.userRestaurantRepo.findByUserId(user.id);
-    if (userRestaurants.length === 0) return null;
+    if (userRestaurants.length === 0) {
+      // Un admin de plataforma sin local renueva su sesión de staff.
+      if (!isAdmin) return null;
+      return {
+        sub: user.id,
+        restaurantId: '',
+        role: UserRole.OWNER,
+        plat: true,
+      };
+    }
     const primary = userRestaurants[0];
     return {
       sub: user.id,
       restaurantId: primary.restaurantId,
       role: primary.role,
-      ...(this.isPlatformAdmin(user) ? { plat: true } : {}),
+      ...(isAdmin ? { plat: true } : {}),
     };
   }
 

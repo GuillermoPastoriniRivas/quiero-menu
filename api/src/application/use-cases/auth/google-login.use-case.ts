@@ -56,16 +56,25 @@ export class GoogleLoginUseCase {
     let restaurantSlug: string;
     let role: UserRole;
 
+    const platformAdmin = isPlatformAdminEmail(
+      identity.email,
+      this.platformAdminEmails,
+    );
+
     if (user) {
       const userRestaurants = await this.userRestaurantRepo.findByUserId(
         user.id,
       );
-      if (userRestaurants.length === 0) {
+      // Un admin de plataforma puede existir sin local propio (cuenta de staff).
+      if (userRestaurants.length === 0 && !platformAdmin) {
         return err(new InvalidCredentialsError());
       }
-      restaurantId = userRestaurants[0].restaurantId;
-      role = userRestaurants[0].role;
-      const restaurant = await this.restaurantRepo.findById(restaurantId);
+      const primary = userRestaurants[0] ?? null;
+      restaurantId = primary?.restaurantId ?? '';
+      role = primary?.role ?? UserRole.OWNER;
+      const restaurant = primary
+        ? await this.restaurantRepo.findById(primary.restaurantId)
+        : null;
       restaurantSlug = restaurant?.slug ?? '';
     } else {
       const created = await this.createOwnedRestaurant(
@@ -91,11 +100,6 @@ export class GoogleLoginUseCase {
       restaurantSlug = created.value.slug;
       role = UserRole.OWNER;
     }
-
-    const platformAdmin = isPlatformAdminEmail(
-      identity.email,
-      this.platformAdminEmails,
-    );
 
     const session = await issueSession(
       this.tokenProvider,

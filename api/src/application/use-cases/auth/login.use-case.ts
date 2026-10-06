@@ -10,6 +10,7 @@ import { LoginOutput } from '../../dtos/auth/login-output.dto.js';
 import { Result, ok, err } from '../../common/result.js';
 import { InvalidCredentialsError } from '../../../domain/errors/domain-errors.js';
 import { isPlatformAdminEmail } from '../../common/platform-admin.js';
+import { UserRole } from '../../../domain/enums/user-role.enum.js';
 
 export class LoginUseCase {
   constructor(
@@ -35,20 +36,27 @@ export class LoginUseCase {
     if (!valid) return err(new InvalidCredentialsError());
 
     const userRestaurants = await this.userRestaurantRepo.findByUserId(user.id);
-    if (userRestaurants.length === 0) return err(new InvalidCredentialsError());
-
-    const primary = userRestaurants[0];
-    const restaurant = await this.restaurantRepo.findById(primary.restaurantId);
 
     const platformAdmin = isPlatformAdminEmail(
       user.email,
       this.platformAdminEmails,
     );
 
+    // Un admin de plataforma puede existir sin local propio (cuenta de staff).
+    // Cualquier otro usuario necesita al menos un local para entrar.
+    if (userRestaurants.length === 0 && !platformAdmin) {
+      return err(new InvalidCredentialsError());
+    }
+
+    const primary = userRestaurants[0] ?? null;
+    const restaurant = primary
+      ? await this.restaurantRepo.findById(primary.restaurantId)
+      : null;
+
     const payload = {
       sub: user.id,
-      restaurantId: primary.restaurantId,
-      role: primary.role,
+      restaurantId: primary?.restaurantId ?? '',
+      role: primary?.role ?? UserRole.OWNER,
       ...(platformAdmin ? { plat: true } : {}),
     };
     const accessToken = this.tokenProvider.signAccess(payload);
@@ -69,8 +77,8 @@ export class LoginUseCase {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: primary.role,
-        restaurantId: primary.restaurantId,
+        role: primary?.role ?? UserRole.OWNER,
+        restaurantId: primary?.restaurantId ?? '',
         restaurantSlug: restaurant?.slug ?? '',
         ...(platformAdmin ? { platformAdmin: true } : {}),
       },

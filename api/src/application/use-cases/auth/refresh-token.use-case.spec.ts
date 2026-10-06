@@ -150,6 +150,30 @@ describe('RefreshTokenUseCase', () => {
     expect(result.error).toBeInstanceOf(InvalidCredentialsError);
   });
 
+  it('renueva la sesión de un admin de plataforma sin local', async () => {
+    const { userRepo, userRestaurantRepo, refreshTokenRepo, tokenProvider } =
+      buildUseCase({
+        userRestaurantRepo: { findByUserId: jest.fn().mockResolvedValue([]) },
+      });
+    const useCase = new RefreshTokenUseCase(
+      refreshTokenRepo,
+      userRepo,
+      userRestaurantRepo,
+      tokenProvider,
+      ['owner@test.com'],
+    );
+
+    const result = await useCase.execute('refresh-token');
+
+    expect(result.ok).toBe(true);
+    expect(tokenProvider.signAccess).toHaveBeenCalledWith({
+      sub: 'u1',
+      restaurantId: '',
+      role: UserRole.OWNER,
+      plat: true,
+    });
+  });
+
   it('conserva la sesión de edición del admin sobre el local operado', async () => {
     const { userRepo, userRestaurantRepo, refreshTokenRepo, tokenProvider } =
       buildUseCase({

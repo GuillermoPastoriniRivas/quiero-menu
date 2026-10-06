@@ -28,7 +28,7 @@ function LoginForm() {
     setLoading(true);
     try {
       await googleLogin(response.credential);
-      router.push('/dashboard');
+      router.push(useAuthStore.getState().user?.platformAdmin ? '/admin' : '/dashboard');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al iniciar sesión');
     } finally {
@@ -42,7 +42,7 @@ function LoginForm() {
     setLoading(true);
     try {
       await login(email, password);
-      router.push('/dashboard');
+      router.push(useAuthStore.getState().user?.platformAdmin ? '/admin' : '/dashboard');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al iniciar sesión');
     } finally {
