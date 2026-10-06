@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { RestaurantCategory } from '../../domain/enums/restaurant-category.enum.js';
+import { PlanTier } from '../../domain/enums/plan-tier.enum.js';
 import { ADMIN_STAGES } from '../../application/use-cases/admin/admin-restaurant-index.js';
 import { ADMIN_LIST_SORTS } from '../../application/use-cases/admin/list-admin-restaurants.use-case.js';
 
@@ -133,3 +134,9 @@ export const AdminCreateInvitationRequestSchema = z.object({
 export type AdminCreateInvitationRequestDto = z.infer<
   typeof AdminCreateInvitationRequestSchema
 >;
+
+/** Regalar o quitar Pro a mano desde el panel admin (sin cobro). */
+export const AdminSetPlanRequestSchema = z.object({
+  plan: z.nativeEnum(PlanTier),
+});
+export type AdminSetPlanRequestDto = z.infer<typeof AdminSetPlanRequestSchema>;

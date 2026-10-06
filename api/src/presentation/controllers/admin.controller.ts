@@ -39,6 +39,8 @@ import {
   AdminUpdateRestaurantRequestDto,
   AdminCreateInvitationRequestSchema,
   AdminCreateInvitationRequestDto,
+  AdminSetPlanRequestSchema,
+  AdminSetPlanRequestDto,
 } from '../request-dtos/admin.dto.js';
 import type { ListAdminRestaurantsUseCase } from '../../application/use-cases/admin/list-admin-restaurants.use-case.js';
 import type { GetAdminOverviewUseCase } from '../../application/use-cases/admin/get-admin-overview.use-case.js';
@@ -68,6 +70,7 @@ import type { OperateRestaurantUseCase } from '../../application/use-cases/admin
 import type { CreateInvitationUseCase } from '../../application/use-cases/invitations/create-invitation.use-case.js';
 import type { ListInvitationsUseCase } from '../../application/use-cases/invitations/list-invitations.use-case.js';
 import type { RevokeInvitationUseCase } from '../../application/use-cases/invitations/revoke-invitation.use-case.js';
+import type { SetRestaurantPlanUseCase } from '../../application/use-cases/admin/set-restaurant-plan.use-case.js';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -115,6 +118,8 @@ export class AdminController {
     private readonly listInvitationsUseCase: ListInvitationsUseCase,
     @Inject('RevokeInvitationUseCase')
     private readonly revokeInvitationUseCase: RevokeInvitationUseCase,
+    @Inject('SetRestaurantPlanUseCase')
+    private readonly setRestaurantPlanUseCase: SetRestaurantPlanUseCase,
     private readonly audit: AuditService,
   ) {}
 
@@ -343,6 +348,27 @@ export class AdminController {
       fields: Object.keys(body),
     });
     return { restaurant: result.value };
+  }
+
+  /**
+   * Regala o quita Pro a mano (sin cobro). Deja la suscripción activa sin fecha
+   * de fin, así que no vence sola ni la tocan los webhooks de pago.
+   */
+  @Throttle({ short: { limit: 20, ttl: 60_000 } })
+  @Patch('restaurants/:id/plan')
+  async setPlan(
+    @CurrentUser() admin: RequestUser,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(AdminSetPlanRequestSchema))
+    body: AdminSetPlanRequestDto,
+  ) {
+    const result = await this.setRestaurantPlanUseCase.execute({
+      restaurantId: id,
+      plan: body.plan,
+    });
+    if (!result.ok) throw new NotFoundException(result.error.message);
+    this.audit.log('admin.plan_changed', admin._id, id, { plan: body.plan });
+    return result.value;
   }
 
   /** Cola de pedidos de cuenta. */

@@ -144,6 +144,7 @@ function Detail() {
   const [featScope, setFeatScope] = useState<'category' | 'home'>('category');
   const [featDays, setFeatDays] = useState('30');
   const [featuring, setFeaturing] = useState(false);
+  const [planWorking, setPlanWorking] = useState(false);
   const refreshPendingClaims = useAdminStore((s) => s.refreshPendingClaims);
 
   const load = useCallback(async () => {
@@ -199,6 +200,19 @@ function Detail() {
     }
   };
 
+  const setPlan = async (plan: 'pro' | 'free') => {
+    setPlanWorking(true);
+    try {
+      await api.patch(`/admin/restaurants/${id}/plan`, { plan });
+      toast.success(plan === 'pro' ? 'Pro regalado' : 'Plan vuelto a Gratis');
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo cambiar el plan');
+    } finally {
+      setPlanWorking(false);
+    }
+  };
+
   if (id === NOT_FOUND || (error && !detail)) {
     return (
       <div className="space-y-4">
@@ -234,6 +248,8 @@ function Detail() {
   const planLabel = detail.subscription
     ? `${PLAN_LABELS[detail.subscription.plan] ?? detail.subscription.plan} · ${STATUS_LABELS[detail.subscription.status] ?? detail.subscription.status}`
     : 'Sin suscripción';
+  const isPro =
+    detail.subscription?.plan === 'pro' && detail.subscription?.status === 'active';
 
   return (
     <div className="space-y-5">
@@ -485,6 +501,25 @@ function Detail() {
               <span className="text-on-surface-variant">Plan</span>
               <span className="font-bold text-on-surface">{planLabel}</span>
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPlan(isPro ? 'free' : 'pro')}
+              disabled={planWorking}
+              className="mt-3 w-full"
+            >
+              <MaterialIcon name={isPro ? 'workspace_premium' : 'redeem'} size="sm" />
+              {planWorking
+                ? 'Cambiando...'
+                : isPro
+                  ? 'Quitar Pro (volver a Gratis)'
+                  : 'Regalar Pro'}
+            </Button>
+            {!isPro && !detail.subscription && (
+              <p className="mt-2 text-xs text-on-surface-variant">
+                No tiene suscripción: se crea una Pro activa sin vencimiento.
+              </p>
+            )}
           </Card>
 
           <Card title="Destacar en el buscador" icon="star">

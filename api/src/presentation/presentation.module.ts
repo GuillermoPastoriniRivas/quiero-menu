@@ -62,6 +62,7 @@ import {
 } from '../application/use-cases/restaurant/get-activation.use-case.js';
 import { GetRestaurantDetailUseCase } from '../application/use-cases/admin/get-restaurant-detail.use-case.js';
 import { CreateRestaurantAccountUseCase } from '../application/use-cases/admin/create-restaurant-account.use-case.js';
+import { SetRestaurantPlanUseCase } from '../application/use-cases/admin/set-restaurant-plan.use-case.js';
 import { RequestStoreClaimUseCase } from '../application/use-cases/claims/request-store-claim.use-case.js';
 import { ListStoreClaimsUseCase } from '../application/use-cases/claims/list-store-claims.use-case.js';
 import { ApproveStoreClaimUseCase } from '../application/use-cases/claims/approve-store-claim.use-case.js';
@@ -490,6 +491,12 @@ const useCaseProviders = [
       'EmailServicePort',
       ConfigService,
     ],
+  },
+  {
+    provide: 'SetRestaurantPlanUseCase',
+    useFactory: (restRepo: any, subRepo: any) =>
+      new SetRestaurantPlanUseCase(restRepo, subRepo),
+    inject: ['RestaurantRepository', 'SubscriptionRepository'],
   },
   {
     provide: 'RequestStoreClaimUseCase',
