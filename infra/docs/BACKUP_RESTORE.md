@@ -83,7 +83,7 @@ mongorestore --uri="$MONGODB_URI" --archive=./restore.archive.gz --gzip --drop
    cd /home/ubuntu/shared && ./hydrate-env.sh
    cd quiero-menu && docker compose up -d api
    ```
-4. Verificar `/api/health/ready` (debe responder `{"status":"ok","db":"up"}`).
+4. Verificar `/api/v1/health/ready` (debe responder `{"status":"ok","db":"up"}`).
 
 ### Restore puntual (una colección)
 

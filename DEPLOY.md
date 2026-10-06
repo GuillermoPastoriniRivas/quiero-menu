@@ -373,7 +373,7 @@ A partir de ahora, cada push a `main` que modifique archivos en `quiero-menu/` t
 ### Checklist post-deploy:
 
 - [ ] `https://quiero.menu` carga la landing page
-- [ ] `https://quiero.menu/api/health` responde OK
+- [ ] `https://quiero.menu/api/v1/health` responde OK
 - [ ] El registro de usuarios funciona
 - [ ] El login funciona
 - [ ] WebSocket conecta (kitchen display actualiza en real-time)
