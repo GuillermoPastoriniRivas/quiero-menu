@@ -24,7 +24,7 @@ export default function PrivacyPage() {
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-extrabold mb-2 font-[family-name:var(--font-heading)]">Politica de Privacidad</h1>
-        <p className="text-sm text-on-surface-variant mb-10">Ultima actualizacion: 14 de abril de 2026</p>
+        <p className="text-sm text-on-surface-variant mb-10">Ultima actualizacion: 6 de octubre de 2026</p>
 
         <div className="prose prose-sm max-w-none space-y-8 text-on-surface/90 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-on-surface [&_h2]:mt-8 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:text-on-surface [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_table]:w-full [&_table]:text-sm [&_th]:text-left [&_th]:p-2 [&_th]:bg-surface-container [&_th]:font-semibold [&_td]:p-2 [&_td]:border-t [&_td]:border-outline-variant/20">
 
@@ -245,12 +245,13 @@ export default function PrivacyPage() {
             </p>
             <ul>
               <li><strong>Cookies esenciales:</strong> necesarias para el funcionamiento de la plataforma (sesion, autenticacion). No requieren consentimiento.</li>
-              <li><strong>Cookies de analisis:</strong> nos ayudan a mejorar la experiencia de uso. Solo se activan con tu consentimiento previo.</li>
+              <li><strong>Cookies de analisis:</strong> nos ayudan a mejorar la experiencia de uso (por ejemplo, Google Analytics). Se activan por defecto amparadas en nuestro interes legitimo en medir y mejorar el servicio.</li>
             </ul>
             <p>
-              Al ingresar a la plataforma, te informaremos sobre el uso de cookies no esenciales y podras
-              aceptarlas o rechazarlas. Tambien podes configurar tu navegador para gestionar cookies en
-              cualquier momento. El rechazo de cookies no esenciales no afecta el funcionamiento basico del servicio.
+              Podes desactivar las cookies de analisis configurando tu navegador para bloquear o eliminar
+              cookies, o instalando el complemento de inhabilitacion de Google Analytics
+              (https://tools.google.com/dlpage/gaoptout). La desactivacion de las cookies de analisis no
+              afecta el funcionamiento basico del servicio.
             </p>
           </section>
 
