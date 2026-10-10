@@ -7,12 +7,14 @@ import { PaymentProvider } from '../../../domain/enums/payment-provider.enum.js'
 import { SubscriptionStatus } from '../../../domain/enums/subscription-status.enum.js';
 import { BillingEventType } from '../../../domain/enums/billing-event-type.enum.js';
 import { PLAN_LIMITS } from '../../../domain/constants/plan-limits.js';
+import type { BehaviorRecorder } from '../../ports/behavior.port.js';
 
 export class HandlePaymentWebhookUseCase {
   constructor(
     private readonly subscriptionRepo: SubscriptionRepository,
     private readonly billingRecordRepo: BillingRecordRepository,
     private readonly restaurantRepo: RestaurantRepository,
+    private readonly behavior?: BehaviorRecorder,
   ) {}
 
   async execute(event: WebhookEvent): Promise<void> {
@@ -94,6 +96,7 @@ export class HandlePaymentWebhookUseCase {
       amountCents: limits.priceMonthly,
       description: `Subscribed to ${plan} plan (${event.provider})`,
     });
+    this.record('subscription_started', event, event.tenantId);
   }
 
   private async handleSubscriptionUpdated(event: WebhookEvent): Promise<void> {
@@ -154,6 +157,11 @@ export class HandlePaymentWebhookUseCase {
       amountCents: limits.priceMonthly,
       description: `Payment received — $${limits.priceMonthly.toLocaleString('es-AR')}/mes`,
     });
+    this.record(
+      'subscription_payment_succeeded',
+      event,
+      subscription.restaurantId,
+    );
 
     if (event.currentPeriodEnd) {
       await this.subscriptionRepo.update(subscription.id, {
@@ -181,6 +189,11 @@ export class HandlePaymentWebhookUseCase {
       amountCents: 0,
       description: `Payment failed for ${subscription.plan} plan`,
     });
+    this.record(
+      'subscription_payment_failed',
+      event,
+      subscription.restaurantId,
+    );
   }
 
   private async handleSubscriptionEnded(event: WebhookEvent): Promise<void> {
@@ -212,6 +225,22 @@ export class HandlePaymentWebhookUseCase {
     await this.restaurantRepo.update(subscription.restaurantId, {
       customDomain: null,
       customDomainStatus: null,
+    });
+    this.record('subscription_canceled', event, subscription.restaurantId);
+  }
+
+  private record(
+    name: string,
+    event: WebhookEvent,
+    restaurantId: string,
+  ): void {
+    const key =
+      event.externalEventId ??
+      `${event.externalSubscriptionId}:${event.currentPeriodEnd?.toISOString() ?? event.status}`;
+    this.behavior?.record(name, {
+      restaurantId,
+      eventId: `billing:${event.provider}:${name}:${key}`,
+      properties: { provider: event.provider },
     });
   }
 }

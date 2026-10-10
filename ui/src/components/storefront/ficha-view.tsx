@@ -48,7 +48,7 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
       <main className="mx-auto flex max-w-4xl flex-col px-5 pb-14 pt-4 sm:px-8 sm:pb-14 sm:pt-6">
         {/* Orden (mobile y desktop): banner -> ficha (desc + botones) ->
             galería -> alert de reclamo al fondo. Ver orders en cada bloque. */}
-        <div className="order-last mt-10 rounded-3xl border border-primary/30 bg-primary/5 p-6 sm:p-8">
+        <div data-claim-banner className="order-last mt-10 rounded-3xl border border-primary/30 bg-primary/5 p-6 sm:p-8">
           <h2 className="font-[family-name:var(--font-heading)] text-xl font-extrabold text-on-surface">
             ¿Tenés este local? Es tuyo.
           </h2>

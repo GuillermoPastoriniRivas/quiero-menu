@@ -1,3 +1,5 @@
+import { behaviorHeaders } from './behavior';
+
 const API_URL =
   (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3015/api') + '/v1';
 
@@ -60,6 +62,7 @@ class ApiClient {
       method,
       headers: {
         'Content-Type': 'application/json',
+        ...behaviorHeaders(),
         ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
         ...headers,
       },
@@ -156,6 +159,7 @@ class ApiClient {
   async postFormData<T>(path: string, formData: FormData): Promise<T> {
     const url = `${API_URL}${path}`;
     const headers: Record<string, string> = {};
+    Object.assign(headers, behaviorHeaders());
     if (this.accessToken) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }

@@ -52,6 +52,7 @@ export class GoogleLoginUseCase {
     if (!identity) return err(new InvalidCredentialsError());
 
     let user = await this.userRepo.findByEmail(identity.email);
+    const newAccount = !user;
     let restaurantId: string;
     let restaurantSlug: string;
     let role: UserRole;
@@ -113,6 +114,7 @@ export class GoogleLoginUseCase {
     );
 
     return ok({
+      newAccount,
       ...session,
       user: {
         id: user.id,

@@ -7,6 +7,7 @@ import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
+import { attributedUrl, trackOwner, trackPublic } from '@/lib/behavior';
 import { countItems, safeCategory, useOnboardingStore, type OnboardingStep } from '@/stores/onboarding.store';
 import { RESTAURANT_CATEGORIES } from '@/lib/restaurant-categories';
 import { Logo } from '@/components/ui/logo';
@@ -778,8 +779,11 @@ function DoneStep({
             size="sm"
             className="h-9"
             onClick={async () => {
-              await navigator.clipboard.writeText(url).catch(() => undefined);
-              setCopied(true);
+              try {
+                await navigator.clipboard.writeText(attributedUrl(url, 'ig'));
+                setCopied(true);
+                trackOwner('link_shared', { method: 'copy' });
+              } catch { /* clipboard unavailable */ }
             }}
           >
             <MaterialIcon name={copied ? 'check_circle' : 'content_copy'} size="sm" />
@@ -840,6 +844,14 @@ function Wizard({ entry }: { entry: 'photo' | 'manual' }) {
   const [importError, setImportError] = useState<string | null>(null);
   const ready = useOnboardingStore((s) => s.ready);
   const resumed = useRef(false);
+
+  useEffect(() => {
+    if (!mode) return;
+    const track = isAuthenticated ? trackOwner : trackPublic;
+    track('onboarding_started', {}, `onboarding:${mode}`);
+    const index = FLOWS[mode].steps.indexOf(STEP_ALIAS[step] ?? step);
+    if (index >= 0) track('onboarding_step', { step: index }, `onboarding:${mode}:${index}`);
+  }, [mode, step, isAuthenticated]);
 
   useEffect(() => {
     hydrate();

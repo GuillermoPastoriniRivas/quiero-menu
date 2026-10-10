@@ -11,6 +11,7 @@ import {
   type StorefrontSearchSuggestion,
 } from "@/lib/storefront-search";
 import { isFeatured } from "@/lib/featured";
+import { trackPublic, searchProperties } from '@/lib/behavior';
 
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_MS = 250;
@@ -71,6 +72,12 @@ export function DirectorySearch({
     trimmed.length >= MIN_QUERY_LENGTH ||
     openNow ||
     (!citySlug && selectedCity.length > 0);
+
+  useEffect(() => {
+    if (loading || error || !results || trimmed.length < MIN_QUERY_LENGTH) return;
+    const timer = setTimeout(() => trackPublic('directory_search', { query: searchProperties(trimmed), resultsCount: total, city: effectiveCity || undefined, category }), 1000);
+    return () => clearTimeout(timer);
+  }, [results, trimmed, total, effectiveCity, category, loading, error]);
 
   // Autofocus solo en desktop: en mobile el teclado abierto tapa los resultados.
   useEffect(() => {

@@ -1,4 +1,5 @@
 export interface LoginOutput {
+  newAccount?: boolean;
   accessToken: string;
   refreshToken: string;
   user: {

@@ -3,6 +3,9 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import { InfrastructureModule } from '../infrastructure/infrastructure.module.js';
+import { BehaviorController } from './controllers/behavior.controller.js';
+import { BehaviorService } from './services/behavior.service.js';
+import { BehaviorInterceptor } from './interceptors/behavior.interceptor.js';
 
 // Guards
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
@@ -808,9 +811,9 @@ const useCaseProviders = [
 
   {
     provide: 'VerifyEmailUseCase',
-    useFactory: (userRepo: any, vtRepo: any) =>
-      new VerifyEmailUseCase(userRepo, vtRepo),
-    inject: ['UserRepository', 'VerificationTokenRepository'],
+    useFactory: (userRepo: any, vtRepo: any, behavior: BehaviorService) =>
+      new VerifyEmailUseCase(userRepo, vtRepo, behavior),
+    inject: ['UserRepository', 'VerificationTokenRepository', BehaviorService],
   },
   {
     provide: 'ResendVerificationUseCase',
@@ -1216,6 +1219,7 @@ const useCaseProviders = [
       couponRepo: any,
       gateway: any,
       pushService: any,
+      behavior: BehaviorService,
     ) =>
       new ConfirmDeliveryUseCase(
         orderRepo,
@@ -1223,6 +1227,7 @@ const useCaseProviders = [
         couponRepo,
         gateway,
         pushService,
+        behavior,
       ),
     inject: [
       'OrderRepository',
@@ -1230,6 +1235,7 @@ const useCaseProviders = [
       'CouponRepository',
       'RealtimeGatewayPort',
       'PushServicePort',
+      BehaviorService,
     ],
   },
   {
@@ -1309,12 +1315,18 @@ const useCaseProviders = [
   },
   {
     provide: 'HandlePaymentWebhookUseCase',
-    useFactory: (subRepo: any, billingRepo: any, restRepo: any) =>
-      new HandlePaymentWebhookUseCase(subRepo, billingRepo, restRepo),
+    useFactory: (
+      subRepo: any,
+      billingRepo: any,
+      restRepo: any,
+      behavior: BehaviorService,
+    ) =>
+      new HandlePaymentWebhookUseCase(subRepo, billingRepo, restRepo, behavior),
     inject: [
       'SubscriptionRepository',
       'BillingRecordRepository',
       'RestaurantRepository',
+      BehaviorService,
     ],
   },
   {
@@ -1518,6 +1530,7 @@ const useCaseProviders = [
 @Module({
   imports: [InfrastructureModule],
   controllers: [
+    BehaviorController,
     HealthController,
     AuthController,
     AdminController,
@@ -1543,6 +1556,8 @@ const useCaseProviders = [
     InternalCustomDomainController,
   ],
   providers: [
+    BehaviorService,
+    { provide: APP_INTERCEPTOR, useClass: BehaviorInterceptor },
     ...useCaseProviders,
     AuditService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },

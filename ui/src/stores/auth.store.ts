@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
 import type { LoginResponse } from '@/types';
+import { mirrorAnalytics } from '@/lib/behavior';
 
 const USER_KEY = 'user';
 
@@ -110,6 +111,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     clearStoredSession();
     const data = await api.post<LoginResponse>('/auth/login', { email, password });
+    mirrorAnalytics('login');
     api.setTokens(data.accessToken, data.refreshToken);
     persistUser(data.user);
     set({ user: data.user, isAuthenticated: true });
@@ -117,10 +119,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   googleLogin: async (credential, restaurant) => {
     clearStoredSession();
-    const data = await api.post<LoginResponse>('/auth/google', {
+    const data = await api.post<LoginResponse & { newAccount?: boolean }>('/auth/google', {
       credential,
       ...(restaurant ? { restaurant } : {}),
     });
+    mirrorAnalytics(data.newAccount ? 'sign_up' : 'login');
     api.setTokens(data.accessToken, data.refreshToken);
     persistUser(data.user);
     set({ user: data.user, isAuthenticated: true });
@@ -141,6 +144,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signup: async (input) => {
     clearStoredSession();
     const data = await api.post<LoginResponse>('/auth/signup', input);
+    mirrorAnalytics('sign_up');
     api.setTokens(data.accessToken, data.refreshToken);
     persistUser(data.user);
     set({ user: data.user, isAuthenticated: true });

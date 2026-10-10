@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { getApiBase } from "@/lib/storefront-context";
+import { trackStorefront } from '@/lib/behavior';
 import { toWhatsAppNumber } from "@/lib/ar-phone";
 
 /**
@@ -20,25 +20,18 @@ export function FichaContactButtons({
   address: string;
 }) {
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const flag = `quiero-menu:viewed:${slug}`;
-    if (!sessionStorage.getItem(flag)) {
-      sessionStorage.setItem(flag, "1");
-      fetch(
-        `${getApiBase()}/storefront/${encodeURIComponent(slug)}/view`,
-        { method: "POST" },
-      ).catch(() => {});
-    }
+    trackStorefront(slug, 'storefront_view', { claimed: false }, 'view');
+    const banner = document.querySelector('[data-claim-banner]');
+    if (!banner || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) trackStorefront(slug, 'claim_view', {}, 'claim-banner');
+    }, { threshold: 0.5 });
+    observer.observe(banner);
+    return () => observer.disconnect();
   }, [slug]);
 
   const track = (type: "whatsapp" | "maps") => {
-    try {
-      navigator.sendBeacon?.(
-        `${getApiBase()}/storefront/${encodeURIComponent(slug)}/events?type=${type}`,
-      );
-    } catch {
-      // Nunca romper la navegación del comensal.
-    }
+    trackStorefront(slug, 'contact_click', { contact: type });
   };
 
   const digits = toWhatsAppNumber(phone) ?? "";

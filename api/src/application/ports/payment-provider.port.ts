@@ -26,6 +26,7 @@ export interface WebhookSignatureContext {
 }
 
 export interface WebhookEvent {
+  externalEventId?: string;
   type: WebhookEventType;
   externalSubscriptionId: string;
   externalCustomerId: string;

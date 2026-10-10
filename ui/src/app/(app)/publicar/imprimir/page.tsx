@@ -9,6 +9,7 @@ import { MaterialIcon } from '@/components/ui/material-icon';
 import { WhatsAppIcon, InstagramIcon } from '@/components/ui/brand-icons';
 import { waMeUrl } from '@/lib/utils';
 import type { OperatingHours } from '@/types';
+import { trackOwner } from '@/lib/behavior';
 
 const SHORT_DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -86,7 +87,7 @@ export default function ImprimirPage() {
             <MaterialIcon name="arrow_back" size="sm" />
             Volver
           </Link>
-          <Button onClick={() => window.print()}>
+          <Button onClick={() => { trackOwner('qr_printed'); window.print(); }}>
             <MaterialIcon name="print" size="sm" />
             Imprimir
           </Button>

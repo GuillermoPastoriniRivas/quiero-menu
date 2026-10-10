@@ -9,6 +9,7 @@ import { OrderStatus } from '../../../domain/enums/order-status.enum.js';
 import { CouponType } from '../../../domain/enums/coupon-type.enum.js';
 import { RealtimeGatewayPort } from '../../ports/realtime-gateway.port.js';
 import { PushServicePort } from '../../ports/push-service.port.js';
+import type { BehaviorRecorder } from '../../ports/behavior.port.js';
 import { Result, ok, err } from '../../common/result.js';
 import {
   normalizeTrackingToken,
@@ -53,6 +54,7 @@ export class ConfirmDeliveryUseCase {
     private readonly couponRepo: CouponRepository,
     private readonly gateway: RealtimeGatewayPort,
     private readonly pushService: PushServicePort,
+    private readonly behavior?: BehaviorRecorder,
   ) {}
 
   async execute(
@@ -124,6 +126,16 @@ export class ConfirmDeliveryUseCase {
       rating: input.rating ?? null,
       onTime: input.onTime ?? null,
       couponCode,
+    });
+    this.behavior?.record('feedback_submitted', {
+      eventId: `feedback:${order.id}`,
+      audience: 'diner',
+      restaurantId: order.restaurantId,
+      properties: {
+        orderId: order.id,
+        ...(feedback.rating ? { rating: feedback.rating } : {}),
+        ...(feedback.onTime !== null ? { onTime: feedback.onTime } : {}),
+      },
     });
 
     return ok({

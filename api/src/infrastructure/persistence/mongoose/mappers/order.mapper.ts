@@ -35,6 +35,7 @@ export class OrderMapper {
         status: h.status as OrderStatus,
         at: h.at,
       })),
+      doc.attribution ?? null,
     );
   }
 }

@@ -22,6 +22,7 @@ import {
 } from '@/lib/storefront-preview';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { attributedUrl, trackOwner } from '@/lib/behavior';
 
 const DEFAULT_COLOR = '#E8532C';
 
@@ -120,6 +121,7 @@ function MiMenuPageInner() {
       : '';
 
   const handleTabChange = (tab: MiMenuTab) => {
+    trackOwner('feature_view', { feature: tab === 'compartir' ? 'sharing' : 'appearance' });
     setActiveTab(tab);
     router.replace(`/mi-menu?tab=${tab}`, { scroll: false });
   };
@@ -158,7 +160,8 @@ function MiMenuPageInner() {
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(menuUrl);
+      await navigator.clipboard.writeText(attributedUrl(menuUrl, 'ig'));
+      trackOwner('link_shared', { method: 'copy' });
       toast.success('Link copiado. Pegalo en tu Instagram o mandalo por WhatsApp.');
       markShared();
     } catch {
@@ -167,7 +170,7 @@ function MiMenuPageInner() {
   };
 
   const shareText = restaurant
-    ? `Mirá la carta de ${restaurant.name} y hacé tu pedido acá: ${menuUrl}`
+    ? `Mirá la carta de ${restaurant.name} y hacé tu pedido acá: ${attributedUrl(menuUrl, 'wa')}`
     : '';
 
   const shareNative = async () => {
@@ -176,7 +179,8 @@ function MiMenuPageInner() {
       return;
     }
     try {
-      await navigator.share({ title: restaurant?.name, text: shareText, url: menuUrl });
+      await navigator.share({ title: restaurant?.name, text: shareText, url: attributedUrl(menuUrl, 'wa') });
+      trackOwner('link_shared', { method: 'native' });
       markShared();
     } catch {
       return;
@@ -208,6 +212,7 @@ function MiMenuPageInner() {
       link.download = `menu-qr-${restaurant?.slug || 'code'}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+      trackOwner('qr_downloaded');
       markShared();
     };
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
@@ -441,7 +446,7 @@ function MiMenuPageInner() {
                       href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={markShared}
+                      onClick={() => { trackOwner('link_shared', { method: 'whatsapp' }); markShared(); }}
                       className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white transition-colors hover:bg-[#1EBE5A]"
                     >
                       <WhatsAppIcon className="size-4" />

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
+import { text } from 'express';
 import * as Sentry from '@sentry/node';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
@@ -15,6 +16,7 @@ async function bootstrap() {
     logger,
   });
   app.use(helmet({ crossOriginResourcePolicy: false }));
+  app.use(text({ type: 'text/plain', limit: '32kb' }));
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.useGlobalFilters(new GlobalExceptionFilter());
@@ -41,6 +43,7 @@ async function bootstrap() {
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'X-QM-Analytics',
       'X-Kitchen-Token',
       'X-Delivery-Token',
     ],

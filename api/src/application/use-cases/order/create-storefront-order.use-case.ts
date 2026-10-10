@@ -16,6 +16,7 @@ import {
   validateOptionSelection,
 } from '../../../domain/services/menu-option-groups.js';
 import { Order } from '../../../domain/entities/order.entity.js';
+import type { BehaviorContext } from '../../../domain/entities/behavior-event.entity.js';
 import {
   OrderItem,
   SelectedOption,
@@ -52,6 +53,7 @@ interface OrderItemInput {
 }
 
 export interface CreateStorefrontOrderInput {
+  attribution?: BehaviorContext;
   items: OrderItemInput[];
   customerName: string;
   customerPhone: string;
@@ -269,6 +271,7 @@ export class CreateStorefrontOrderUseCase {
       receiptUrl: input.receiptUrl ?? null,
       notes: input.notes,
       source: OrderSource.STOREFRONT,
+      attribution: input.attribution ?? null,
     });
 
     const itemsWithOrderId = orderItemsData.map((item) => ({

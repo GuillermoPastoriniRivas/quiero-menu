@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { OrderStatus } from '../../domain/enums/order-status.enum.js';
 import { DeliveryType } from '../../domain/enums/delivery-type.enum.js';
+import { BehaviorContextSchema } from './behavior.dto.js';
 
 export const CreateStorefrontOrderRequestSchema = z.object({
+  attribution: BehaviorContextSchema.optional(),
   items: z
     .array(
       z.object({

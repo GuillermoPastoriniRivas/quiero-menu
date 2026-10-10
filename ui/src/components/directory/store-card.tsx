@@ -47,7 +47,7 @@ export function StoreCard({
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
       <Link
-        href={`/${entry.slug}`}
+        href={`/${entry.slug}?ref=dir`}
         className="relative block h-28 overflow-hidden"
         aria-label={`Menú de ${entry.name}`}
       >
@@ -81,7 +81,7 @@ export function StoreCard({
       <div className="flex flex-1 flex-col gap-2 p-4 pt-3">
         <div className="flex items-start justify-between gap-2">
           <Link
-            href={`/${entry.slug}`}
+            href={`/${entry.slug}?ref=dir`}
             className="font-[family-name:var(--font-heading)] text-base font-bold leading-tight text-on-surface hover:text-primary"
           >
             {entry.name}
@@ -155,7 +155,7 @@ export function StoreCard({
             </a>
           ) : null}
           <Link
-            href={`/${entry.slug}`}
+            href={`/${entry.slug}?ref=dir`}
             className="gradient-cta inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-transform hover:scale-[1.03]"
           >
             {unclaimed ? "Ver ficha" : "Ver menú"}

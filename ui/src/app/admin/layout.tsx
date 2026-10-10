@@ -26,6 +26,7 @@ const PRIMARY: NavItem[] = [
 ];
 
 const SECONDARY: NavItem[] = [
+  { href: '/admin/comportamiento', label: 'Comportamiento', icon: 'analytics' },
   { href: '/admin/destacados', label: 'Destacados', icon: 'star' },
   { href: '/admin/activity', label: 'Actividad', icon: 'history' },
 ];

@@ -10,6 +10,7 @@ import type { AnalyticsOverview } from '@/types';
 import { OrderStatus } from '@/types';
 import { formatCurrency, formatMinutes } from '@/lib/format';
 import { Money } from '@/components/ui/money';
+import Link from 'next/link';
 
 const STATUS_LABELS: Record<string, string> = {
   [OrderStatus.NEW]: 'Nuevos',
@@ -82,6 +83,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Análisis de ventas</h1>
+        <Link href="/analytics/comportamiento" className="text-sm font-bold text-primary hover:underline">Ver comportamiento y conversión →</Link>
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -146,10 +148,10 @@ export default function AnalyticsPage() {
             </Card>
             <Card size="sm" className="shadow-sm border border-outline-variant/10">
               <CardContent className="px-4 py-3 space-y-1">
-                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Te escribieron</p>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Clics en WhatsApp</p>
                 <p className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)' }}>{data.events.whatsapp}</p>
                 <p className="text-xs text-on-surface-variant">
-                  contactos por WhatsApp
+                  aperturas del enlace
                   {(() => {
                     const prev = data.events.whatsappPrev;
                     const delta = prev > 0 ? ((data.events.whatsapp - prev) / prev) * 100 : data.events.whatsapp > 0 ? 100 : 0;

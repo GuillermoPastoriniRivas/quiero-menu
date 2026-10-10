@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { UserRepository } from '../../../domain/repositories/user.repository.js';
 import { VerificationTokenRepository } from '../../../domain/repositories/verification-token.repository.js';
 import { Result, ok, err } from '../../common/result.js';
+import type { BehaviorRecorder } from '../../ports/behavior.port.js';
 import {
   InvalidTokenError,
   TokenExpiredError,
@@ -11,6 +12,7 @@ export class VerifyEmailUseCase {
   constructor(
     private readonly userRepo: UserRepository,
     private readonly tokenRepo: VerificationTokenRepository,
+    private readonly behavior?: BehaviorRecorder,
   ) {}
 
   async execute(
@@ -30,6 +32,10 @@ export class VerifyEmailUseCase {
 
     await this.userRepo.updateEmailVerified(record.userId, true);
     await this.tokenRepo.deleteAllByUserId(record.userId, 'email_verification');
+    this.behavior?.record('owner_email_verified', {
+      actorUserId: record.userId,
+      eventId: `verified:${record.userId}`,
+    });
 
     return ok(undefined);
   }

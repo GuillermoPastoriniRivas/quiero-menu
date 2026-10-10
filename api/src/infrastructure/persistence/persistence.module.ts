@@ -128,8 +128,20 @@ import { MongoStoreClaimRepository } from './mongoose/repositories/mongo-store-c
 import { MongoInvitationRepository } from './mongoose/repositories/mongo-invitation.repository.js';
 import { MongoOrderFeedbackRepository } from './mongoose/repositories/mongo-order-feedback.repository.js';
 import { MongoRestaurantInsightsQuery } from './mongoose/queries/mongo-restaurant-insights.query.js';
+import { MongoBehaviorQuery } from './mongoose/queries/mongo-behavior.query.js';
+import {
+  BehaviorEventModel,
+  BehaviorEventSchema,
+  BehaviorDailyModel,
+  BehaviorDailySchema,
+  BehaviorAccountModel,
+  BehaviorAccountSchema,
+} from './mongoose/schemas/behavior-event.schema.js';
 
 const schemas = MongooseModule.forFeature([
+  { name: BehaviorEventModel.name, schema: BehaviorEventSchema },
+  { name: BehaviorDailyModel.name, schema: BehaviorDailySchema },
+  { name: BehaviorAccountModel.name, schema: BehaviorAccountSchema },
   { name: RestaurantModel.name, schema: RestaurantSchema },
   { name: OperatingHoursModel.name, schema: OperatingHoursSchema },
   { name: MenuCategoryModel.name, schema: MenuCategorySchema },
@@ -160,6 +172,7 @@ const schemas = MongooseModule.forFeature([
 ]);
 
 const repositories = [
+  { provide: 'BehaviorPort', useClass: MongoBehaviorQuery },
   { provide: 'RestaurantRepository', useClass: MongoRestaurantRepository },
   {
     provide: 'OperatingHoursRepository',

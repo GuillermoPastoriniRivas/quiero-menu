@@ -14,6 +14,7 @@ import { browserPathParam } from '@/lib/static-route-param';
 import { getRoomSocket } from '@/lib/socket';
 import { subscribeOrderPush, isPushSupported, isPushSubscribed } from '@/lib/push';
 import { getApiBase } from '@/lib/storefront-context';
+import { trackTracking } from '@/lib/behavior';
 
 const STATUS_STEPS = [
   OrderStatus.NEW,
@@ -56,6 +57,12 @@ export default function TrackingPage() {
   const [confirming, setConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState('');
   const [copied, setCopied] = useState(false);
+
+  const trackingToken = data?.order.trackingToken;
+  const trackingSlug = data?.restaurant.slug;
+  useEffect(() => {
+    if (trackingToken && trackingSlug) trackTracking(trackingToken, trackingSlug, 'tracking_view', {}, `tracking:${trackingToken}`);
+  }, [trackingToken, trackingSlug]);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -106,7 +113,10 @@ export default function TrackingPage() {
     setPushState('busy');
     try {
       const ok = await subscribeOrderPush(data.order.trackingToken);
-      if (ok) setPushState('on');
+      if (ok) {
+        setPushState('on');
+        trackTracking(data.order.trackingToken, data.restaurant.slug, 'push_enabled');
+      }
     } finally {
       setPushState((s) => (s === 'busy' ? 'idle' : s));
     }
@@ -145,6 +155,7 @@ export default function TrackingPage() {
   const handleCopyCoupon = async (couponCode: string) => {
     try {
       await navigator.clipboard.writeText(couponCode);
+      if (data) trackTracking(data.order.trackingToken, data.restaurant.slug, 'coupon_copied');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -200,11 +211,13 @@ export default function TrackingPage() {
         body: file,
       });
       if (!uploadRes.ok) throw new Error('Error al subir comprobante');
-      await fetch(`${getApiBase()}/storefront/${encodeURIComponent(slugForRestaurant)}/orders/${data.order.id}/receipt`, {
+      const attached = await fetch(`${getApiBase()}/storefront/${encodeURIComponent(slugForRestaurant)}/orders/${data.order.id}/receipt`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ receiptUrl: publicUrl }),
       });
+      if (!attached.ok) throw new Error('Error al adjuntar comprobante');
+      trackTracking(data.order.trackingToken, data.restaurant.slug, 'receipt_uploaded');
       await fetchTracking();
     } catch {
       alert('Error al subir el comprobante. Intenta de nuevo.');
@@ -313,6 +326,7 @@ export default function TrackingPage() {
         {whatsappUrl && (
           <a
             href={whatsappUrl}
+            onClick={() => trackTracking(order.trackingToken, restaurant.slug, 'tracking_contact_click')}
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white hover:bg-[#1EBE5A] transition-colors"

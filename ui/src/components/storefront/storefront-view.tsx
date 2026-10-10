@@ -39,6 +39,7 @@ import { formatArPhone, arPhoneToWhatsApp, toWhatsAppNumber } from "@/lib/ar-pho
 import { formatUpdatedDate } from "@/lib/restaurant-categories";
 import { ProductOptions } from '@/components/storefront/product-options';
 import { productOptionGroups, reconcileProductOptions, selectionIssues, toggleProductOption } from '@/lib/menu-options';
+import { behaviorContext, searchProperties, trackStorefront } from '@/lib/behavior';
 
 type FullMenuItem = MenuItem & {
   variants: MenuItemVariant[];
@@ -140,19 +141,9 @@ export function StorefrontView({
    * sin preflight CORS y sobrevive la navegación a wa.me. El tipo viaja en
    * query porque el body de sendBeacon llega como texto plano.
    */
-  const trackContact = useMemo(() => {
-    if (typeof navigator === "undefined" || !navigator.sendBeacon) {
-      return () => {};
-    }
-    const base = getApiBase();
-    return (type: "whatsapp" | "maps" | "instagram") => {
-      try {
-        navigator.sendBeacon(`${base}/storefront/${slug}/events?type=${type}`);
-      } catch {
-        // El ping nunca debe romper la navegación del comensal.
-      }
-    };
-  }, [slug]);
+  const trackContact = (type: 'whatsapp' | 'maps' | 'instagram') => {
+    if (trackView) trackStorefront(slug, 'contact_click', { contact: type });
+  };
 
   // Hoy (calculado en el server con la timezone del local) — soporta múltiples rangos (ej 08-12 y 16-20)
   const todayHoursLabel = useMemo(() => {
@@ -168,7 +159,14 @@ export function StorefrontView({
     return `Hoy ${parts.join(", ")}`;
   }, [todayHours, data.operatingHours, isOpen]);
 
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpenState] = useState(false);
+  const setCheckoutOpen = (open: boolean) => {
+    if (trackView) {
+      trackStorefront(slug, open ? 'cart_view' : 'checkout_exit', { quantity: cart.items.length });
+      if (open) trackStorefront(slug, 'checkout_start', { quantity: cart.items.length });
+    }
+    setCheckoutOpenState(open);
+  };
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(
@@ -184,18 +182,19 @@ export function StorefrontView({
   const [repeatOrder, setRepeatOrder] = useState<LastOrder | null>(null);
   const [repeatError, setRepeatError] = useState("");
 
-  // Registrar una vista del menú por sesion (para la conversion en analytics)
+  // One view per real 30-minute session/local. Previews and owners are excluded.
   useEffect(() => {
     if (!trackView) return;
-    if (typeof window === "undefined") return;
-    const flag = `quiero-menu:viewed:${slug}`;
-    if (!sessionStorage.getItem(flag)) {
-      sessionStorage.setItem(flag, "1");
-      fetch(`${getApiBase()}/storefront/${encodeURIComponent(slug)}/view`, {
-        method: "POST",
-      }).catch(() => {});
-    }
-  }, [slug, trackView]);
+    trackStorefront(slug, 'storefront_view', { isOpen, claimed: restaurant.claimed !== false }, 'view');
+    if (typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) trackStorefront(slug, 'category_view', { categoryId: entry.target.id.replace('cat-', '') }, entry.target.id);
+      }
+    }, { threshold: 0.1 });
+    document.querySelectorAll('[id^="cat-"]').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [slug, trackView, isOpen, restaurant.claimed]);
 
   // Ultimo pedido para "repetir"
   useEffect(() => {
@@ -290,6 +289,7 @@ export function StorefrontView({
   const [optionNotice, setOptionNotice] = useState("");
 
   const openItemDetail = (item: FullMenuItem) => {
+    if (trackView) trackStorefront(slug, 'item_view', { itemId: item.id, isOpen });
     if (!item.isAvailable || item.isOrderable === false) return;
     if (!isOpen) return;
     setSelectedItem(item);
@@ -344,6 +344,12 @@ export function StorefrontView({
     );
   }, [searchQuery, categories]);
 
+  useEffect(() => {
+    if (!trackView || !searchOpen || searchQuery.trim().length < 2) return;
+    const timer = setTimeout(() => trackStorefront(slug, 'menu_search', { query: searchProperties(searchQuery), resultsCount: searchResults.length }), 1000);
+    return () => clearTimeout(timer);
+  }, [slug, trackView, searchOpen, searchQuery, searchResults.length]);
+
   const optionIssues = useMemo(() => selectionIssues(optionGroups, selectedOptionIds), [optionGroups, selectedOptionIds]);
   const optionsValid = optionIssues.length === 0;
   const toggleOption = (optionId: string) => setSelectedOptionIds((ids) => toggleProductOption(optionGroups, ids, optionId));
@@ -379,6 +385,7 @@ export function StorefrontView({
       notes: itemNotes,
     };
     cart.addItem(cartItem);
+    if (trackView) trackStorefront(slug, 'item_add', { itemId: selectedItem.id, quantity: itemQuantity, value: itemTotalPrice, currency: restaurant.currency });
     closeItemDetail();
   };
 
@@ -470,7 +477,9 @@ export function StorefrontView({
     for (let i = 0; i < count; i++) cart.removeItem(0);
     restored.forEach((item) => {
       cart.addItem(item);
+      if (trackView) trackStorefront(slug, 'item_add', { itemId: item.menuItemId, quantity: item.quantity });
     });
+    if (trackView) trackStorefront(slug, 'repeat_order');
     cart.setCustomer({
       customerName: repeatOrder.customerName || "",
       customerPhone: repeatOrder.customerPhone || "",
@@ -494,6 +503,7 @@ export function StorefrontView({
     setCheckoutError("");
     try {
       const body = {
+        attribution: trackView ? behaviorContext(slug) : undefined,
         items: cart.items.map((i) => ({
           menuItemId: i.menuItemId,
           variantId: i.variantId,
@@ -521,6 +531,7 @@ export function StorefrontView({
         },
       );
       if (!res.ok) {
+        if (trackView) trackStorefront(slug, 'checkout_error', { reason: res.status === 423 ? 'closed' : res.status >= 500 ? 'server' : 'validation' });
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.message || "Error al crear el pedido");
       }
@@ -537,6 +548,7 @@ export function StorefrontView({
       cart.clear();
       router.push(`/tracking/${encodeURIComponent(result.order.trackingToken)}`);
     } catch (e) {
+      if (trackView && e instanceof TypeError) trackStorefront(slug, 'checkout_error', { reason: 'network' });
       const message =
         e instanceof Error
           ? e.message
@@ -1027,7 +1039,7 @@ export function StorefrontView({
         <div className="mx-auto max-w-7xl px-4 pb-20 lg:pb-8">
           <div className="pt-6 pb-4 text-center">
             <a
-              href="https://quiero.menu"
+              href="https://quiero.menu?ref=powered"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-on-surface-variant hover:text-foreground transition-colors"
@@ -1317,6 +1329,7 @@ export function StorefrontView({
                     size="sm"
                     aria-label={`Quitar ${item.menuItemName}`}
                     onClick={() => {
+                      if (trackView) trackStorefront(slug, 'item_remove', { itemId: cart.items[i].menuItemId, quantity: cart.items[i].quantity });
                       cart.removeItem(i);
                     }}
                   >

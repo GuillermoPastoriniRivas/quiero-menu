@@ -12,7 +12,14 @@ import {
   ConflictException,
   HttpException,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import type { TokenProviderPort } from '../../application/ports/token-provider.port.js';
+import {
+  excludesBehavior,
+  internalBehaviorViewer,
+} from './behavior.controller.js';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../decorators/public.decorator.js';
 import { ZodValidationPipe } from '../pipes/zod-validation.pipe.js';
@@ -78,6 +85,7 @@ export class StorefrontController {
     @Inject('NotifyReceiptUploadedUseCase')
     private readonly notifyReceipt: NotifyReceiptUploadedUseCase,
     @Inject('OrderRepository') private readonly orderRepo: OrderRepository,
+    @Inject('TokenProviderPort') private readonly tokens: TokenProviderPort,
   ) {}
 
   @Public()
@@ -101,11 +109,13 @@ export class StorefrontController {
   @Post(':slug/orders')
   async createStorefrontOrder(
     @Param('slug') slug: string,
+    @Req() request: Request,
     @Body(new ZodValidationPipe(CreateStorefrontOrderRequestSchema))
     body: CreateStorefrontOrderRequestDto,
   ) {
     const result = await this.createOrder.execute(slug, {
       ...body,
+      attribution: excludesBehavior(request) ? undefined : body.attribution,
       deliveryType: body.deliveryType as DeliveryType,
       customerAddress: body.customerAddress,
       receiptUrl: body.receiptUrl,
@@ -149,7 +159,21 @@ export class StorefrontController {
 
   @Public()
   @Post(':slug/view')
-  async recordStorefrontView(@Param('slug') slug: string) {
+  async recordStorefrontView(
+    @Param('slug') slug: string,
+    @Req() request: Request,
+  ) {
+    const restaurant = await this.getBySlug.execute(slug);
+    if (
+      excludesBehavior(request) ||
+      (restaurant.ok &&
+        internalBehaviorViewer(
+          request,
+          this.tokens,
+          restaurant.value.restaurant.id,
+        ))
+    )
+      return { views: 0 };
     const result = await this.recordView.execute(slug);
     if (!result.ok) throw new NotFoundException(result.error.message);
     return result.value;
@@ -164,9 +188,21 @@ export class StorefrontController {
   @Post(':slug/events')
   async recordStorefrontEvent(
     @Param('slug') slug: string,
+    @Req() request: Request,
     @Query(new ZodValidationPipe(RecordStorefrontEventRequestSchema))
     query: RecordStorefrontEventRequestDto,
   ) {
+    const restaurant = await this.getBySlug.execute(slug);
+    if (
+      excludesBehavior(request) ||
+      (restaurant.ok &&
+        internalBehaviorViewer(
+          request,
+          this.tokens,
+          restaurant.value.restaurant.id,
+        ))
+    )
+      return { ok: true };
     const result = await this.recordEvent.execute(
       slug,
       query.type as StorefrontEventType,

@@ -20,6 +20,12 @@ export class UserModel {
   @Prop({ default: false })
   emailVerified: boolean;
 
+  @Prop({ type: Date, default: null })
+  lastLoginAt: Date | null;
+
+  @Prop({ type: Date, default: null })
+  lastActiveAt: Date | null;
+
   createdAt: Date;
 }
 

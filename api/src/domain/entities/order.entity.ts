@@ -1,6 +1,7 @@
 import { OrderStatus } from '../enums/order-status.enum.js';
 import { OrderSource } from '../enums/order-source.enum.js';
 import { DeliveryType } from '../enums/delivery-type.enum.js';
+import type { BehaviorContext } from './behavior-event.entity.js';
 
 export interface StatusTransition {
   status: OrderStatus;
@@ -34,5 +35,6 @@ export class Order {
     public readonly readyAt: Date | null,
     public readonly deliveredAt: Date | null,
     public readonly statusHistory: StatusTransition[],
+    public readonly attribution?: BehaviorContext | null,
   ) {}
 }

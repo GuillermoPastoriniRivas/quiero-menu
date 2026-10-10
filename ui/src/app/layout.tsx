@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { RegisterSW } from "@/components/register-sw";
 import { SentryInit } from "@/components/sentry-init";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { BehaviorAnalytics } from "@/components/analytics/behavior-analytics";
+import { Suspense } from 'react';
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -90,6 +92,7 @@ export default function RootLayout({
         <RegisterSW />
         <SentryInit />
         <GoogleAnalytics />
+        <Suspense fallback={null}><BehaviorAnalytics /></Suspense>
         <Toaster />
       </body>
     </html>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { fetchImageAsDataUrl } from '@/lib/utils';
+import { attributedUrl } from '@/lib/behavior';
 
 const API_URL =
   (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3015/api') + '/v1';
@@ -57,7 +58,7 @@ export function BrandedQr({
 
   return (
     <QRCodeSVG
-      value={value}
+      value={attributedUrl(value, 'qr')}
       size={size}
       level="H"
       marginSize={4}

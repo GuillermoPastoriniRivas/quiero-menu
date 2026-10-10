@@ -3,6 +3,7 @@ import { HydratedDocument, Types } from 'mongoose';
 import { OrderStatus } from '../../../../domain/enums/order-status.enum.js';
 import { OrderSource } from '../../../../domain/enums/order-source.enum.js';
 import { DeliveryType } from '../../../../domain/enums/delivery-type.enum.js';
+import type { BehaviorContext } from '../../../../domain/entities/behavior-event.entity.js';
 
 export type OrderDocument = HydratedDocument<OrderModel>;
 
@@ -11,6 +12,8 @@ export type OrderDocument = HydratedDocument<OrderModel>;
   timestamps: { createdAt: true, updatedAt: false },
 })
 export class OrderModel {
+  @Prop({ type: Object, default: null })
+  attribution: BehaviorContext | null;
   @Prop({ type: Types.ObjectId, required: true })
   restaurantId: Types.ObjectId;
 
@@ -95,3 +98,5 @@ export const OrderSchema = SchemaFactory.createForClass(OrderModel);
 OrderSchema.index({ restaurantId: 1, code: 1 }, { unique: true });
 OrderSchema.index({ trackingToken: 1 }, { unique: true, sparse: true });
 OrderSchema.index({ restaurantId: 1, status: 1 });
+OrderSchema.index({ restaurantId: 1, source: 1, createdAt: 1 });
+OrderSchema.index({ restaurantId: 1, customerPhone: 1, createdAt: 1 });

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { AnalyticsPreference } from '@/components/analytics/analytics-preference';
 
 export const metadata: Metadata = {
   title: 'Politica de Privacidad',
@@ -24,7 +25,7 @@ export default function PrivacyPage() {
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-extrabold mb-2 font-[family-name:var(--font-heading)]">Politica de Privacidad</h1>
-        <p className="text-sm text-on-surface-variant mb-10">Ultima actualizacion: 6 de octubre de 2026</p>
+        <p className="text-sm text-on-surface-variant mb-10">Ultima actualizacion: 8 de octubre de 2026</p>
 
         <div className="prose prose-sm max-w-none space-y-8 text-on-surface/90 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-on-surface [&_h2]:mt-8 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:text-on-surface [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_table]:w-full [&_table]:text-sm [&_th]:text-left [&_th]:p-2 [&_th]:bg-surface-container [&_th]:font-semibold [&_td]:p-2 [&_td]:border-t [&_td]:border-outline-variant/20">
 
@@ -94,6 +95,7 @@ export default function PrivacyPage() {
               <li>Direccion IP y datos de conexion.</li>
               <li>Tipo de navegador y dispositivo.</li>
               <li>Paginas visitadas y tiempo de navegacion.</li>
+              <li>Con medición de navegación habilitada: identificadores aleatorios de navegador y sesión, origen del link, dispositivo e interacciones con el menú y el panel.</li>
             </ul>
           </section>
 
@@ -174,6 +176,7 @@ export default function PrivacyPage() {
               <li><strong>Datos de cuenta de establecimientos:</strong> mientras la cuenta este activa y hasta 2 anos despues de su cancelacion.</li>
               <li><strong>Datos de pedidos:</strong> 2 anos desde la fecha del pedido, para cumplir obligaciones legales y resolver eventuales reclamos.</li>
               <li><strong>Datos de consumidores:</strong> 1 ano desde el ultimo pedido realizado.</li>
+              <li><strong>Eventos individuales de navegación:</strong> hasta 90 días. Los conteos diarios sin identificadores de visitantes se conservan para comparar períodos.</li>
             </ul>
             <p>Transcurridos los plazos, los datos seran eliminados o anonimizados.</p>
           </section>
@@ -245,14 +248,15 @@ export default function PrivacyPage() {
             </p>
             <ul>
               <li><strong>Cookies esenciales:</strong> necesarias para el funcionamiento de la plataforma (sesion, autenticacion). No requieren consentimiento.</li>
-              <li><strong>Cookies de analisis:</strong> nos ayudan a mejorar la experiencia de uso (por ejemplo, Google Analytics). Se activan por defecto amparadas en nuestro interes legitimo en medir y mejorar el servicio.</li>
+              <li><strong>Medición opcional:</strong> Google Analytics y medición propia de interacción. La medición propia utiliza almacenamiento del navegador; la sesión se renueva tras 30 minutos de inactividad y el identificador de visitante vence a los 90 días.</li>
             </ul>
             <p>
-              Podes desactivar las cookies de analisis configurando tu navegador para bloquear o eliminar
-              cookies, o instalando el complemento de inhabilitacion de Google Analytics
-              (https://tools.google.com/dlpage/gaoptout). La desactivacion de las cookies de analisis no
-              afecta el funcionamiento basico del servicio.
+              Podés desactivar la medición desde el control de abajo. También respetamos las señales Do Not Track
+              y Global Privacy Control. No copiamos nombres, teléfonos, direcciones, notas de pedidos ni tokens
+              de acceso a los eventos de navegación. La recompra se calcula por local sobre los pedidos existentes
+              y muestra conteos agregados. Desactivar la medición no afecta el funcionamiento del menú ni los pedidos.
             </p>
+            <AnalyticsPreference />
           </section>
 
           <section>

@@ -133,6 +133,7 @@ export class MercadoPagoPaymentService implements PaymentProviderPort {
     const resourceId = String(notification.data?.id ?? '');
 
     const base: WebhookEvent = {
+      externalEventId: resourceId,
       type: 'subscription_updated',
       externalSubscriptionId: '',
       externalCustomerId: '',
