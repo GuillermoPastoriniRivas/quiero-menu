@@ -11,7 +11,7 @@ import type {
   CouponValidation,
 } from "@/types";
 import { useCartStore, CartItem } from "@/stores/cart.store";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, dayName } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -159,6 +159,24 @@ export function StorefrontView({
     return `Hoy ${parts.join(", ")}`;
   }, [todayHours, data.operatingHours, isOpen]);
 
+  const todayDow = todayHours?.dayOfWeek ?? null;
+
+  const weeklyHours = useMemo(() => {
+    const order = [1, 2, 3, 4, 5, 6, 0]; // Lunes a Domingo
+    return order.map((d) => {
+      const entries = data.operatingHours
+        .filter((h) => h.dayOfWeek === d)
+        .sort((a, b) => a.opensAt.localeCompare(b.opensAt));
+      const closed = entries.length === 0 || entries.some((e) => e.isClosed);
+      return {
+        dayOfWeek: d,
+        label: dayName(d),
+        closed,
+        ranges: closed ? [] : entries.map((e) => `${e.opensAt}–${e.closesAt}`),
+      };
+    });
+  }, [data.operatingHours]);
+
   const [checkoutOpen, setCheckoutOpenState] = useState(false);
   const setCheckoutOpen = (open: boolean) => {
     if (trackView) {
@@ -181,6 +199,7 @@ export function StorefrontView({
   const [couponError, setCouponError] = useState("");
   const [repeatOrder, setRepeatOrder] = useState<LastOrder | null>(null);
   const [repeatError, setRepeatError] = useState("");
+  const [hoursOpen, setHoursOpen] = useState(false);
 
   // One view per real 30-minute session/local. Previews and owners are excluded.
   useEffect(() => {
@@ -630,10 +649,15 @@ export function StorefrontView({
                   </span>
                 )}
                 {todayHoursLabel && (
-                  <span className="text-white/90 text-sm font-medium flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setHoursOpen(true)}
+                    aria-label="Ver horarios de atención"
+                    className="text-white/90 text-sm font-medium flex items-center gap-1 rounded-full px-2 py-0.5 hover:bg-white/15 transition-colors"
+                  >
                     <MaterialIcon name="schedule" size="xs" />
                     {todayHoursLabel}
-                  </span>
+                  </button>
                 )}
               </div>
             </div>
@@ -648,10 +672,15 @@ export function StorefrontView({
             {restaurant.name}
           </h1>
           {todayHoursLabel && (
-            <span className="text-sm text-on-surface-variant flex items-center gap-1 mt-1">
+            <button
+              type="button"
+              onClick={() => setHoursOpen(true)}
+              aria-label="Ver horarios de atención"
+              className="text-sm text-on-surface-variant hover:text-primary flex items-center gap-1 mt-1 transition-colors"
+            >
               <MaterialIcon name="schedule" size="xs" />
               {todayHoursLabel}
-            </span>
+            </button>
           )}
         </div>
       )}
@@ -844,14 +873,19 @@ export function StorefrontView({
                       </a>
                     )}
                     {todayHoursLabel && (
-                      <p className="flex items-center gap-2 text-sm text-on-surface-variant">
+                      <button
+                        type="button"
+                        onClick={() => setHoursOpen(true)}
+                        aria-label="Ver horarios de atención"
+                        className="flex w-full items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors text-left"
+                      >
                         <MaterialIcon
                           name="schedule"
                           size="sm"
                           className="text-primary shrink-0"
                         />
                         {todayHoursLabel}
-                      </p>
+                      </button>
                     )}
                     {(whatsappUrl || instagramUrl) && (
                       <div className="flex flex-col gap-2">
@@ -1237,6 +1271,58 @@ export function StorefrontView({
                 ))}
               </div>
             )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* ── Schedule sheet ── */}
+      <Sheet open={hoursOpen} onOpenChange={setHoursOpen}>
+        <SheetContent
+          side={isDesktop ? "right" : "bottom"}
+          className={`overflow-auto ${isDesktop ? "lg:max-w-md" : "data-[side=bottom]:h-[70dvh] rounded-t-3xl"}`}
+        >
+          <SheetHeader className="p-6 pb-0">
+            <SheetTitle>Horarios de atención</SheetTitle>
+          </SheetHeader>
+          <div className="p-6 space-y-4">
+            {isOpen ? (
+              <span className="inline-flex items-center gap-1 bg-green-500/90 text-white px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+                <MaterialIcon name="fiber_manual_record" size="xs" fill />
+                Abierto ahora
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 bg-on-surface/10 text-on-surface-variant px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+                <MaterialIcon name="cancel" size="xs" fill />
+                Cerrado ahora
+              </span>
+            )}
+            <div className="space-y-1">
+              {weeklyHours.map((d) => {
+                const isToday = d.dayOfWeek === todayDow;
+                return (
+                  <div
+                    key={d.dayOfWeek}
+                    className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm ${
+                      isToday
+                        ? "bg-primary/5 font-semibold text-on-surface"
+                        : "text-on-surface-variant"
+                    }`}
+                  >
+                    <span>
+                      {d.label}
+                      {isToday && (
+                        <span className="ml-1 text-xs font-bold uppercase tracking-wider text-primary">
+                          Hoy
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-right tabular-nums">
+                      {d.closed ? "Cerrado" : d.ranges.join(" y ")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </SheetContent>
       </Sheet>
