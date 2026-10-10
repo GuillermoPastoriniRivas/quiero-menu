@@ -7,5 +7,7 @@ export class MenuItemOption {
     public readonly priceDelta: number,
     public readonly optionGroup: string,
     public readonly isAvailable: boolean,
+    public readonly clientRequestId?: string,
+    public readonly sourceItemId?: string,
   ) {}
 }

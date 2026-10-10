@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { api } from '@/lib/api';
-import type { MenuCategory, MenuItem, MenuItemVariant, MenuItemOption } from '@/types';
+import type { MenuCategory, MenuItem, MenuItemVariant, MenuItemOption, MenuItemOptionGroup } from '@/types';
 
 interface MenuState {
   categories: MenuCategory[];
@@ -10,7 +10,7 @@ interface MenuState {
   isLoading: boolean;
 
   fetchCategories: () => Promise<void>;
-  createCategory: (data: { name: string; description?: string }) => Promise<MenuCategory>;
+  createCategory: (data: { name: string; description?: string; isOptionSource?: boolean }) => Promise<MenuCategory>;
   updateCategory: (id: string, data: Partial<MenuCategory>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
 
@@ -18,12 +18,13 @@ interface MenuState {
   updateItem: (id: string, data: Partial<MenuItem>) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
   toggleAvailability: (id: string) => Promise<void>;
+  updateItemOptionGroups: (itemId: string, groups: MenuItemOptionGroup[]) => Promise<MenuItem>;
 
   createVariant: (itemId: string, data: { name: string; priceOverride?: number | null; maxSelections?: number }) => Promise<MenuItemVariant>;
   updateVariant: (id: string, data: Partial<MenuItemVariant>) => Promise<void>;
   deleteVariant: (id: string) => Promise<void>;
 
-  createOption: (itemId: string, data: { name: string; optionGroup: string; priceDelta?: number; variantId?: string | null }) => Promise<MenuItemOption>;
+  createOption: (itemId: string, data: { name: string; optionGroup: string; priceDelta?: number; variantId?: string | null; clientRequestId?: string }) => Promise<MenuItemOption>;
   updateOption: (id: string, data: Partial<MenuItemOption>) => Promise<void>;
   deleteOption: (id: string) => Promise<void>;
 }
@@ -78,6 +79,12 @@ export const useMenuStore = create<MenuState>((set) => ({
   toggleAvailability: async (id) => {
     const updated = await api.patch<MenuItem>(`/menu/items/${id}/toggle-availability`);
     set((s) => ({ items: s.items.map((i) => (i.id === id ? updated : i)) }));
+  },
+
+  updateItemOptionGroups: async (itemId, groups) => {
+    const updated = await api.patch<MenuItem>(`/menu/items/${itemId}/option-groups`, { groups });
+    set((s) => ({ items: s.items.map((i) => (i.id === itemId ? updated : i)) }));
+    return updated;
   },
 
   createVariant: async (itemId, data) => {

@@ -21,6 +21,10 @@ export class MongoMenuItemRepository implements MenuItemRepository {
       ...data,
       restaurantId: new Types.ObjectId(data.restaurantId),
       categoryId: new Types.ObjectId(data.categoryId),
+      optionGroups: (data.optionGroups ?? []).map((g) => ({
+        ...g,
+        variantId: g.variantId ? new Types.ObjectId(g.variantId) : null,
+      })),
     });
     return MenuItemMapper.toDomain(doc);
   }

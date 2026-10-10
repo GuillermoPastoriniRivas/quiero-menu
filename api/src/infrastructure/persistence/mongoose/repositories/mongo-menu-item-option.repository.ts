@@ -3,25 +3,43 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { MenuItemOptionRepository } from '../../../../domain/repositories/menu-item-option.repository.js';
 import { MenuItemOption } from '../../../../domain/entities/menu-item-option.entity.js';
-import {
-  MenuItemOptionModel,
-  MenuItemOptionDocument,
-} from '../schemas/menu-item-option.schema.js';
+import { MenuItemOptionModel } from '../schemas/menu-item-option.schema.js';
 import { MenuItemOptionMapper } from '../mappers/menu-item-option.mapper.js';
 
 @Injectable()
 export class MongoMenuItemOptionRepository implements MenuItemOptionRepository {
   constructor(
     @InjectModel(MenuItemOptionModel.name)
-    private readonly model: Model<MenuItemOptionDocument>,
+    private readonly model: Model<MenuItemOptionModel>,
   ) {}
 
   async create(data: Omit<MenuItemOption, 'id'>): Promise<MenuItemOption> {
-    const doc = await this.model.create({
+    const payload = {
       ...data,
       itemId: new Types.ObjectId(data.itemId),
       variantId: data.variantId ? new Types.ObjectId(data.variantId) : null,
-    });
+    };
+    if (data.clientRequestId) {
+      const filter = {
+        itemId: payload.itemId,
+        clientRequestId: data.clientRequestId,
+      };
+      try {
+        const doc = await this.model.findOneAndUpdate(
+          filter,
+          { $setOnInsert: payload },
+          { upsert: true, returnDocument: 'after' },
+        );
+        return MenuItemOptionMapper.toDomain(doc);
+      } catch (error) {
+        // Una respuesta perdida o dos envíos simultáneos recuperan la misma opción.
+        if ((error as { code?: number }).code !== 11000) throw error;
+        const doc = await this.model.findOne(filter);
+        if (!doc) throw error;
+        return MenuItemOptionMapper.toDomain(doc);
+      }
+    }
+    const doc = await this.model.create(payload);
     return MenuItemOptionMapper.toDomain(doc);
   }
 

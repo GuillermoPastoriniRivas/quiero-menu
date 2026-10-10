@@ -9,6 +9,12 @@ import { CouponRepository } from '../../../domain/repositories/coupon.repository
 import { RealtimeGatewayPort } from '../../ports/realtime-gateway.port.js';
 import { PushServicePort } from '../../ports/push-service.port.js';
 import { OperatingHoursPolicy } from '../../../domain/services/operating-hours-policy.js';
+import type { MenuCategoryRepository } from '../../../domain/repositories/menu-category.repository.js';
+import { resolveSharedMenuOptions } from '../../../domain/services/shared-menu-options.js';
+import {
+  resolveOptionGroups,
+  validateOptionSelection,
+} from '../../../domain/services/menu-option-groups.js';
 import { Order } from '../../../domain/entities/order.entity.js';
 import {
   OrderItem,
@@ -25,6 +31,7 @@ import {
   MenuItemNotFoundError,
   CrossRestaurantAccessError,
   CouponInvalidError,
+  MenuItemOptionLimitError,
 } from '../../../domain/errors/domain-errors.js';
 import {
   isCouponApplicable,
@@ -77,6 +84,7 @@ export class CreateStorefrontOrderUseCase {
     private readonly gateway: RealtimeGatewayPort,
     private readonly pushService: PushServicePort,
     private readonly hoursPolicy: OperatingHoursPolicy = new OperatingHoursPolicy(),
+    private readonly categoryRepo?: MenuCategoryRepository,
   ) {}
 
   async execute(
@@ -91,6 +99,7 @@ export class CreateStorefrontOrderUseCase {
       | MenuItemNotFoundError
       | CrossRestaurantAccessError
       | CouponInvalidError
+      | MenuItemOptionLimitError
     >
   > {
     const restaurant = await this.restaurantRepo.findBySlug(slug);
@@ -106,6 +115,11 @@ export class CreateStorefrontOrderUseCase {
 
     const orderItemsData: Omit<OrderItem, 'id'>[] = [];
     let subtotal = 0;
+    const categories =
+      (await this.categoryRepo?.findByRestaurantId(restaurant.id)) ?? [];
+    let sourceItems:
+      | Awaited<ReturnType<MenuItemRepository['findByRestaurantId']>>
+      | undefined;
 
     for (const itemInput of input.items) {
       const menuItem = await this.menuItemRepo.findById(itemInput.menuItemId);
@@ -113,30 +127,82 @@ export class CreateStorefrontOrderUseCase {
         return err(new MenuItemNotFoundError());
       if (menuItem.restaurantId !== restaurant.id)
         return err(new CrossRestaurantAccessError());
+      if (
+        categories.some((c) => c.id === menuItem.categoryId && c.isOptionSource)
+      )
+        return err(
+          new MenuItemOptionLimitError(
+            'Los sabores se eligen dentro de un producto. Elegí un pote para continuar.',
+          ),
+        );
 
       let unitPrice = menuItem.basePrice;
       let variantName: string | null = null;
 
-      if (itemInput.variantId) {
-        const variant = await this.variantRepo.findById(itemInput.variantId);
-        if (variant) {
-          if (variant.priceOverride !== null) unitPrice = variant.priceOverride;
-          variantName = variant.name;
-        }
+      const [variants, localOptions] = await Promise.all([
+        this.variantRepo.findByItemId(menuItem.id),
+        this.optionRepo.findByItemId(menuItem.id),
+      ]);
+      if (menuItem.optionGroups?.some((g) => g.sourceCategoryId))
+        sourceItems ??= await this.menuItemRepo.findByRestaurantId(
+          restaurant.id,
+        );
+      const variantId = itemInput.variantId ?? null;
+      const options = resolveSharedMenuOptions(
+        menuItem,
+        localOptions,
+        categories,
+        sourceItems ?? [],
+        variantId,
+      );
+      const variant = variants.find((v) => v.id === variantId);
+      if (
+        (variants.length > 0 && !variant) ||
+        (variantId !== null && !variant)
+      ) {
+        return err(
+          new MenuItemOptionLimitError(
+            `"${menuItem.name}": elegí un tamaño disponible.`,
+          ),
+        );
       }
-
-      const selectedOptions: SelectedOption[] = [];
-      for (const optionId of itemInput.selectedOptionIds) {
-        const option = await this.optionRepo.findById(optionId);
-        if (option) {
-          unitPrice += option.priceDelta;
-          selectedOptions.push({
-            optionId: option.id,
-            name: option.name,
-            priceDelta: option.priceDelta,
-          });
-        }
+      if (variant) {
+        unitPrice = variant.priceOverride ?? menuItem.basePrice;
+        variantName = variant.name;
       }
+      const uniqueIds = new Set(itemInput.selectedOptionIds);
+      const selected = options.filter((option) => uniqueIds.has(option.id));
+      if (
+        uniqueIds.size !== itemInput.selectedOptionIds.length ||
+        selected.length !== uniqueIds.size ||
+        selected.some(
+          (option) =>
+            option.itemId !== menuItem.id ||
+            !option.isAvailable ||
+            (option.variantId !== null && option.variantId !== variantId),
+        )
+      ) {
+        return err(
+          new MenuItemOptionLimitError(
+            `"${menuItem.name}": algunas opciones ya no están disponibles. Revisá tu selección.`,
+          ),
+        );
+      }
+      const rules = resolveOptionGroups(menuItem, variants, options, variantId);
+      const selectionError = validateOptionSelection(rules, selected);
+      if (selectionError)
+        return err(
+          new MenuItemOptionLimitError(`"${menuItem.name}": ${selectionError}`),
+        );
+      const selectedOptions: SelectedOption[] = selected.map((option) => ({
+        optionId: option.id,
+        name: option.name,
+        priceDelta: option.priceDelta,
+      }));
+      unitPrice += selected.reduce(
+        (total, option) => total + option.priceDelta,
+        0,
+      );
 
       const totalPrice = unitPrice * itemInput.quantity;
       subtotal += totalPrice;

@@ -1,4 +1,5 @@
 import { MenuItem } from '../../../../domain/entities/menu-item.entity.js';
+import { MenuItemOptionGroup } from '../../../../domain/entities/menu-item-option-group.entity.js';
 import { MenuItemType } from '../../../../domain/enums/menu-item-type.enum.js';
 import { MenuItemDocument } from '../schemas/menu-item.schema.js';
 
@@ -16,6 +17,18 @@ export class MenuItemMapper {
       doc.isAvailable,
       doc.isVisible,
       doc.itemType as MenuItemType,
+      (doc.optionGroups ?? []).map(
+        (g) =>
+          new MenuItemOptionGroup(
+            g.name,
+            g.minSelections,
+            g.maxSelections,
+            g.variantId?.toHexString() ?? null,
+            g.displayOrder,
+            'group',
+            g.sourceCategoryId?.toHexString() ?? null,
+          ),
+      ),
     );
   }
 }

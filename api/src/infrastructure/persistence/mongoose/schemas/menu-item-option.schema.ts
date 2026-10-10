@@ -22,9 +22,19 @@ export class MenuItemOptionModel {
 
   @Prop({ default: true })
   isAvailable: boolean;
+
+  @Prop({ type: String })
+  clientRequestId?: string;
 }
 
 export const MenuItemOptionSchema =
   SchemaFactory.createForClass(MenuItemOptionModel);
 MenuItemOptionSchema.index({ itemId: 1 });
 MenuItemOptionSchema.index({ variantId: 1 });
+MenuItemOptionSchema.index(
+  { itemId: 1, clientRequestId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { clientRequestId: { $type: 'string' } },
+  },
+);

@@ -100,6 +100,7 @@ import { DeleteMenuCategoryUseCase } from '../application/use-cases/menu/delete-
 import { ListMenuCategoriesUseCase } from '../application/use-cases/menu/list-menu-categories.use-case.js';
 import { ReorderMenuCategoriesUseCase } from '../application/use-cases/menu/reorder-menu-categories.use-case.js';
 import { CreateMenuItemUseCase } from '../application/use-cases/menu/create-menu-item.use-case.js';
+import { UpdateMenuItemOptionGroupsUseCase } from '../application/use-cases/menu/update-menu-item-option-groups.use-case.js';
 import { UpdateMenuItemUseCase } from '../application/use-cases/menu/update-menu-item.use-case.js';
 import { DeleteMenuItemUseCase } from '../application/use-cases/menu/delete-menu-item.use-case.js';
 import { ToggleMenuItemAvailabilityUseCase } from '../application/use-cases/menu/toggle-menu-item-availability.use-case.js';
@@ -1028,6 +1029,22 @@ const useCaseProviders = [
     inject: ['MenuItemRepository'],
   },
   {
+    provide: 'UpdateMenuItemOptionGroupsUseCase',
+    useFactory: (itemRepo: any, optRepo: any, varRepo: any, catRepo: any) =>
+      new UpdateMenuItemOptionGroupsUseCase(
+        itemRepo,
+        optRepo,
+        varRepo,
+        catRepo,
+      ),
+    inject: [
+      'MenuItemRepository',
+      'MenuItemOptionRepository',
+      'MenuItemVariantRepository',
+      'MenuCategoryRepository',
+    ],
+  },
+  {
     provide: 'DeleteMenuItemUseCase',
     useFactory: (itemRepo: any, varRepo: any, optRepo: any) =>
       new DeleteMenuItemUseCase(itemRepo, varRepo, optRepo),
@@ -1103,6 +1120,7 @@ const useCaseProviders = [
       couponRepo: any,
       gateway: any,
       pushService: any,
+      catRepo: any,
     ) =>
       new CreateStorefrontOrderUseCase(
         orderRepo,
@@ -1115,6 +1133,8 @@ const useCaseProviders = [
         couponRepo,
         gateway,
         pushService,
+        undefined,
+        catRepo,
       ),
     inject: [
       'OrderRepository',
@@ -1127,6 +1147,7 @@ const useCaseProviders = [
       'CouponRepository',
       'RealtimeGatewayPort',
       'PushServicePort',
+      'MenuCategoryRepository',
     ],
   },
   {

@@ -5,6 +5,7 @@ export const CreateCategoryRequestSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional().default(''),
   isVisible: z.boolean().optional().default(true),
+  isOptionSource: z.boolean().optional().default(false),
 });
 export type CreateCategoryRequestDto = z.infer<
   typeof CreateCategoryRequestSchema
@@ -14,6 +15,7 @@ export const UpdateCategoryRequestSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   isVisible: z.boolean().optional(),
+  isOptionSource: z.boolean().optional(),
 });
 export type UpdateCategoryRequestDto = z.infer<
   typeof UpdateCategoryRequestSchema
@@ -69,6 +71,7 @@ export type UpdateVariantRequestDto = z.infer<
 >;
 
 export const CreateOptionRequestSchema = z.object({
+  clientRequestId: z.string().uuid().optional(),
   variantId: z.string().nullable().optional().default(null),
   name: z.string().min(1),
   priceDelta: z.number().optional().default(0),
@@ -85,3 +88,34 @@ export const UpdateOptionRequestSchema = z.object({
   isAvailable: z.boolean().optional(),
 });
 export type UpdateOptionRequestDto = z.infer<typeof UpdateOptionRequestSchema>;
+
+export const UpdateOptionGroupsRequestSchema = z.object({
+  groups: z.array(
+    z
+      .object({
+        name: z.string().trim().min(1),
+        minSelections: z.number().int().min(0).optional().default(0),
+        maxSelections: z.number().int().min(0).optional().default(0),
+        variantId: z.string().nullable().optional().default(null),
+        displayOrder: z.number().optional().default(0),
+        sourceCategoryId: z
+          .string()
+          .regex(/^[a-fA-F0-9]{24}$/)
+          .nullable()
+          .optional()
+          .default(null),
+      })
+      .refine(
+        (group) =>
+          group.maxSelections === 0 ||
+          group.minSelections <= group.maxSelections,
+        {
+          message: 'El mínimo no puede superar el máximo.',
+          path: ['minSelections'],
+        },
+      ),
+  ),
+});
+export type UpdateOptionGroupsRequestDto = z.infer<
+  typeof UpdateOptionGroupsRequestSchema
+>;

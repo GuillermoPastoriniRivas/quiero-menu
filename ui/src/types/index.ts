@@ -121,6 +121,7 @@ export interface OperatingHours {
 }
 
 export interface MenuCategory {
+  isOptionSource?: boolean;
   id: string;
   restaurantId: string;
   name: string;
@@ -130,6 +131,7 @@ export interface MenuCategory {
 }
 
 export interface MenuItem {
+  isOrderable?: boolean;
   id: string;
   restaurantId: string;
   categoryId: string;
@@ -141,6 +143,19 @@ export interface MenuItem {
   isAvailable: boolean;
   isVisible: boolean;
   itemType: MenuItemType;
+  /** Reglas min/max de selección por grupo de opciones (API nueva). */
+  optionGroups?: MenuItemOptionGroup[];
+}
+
+export interface MenuItemOptionGroup {
+  sourceCategoryId?: string | null;
+  name: string;
+  minSelections: number;
+  maxSelections: number;
+  variantId: string | null;
+  displayOrder: number;
+  /** Las reglas derivadas comparten el límite original del tamaño. */
+  selectionScope?: 'group' | 'item';
 }
 
 export interface MenuItemVariant {
@@ -153,6 +168,7 @@ export interface MenuItemVariant {
 }
 
 export interface MenuItemOption {
+  sourceItemId?: string;
   id: string;
   itemId: string;
   variantId: string | null;

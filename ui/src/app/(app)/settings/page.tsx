@@ -7,8 +7,8 @@ import { RestaurantDataSettings } from "@/components/settings/restaurant-data-se
 import { PaymentMethodsSettings } from "@/components/settings/payment-methods-settings";
 import { OperatingHoursSettings } from "@/components/settings/operating-hours-settings";
 
-export const SETTINGS_TABS = ["datos", "pagos", "horarios"] as const;
-export type SettingsTab = (typeof SETTINGS_TABS)[number];
+const SETTINGS_TABS = ["datos", "pagos", "horarios"] as const;
+type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 // Tabs legacy de la vieja /settings y de /business/* -> destino nuevo
 const LEGACY_TAB_REDIRECTS: Record<string, string> = {

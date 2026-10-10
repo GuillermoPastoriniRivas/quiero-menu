@@ -19,6 +19,9 @@ export class MenuCategoryModel {
 
   @Prop({ default: true })
   isVisible: boolean;
+
+  @Prop({ default: false })
+  isOptionSource: boolean;
 }
 
 export const MenuCategorySchema =

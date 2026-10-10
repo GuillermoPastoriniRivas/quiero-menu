@@ -15,7 +15,10 @@ import { Separator } from '@/components/ui/separator';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { MoneyInput } from '@/components/ui/money-input';
+import { OptionEditorDialog } from '@/components/menu/option-editor-dialog';
+import { OptionGroupDialog } from '@/components/menu/option-group-dialog';
 import Link from 'next/link';
+import { describeOptionRule, optionGroupName } from '@/lib/menu-options';
 import { formatCurrency } from '@/lib/format';
 import type { MenuCategory, MenuItem, MenuItemVariant, MenuItemOption, StorefrontData } from '@/types';
 import { toast } from 'sonner';
@@ -35,6 +38,7 @@ type CatDialog = { mode: 'create' } | { mode: 'edit'; cat: RichCategory } | null
 type ItemDialog = { mode: 'create'; catId: string } | { mode: 'edit'; item: RichItem } | null;
 type VariantDialog = { mode: 'create'; itemId: string } | { mode: 'edit'; variant: MenuItemVariant } | null;
 type OptionDialog = { mode: 'create'; itemId: string } | { mode: 'edit'; option: MenuItemOption } | null;
+type GroupDialog = { item: RichItem; group: string } | null;
 
 /* ====================================================== */
 export default function MenuPage() {
@@ -50,9 +54,9 @@ export default function MenuPage() {
     createVariant,
     updateVariant,
     deleteVariant,
-    createOption,
     updateOption,
     deleteOption,
+    updateItemOptionGroups,
   } = useMenuStore();
 
   const [richCategories, setRichCategories] = useState<RichCategory[]>([]);
@@ -65,7 +69,7 @@ export default function MenuPage() {
 
   /* --- dialog state --- */
   const [catDialog, setCatDialog] = useState<CatDialog>(null);
-  const [catForm, setCatForm] = useState({ name: '', description: '' });
+  const [catForm, setCatForm] = useState({ name: '', description: '', isOptionSource: false });
 
   const [itemDialog, setItemDialog] = useState<ItemDialog>(null);
   const [itemForm, setItemForm] = useState({ name: '', price: '', description: '', imageUrl: '' });
@@ -74,7 +78,8 @@ export default function MenuPage() {
   const [variantForm, setVariantForm] = useState({ name: '', price: '' });
 
   const [optionDialog, setOptionDialog] = useState<OptionDialog>(null);
-  const [optionForm, setOptionForm] = useState({ name: '', group: '', delta: '' });
+
+  const [groupDialog, setGroupDialog] = useState<GroupDialog>(null);
 
   /* --- inline price editing --- */
   const [priceEdit, setPriceEdit] = useState<
@@ -84,9 +89,9 @@ export default function MenuPage() {
   const cancelBlurRef = useRef(false);
 
   /* ---------- load full menu via storefront ---------- */
-  const loadMenu = useCallback(async () => {
+  const loadMenu = useCallback(async (showLoading = true) => {
     if (!user?.restaurantSlug) return;
-    setLoading(true);
+    if (showLoading) setLoading(true);
     try {
       const data = await api.get<StorefrontData>(`/storefront/${user.restaurantSlug}`);
       setMenuCurrency(data.restaurant.currency);
@@ -213,11 +218,11 @@ export default function MenuPage() {
   /* ---------- dialog openers ---------- */
   const openCatCreate = () => {
     setCatDialog({ mode: 'create' });
-    setCatForm({ name: '', description: '' });
+    setCatForm({ name: '', description: '', isOptionSource: false });
   };
   const openCatEdit = (cat: RichCategory) => {
     setCatDialog({ mode: 'edit', cat });
-    setCatForm({ name: cat.name, description: cat.description || '' });
+    setCatForm({ name: cat.name, description: cat.description || '', isOptionSource: cat.isOptionSource ?? false });
   };
 
   const openItemCreate = (catId: string) => {
@@ -248,15 +253,10 @@ export default function MenuPage() {
 
   const openOptionCreate = (itemId: string) => {
     setOptionDialog({ mode: 'create', itemId });
-    setOptionForm({ name: '', group: '', delta: '' });
   };
   const openOptionEdit = (option: MenuItemOption) => {
     setOptionDialog({ mode: 'edit', option });
-    setOptionForm({
-      name: option.name,
-      group: option.optionGroup,
-      delta: option.priceDelta ? String(option.priceDelta) : '',
-    });
+
   };
 
   /* ---------- category actions ---------- */
@@ -269,12 +269,14 @@ export default function MenuPage() {
         await updateCategory(catDialog.cat.id, {
           name,
           description: catForm.description.trim(),
+          isOptionSource: catForm.isOptionSource,
         });
         toast.success('Categoria actualizada');
       } else {
         await createCategory({
           name,
           description: catForm.description.trim() || undefined,
+          isOptionSource: catForm.isOptionSource,
         });
         toast.success('Categoria creada');
       }
@@ -390,28 +392,6 @@ export default function MenuPage() {
   };
 
   /* ---------- option actions ---------- */
-  const handleSaveOption = async () => {
-    if (!optionDialog || !optionForm.name.trim() || !optionForm.group.trim()) return;
-    try {
-      const payload = {
-        name: optionForm.name.trim(),
-        optionGroup: optionForm.group.trim(),
-        priceDelta: optionForm.delta ? Number(optionForm.delta) : 0,
-      };
-      if (optionDialog.mode === 'edit') {
-        await updateOption(optionDialog.option.id, payload);
-        toast.success('Opcion actualizada');
-      } else {
-        await createOption(optionDialog.itemId, payload);
-        toast.success('Opcion creada');
-      }
-      setOptionDialog(null);
-      await loadMenu();
-    } catch {
-      toast.error(optionDialog.mode === 'edit' ? 'Error al actualizar opcion' : 'Error al crear opcion');
-    }
-  };
-
   const handleDeleteOption = async (id: string) => {
     if (!confirm('Eliminar esta opcion?')) return;
     try {
@@ -422,6 +402,9 @@ export default function MenuPage() {
       toast.error('Error al eliminar opcion');
     }
   };
+
+  /* ---------- option group rules ---------- */
+  const openGroupEdit = (item: RichItem, group: string) => setGroupDialog({ item, group });
 
   /* ---------- render ---------- */
   if (loading) {
@@ -495,7 +478,7 @@ export default function MenuPage() {
 
                 {cat.items.map((item) => {
                   const itemOpen = expandedItems.has(item.id);
-                  const hasExtras = item.variants.length > 0 || item.options.length > 0;
+                  const hasExtras = item.variants.length > 0 || item.options.length > 0 || (item.optionGroups?.length ?? 0) > 0;
 
                   return (
                     <div key={item.id} className="border rounded-lg">
@@ -504,7 +487,7 @@ export default function MenuPage() {
                         className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-3 cursor-pointer select-none sm:gap-3 min-w-0"
                         onClick={() => toggleItem(item.id)}
                       >
-                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                        <button type="button" aria-expanded={itemOpen} onClick={(event) => { event.stopPropagation(); toggleItem(item.id); }} className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 text-left">
                           <span className="shrink-0 text-muted-foreground">
                             {hasExtras ? (
                               itemOpen ? <MaterialIcon name="expand_more" size="sm" /> : <MaterialIcon name="chevron_right" size="sm" />
@@ -526,7 +509,7 @@ export default function MenuPage() {
                               <p className="text-xs text-muted-foreground line-clamp-1">{item.description}</p>
                             )}
                           </div>
-                        </div>
+                        </button>
 
                         <div className="flex items-center gap-1 sm:gap-2 shrink-0 flex-wrap justify-end w-full sm:w-auto" onClick={(e) => e.stopPropagation()}>
                           {priceEdit?.kind === 'item' && priceEdit.id === item.id ? (
@@ -551,13 +534,14 @@ export default function MenuPage() {
                           )}
                           {!item.isAvailable && <Badge variant="secondary">No disponible</Badge>}
                           <Switch
+                            aria-label={`Disponibilidad de ${item.name}`}
                             checked={item.isAvailable}
                             onCheckedChange={(checked) => handleToggleAvailability(item.id, checked)}
                           />
-                          <Button size="sm" variant="ghost" onClick={() => openItemEdit(item)}>
+                          <Button size="sm" variant="ghost" aria-label={`Editar ${item.name}`} onClick={() => openItemEdit(item)}>
                             <MaterialIcon name="edit" size="xs" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item.id)}>
+                          <Button size="sm" variant="ghost" aria-label={`Eliminar ${item.name}`} onClick={() => handleDeleteItem(item.id)}>
                             <MaterialIcon name="delete" size="xs" className="text-destructive" />
                           </Button>
                         </div>
@@ -617,10 +601,10 @@ export default function MenuPage() {
                                   )}
                                 </div>
                                 <div className="flex gap-1">
-                                  <Button size="sm" variant="ghost" onClick={() => openVariantEdit(v)}>
+                                  <Button size="sm" variant="ghost" aria-label={`Editar tamaño ${v.name}`} onClick={() => openVariantEdit(v)}>
                                     <MaterialIcon name="edit" size="xs" />
                                   </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => handleDeleteVariant(v.id)}>
+                                  <Button size="sm" variant="ghost" aria-label={`Eliminar tamaño ${v.name}`} onClick={() => handleDeleteVariant(v.id)}>
                                     <MaterialIcon name="delete" size="xs" className="text-destructive" />
                                   </Button>
                                 </div>
@@ -655,52 +639,70 @@ export default function MenuPage() {
                             {/* group options by optionGroup */}
                             {Object.entries(
                               item.options.reduce<Record<string, MenuItemOption[]>>((acc, opt) => {
-                                (acc[opt.optionGroup] ??= []).push(opt);
+                                (acc[optionGroupName(opt)] ??= []).push(opt);
                                 return acc;
                               }, {}),
-                            ).map(([group, opts]) => (
-                              <div key={group} className="pl-6 ml-2 border-l-2 border-muted">
-                                <p className="text-xs font-medium text-muted-foreground pl-2 pb-1">{group}</p>
-                                {opts.map((opt) => (
-                                  <div key={opt.id} className="flex items-center justify-between pl-2 py-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm">{opt.name}</span>
-                                      {opt.priceDelta > 0 &&
-                                        (priceEdit?.kind === 'option' && priceEdit.id === opt.id ? (
-                                          <MoneyInput
-                                            autoFocus
-                                            value={priceDraft}
-                                            onChange={setPriceDraft}
-                                            onKeyDown={handlePriceKeyDown}
-                                            onBlur={handlePriceBlur}
-                                            className="h-7 w-20 text-xs"
-                                            aria-label={`Precio adicional de ${opt.name}`}
-                                          />
-                                        ) : (
-                                          <button
-                                            type="button"
-                                            onClick={() => openPriceEdit({ kind: 'option', id: opt.id }, String(opt.priceDelta))}
-                                            className="rounded px-0.5 py-0.5 transition-colors hover:bg-muted"
-                                            title="Editar precio"
-                                          >
-                                            <Badge variant="secondary" className="text-xs">
-                                              +{formatCurrency(opt.priceDelta, menuCurrency)}
-                                            </Badge>
-                                          </button>
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-1">
-                                      <Button size="sm" variant="ghost" onClick={() => openOptionEdit(opt)}>
-                                        <MaterialIcon name="edit" size="xs" />
-                                      </Button>
-                                      <Button size="sm" variant="ghost" onClick={() => handleDeleteOption(opt.id)}>
-                                        <MaterialIcon name="delete" size="xs" className="text-destructive" />
-                                      </Button>
-                                    </div>
+                            ).map(([group, opts]) => {
+                              const labels = [...new Set((item.optionGroups ?? []).filter((g) => g.name === group).map((g) => describeOptionRule(g.minSelections, g.maxSelections)))];
+                              const ruleLabel = labels.length > 1 ? 'Depende del tamaño' : labels[0] ?? 'Opcional';
+                              return (
+                                <div key={group} className="pl-6 ml-2 border-l-2 border-muted">
+                                  <div className="flex flex-wrap items-center gap-2 pl-2 pb-1">
+                                    <p className="text-xs font-medium text-muted-foreground">{group}</p>
+                                    <Badge variant="secondary" className="text-[10px]">{ruleLabel}</Badge>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 px-1.5 text-xs"
+                                      onClick={() => openGroupEdit(item, group)}
+                                      title="Configurar cuántas opciones puede elegir el cliente"
+                                    >
+                                      <MaterialIcon name="tune" size="xs" />
+                                      <span className="ml-1">Reglas</span>
+                                    </Button>
                                   </div>
-                                ))}
-                              </div>
-                            ))}
+                                  {opts.map((opt) => (
+                                    <div key={opt.id} className="flex items-center justify-between pl-2 py-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm">{opt.name}</span>
+                                        {opt.priceDelta > 0 &&
+                                          (priceEdit?.kind === 'option' && priceEdit.id === opt.id ? (
+                                            <MoneyInput
+                                              autoFocus
+                                              value={priceDraft}
+                                              onChange={setPriceDraft}
+                                              onKeyDown={handlePriceKeyDown}
+                                              onBlur={handlePriceBlur}
+                                              className="h-7 w-20 text-xs"
+                                              aria-label={`Precio adicional de ${opt.name}`}
+                                            />
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => openPriceEdit({ kind: 'option', id: opt.id }, String(opt.priceDelta))}
+                                              className="rounded px-0.5 py-0.5 transition-colors hover:bg-muted"
+                                              title="Editar precio"
+                                            >
+                                              <Badge variant="secondary" className="text-xs">
+                                                +{formatCurrency(opt.priceDelta, menuCurrency)}
+                                              </Badge>
+                                            </button>
+                                          ))}
+                                      </div>
+                                      <div className="flex gap-1">
+                                        {opt.sourceItemId ? <span className="text-xs text-muted-foreground">Disponibilidad en la lista compartida</span> : <><Button size="sm" variant="ghost" aria-label={`Editar opción ${opt.name}`} onClick={() => openOptionEdit(opt)}>
+                                          <MaterialIcon name="edit" size="xs" />
+                                        </Button>
+                                        <Button size="sm" variant="ghost" aria-label={`Eliminar opción ${opt.name}`} onClick={() => handleDeleteOption(opt.id)}>
+                                          <MaterialIcon name="delete" size="xs" className="text-destructive" />
+                                        </Button>
+                                        </>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })}
 
                             {/* add option (looks like an option row) */}
                             <button
@@ -709,8 +711,9 @@ export default function MenuPage() {
                               className="ml-2 flex w-full items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/30 px-2 py-1.5 pl-6 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted"
                             >
                               <MaterialIcon name="add" size="xs" />
-                              <span className="text-sm">Agregar opcion</span>
+                              <span className="text-sm">Agregar opciones</span>
                             </button>
+                            {richCategories.some((source) => source.isOptionSource && source.id !== item.categoryId) && <Button variant="outline" size="sm" className="mt-2 ml-2" onClick={() => openGroupEdit(item, 'Sabores')}>Usar una lista compartida</Button>}
                           </div>
                         </div>
                       )}
@@ -769,6 +772,7 @@ export default function MenuPage() {
                 placeholder="Ej: Bebidas frias y calientes"
               />
             </div>
+            <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={catForm.isOptionSource} onChange={(e) => setCatForm((f) => ({ ...f, isOptionSource: e.target.checked }))} /><span>Usar como lista compartida de opciones<span className="block text-xs text-muted-foreground">Por ejemplo, sabores para varios potes. Se eligen dentro de un producto y no se venden por separado.</span></span></label>
             <Button className="w-full" onClick={handleSaveCategory}>
               {catDialog?.mode === 'edit' ? 'Guardar cambios' : 'Crear categoria'}
             </Button>
@@ -862,46 +866,13 @@ export default function MenuPage() {
         </DialogContent>
       </Dialog>
 
-      {/* --- option dialog --- */}
-      <Dialog open={optionDialog !== null} onOpenChange={(open) => !open && setOptionDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {optionDialog?.mode === 'edit' ? 'Editar opcion' : 'Agregar opcion'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label>Grupo</Label>
-              <Input
-                value={optionForm.group}
-                onChange={(e) => setOptionForm((f) => ({ ...f, group: e.target.value }))}
-                placeholder="Extras, Salsas, Toppings..."
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Nombre</Label>
-              <Input
-                value={optionForm.name}
-                onChange={(e) => setOptionForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Queso extra"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Precio adicional (0 si no aplica)</Label>
-              <MoneyInput
-                value={optionForm.delta}
-                onChange={(v) => setOptionForm((f) => ({ ...f, delta: v }))}
-                placeholder="3000"
-                className="w-full"
-              />
-            </div>
-            <Button className="w-full" onClick={handleSaveOption}>
-              {optionDialog?.mode === 'edit' ? 'Guardar cambios' : 'Crear opcion'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {optionDialog && <OptionEditorDialog dialog={optionDialog} onClose={() => setOptionDialog(null)} onChanged={() => loadMenu(false)} />}
+      {groupDialog && <OptionGroupDialog item={groupDialog.item} group={groupDialog.group} sources={richCategories.filter((c) => c.isOptionSource && c.id !== groupDialog.item.categoryId)} onClose={() => setGroupDialog(null)} onSave={async (groups) => {
+        await updateItemOptionGroups(groupDialog.item.id, groups);
+        await loadMenu(false);
+        toast.success('Regla del grupo guardada');
+      }} />}
+
     </div>
   );
 }

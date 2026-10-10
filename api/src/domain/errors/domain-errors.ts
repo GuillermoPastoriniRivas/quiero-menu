@@ -59,6 +59,12 @@ export class MenuItemOptionNotFoundError extends DomainError {
   }
 }
 
+export class MenuItemOptionLimitError extends DomainError {
+  constructor(message: string) {
+    super('MENU_ITEM_OPTION_LIMIT', message);
+  }
+}
+
 export class OrderNotFoundError extends DomainError {
   constructor() {
     super('ORDER_NOT_FOUND', 'Order not found.');

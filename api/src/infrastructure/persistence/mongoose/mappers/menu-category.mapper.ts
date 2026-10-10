@@ -10,6 +10,7 @@ export class MenuCategoryMapper {
       doc.description,
       doc.displayOrder,
       doc.isVisible,
+      doc.isOptionSource ?? false,
     );
   }
 }

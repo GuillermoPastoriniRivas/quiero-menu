@@ -11,6 +11,8 @@ import { MenuCategory } from '../../../domain/entities/menu-category.entity.js';
 import { MenuItem } from '../../../domain/entities/menu-item.entity.js';
 import { MenuItemVariant } from '../../../domain/entities/menu-item-variant.entity.js';
 import { MenuItemOption } from '../../../domain/entities/menu-item-option.entity.js';
+import { deriveOptionGroups } from '../../../domain/services/menu-option-groups.js';
+import { resolveSharedMenuOptions } from '../../../domain/services/shared-menu-options.js';
 import { OperatingHours } from '../../../domain/entities/operating-hours.entity.js';
 import { Result, ok, err } from '../../common/result.js';
 import { RestaurantNotFoundError } from '../../../domain/errors/domain-errors.js';
@@ -87,7 +89,6 @@ export class GetRestaurantBySlugUseCase {
 
     const optionsByItem = new Map<string, MenuItemOption[]>();
     for (const o of allOptions) {
-      if (!o.isAvailable) continue;
       const list = optionsByItem.get(o.itemId) ?? [];
       list.push(o);
       optionsByItem.set(o.itemId, list);
@@ -96,11 +97,22 @@ export class GetRestaurantBySlugUseCase {
     const categories = visibleCategories.map((cat) => {
       const items = (itemsByCategory.get(cat.id) ?? [])
         .sort((a, b) => a.displayOrder - b.displayOrder)
-        .map((item) => ({
-          ...item,
-          variants: variantsByItem.get(item.id) ?? [],
-          options: optionsByItem.get(item.id) ?? [],
-        }));
+        .map((item) => {
+          const variants = variantsByItem.get(item.id) ?? [];
+          const options = resolveSharedMenuOptions(
+            item,
+            optionsByItem.get(item.id) ?? [],
+            rawCategories,
+            allItems,
+          );
+          return {
+            ...item,
+            isOrderable: !cat.isOptionSource,
+            optionGroups: deriveOptionGroups(item, variants, options),
+            variants,
+            options,
+          };
+        });
       return { ...cat, items };
     });
 

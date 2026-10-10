@@ -9,6 +9,8 @@ export function formatThousands(value: string): string {
 }
 
 interface MoneyInputProps {
+  id?: string;
+  disabled?: boolean;
   value: string;
   onChange: (raw: string) => void;
   placeholder?: string;

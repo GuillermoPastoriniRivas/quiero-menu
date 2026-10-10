@@ -6,5 +6,6 @@ export class MenuCategory {
     public readonly description: string,
     public readonly displayOrder: number,
     public readonly isVisible: boolean,
+    public readonly isOptionSource?: boolean,
   ) {}
 }

@@ -37,6 +37,8 @@ import {
 import { getApiBase } from "@/lib/storefront-context";
 import { formatArPhone, arPhoneToWhatsApp, toWhatsAppNumber } from "@/lib/ar-phone";
 import { formatUpdatedDate } from "@/lib/restaurant-categories";
+import { ProductOptions } from '@/components/storefront/product-options';
+import { productOptionGroups, reconcileProductOptions, selectionIssues, toggleProductOption } from '@/lib/menu-options';
 
 type FullMenuItem = MenuItem & {
   variants: MenuItemVariant[];
@@ -168,6 +170,7 @@ export function StorefrontView({
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(
     categories[0]?.id ?? null,
   );
@@ -284,11 +287,13 @@ export function StorefrontView({
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [itemQuantity, setItemQuantity] = useState(1);
   const [itemNotes, setItemNotes] = useState("");
+  const [optionNotice, setOptionNotice] = useState("");
 
   const openItemDetail = (item: FullMenuItem) => {
-    if (!item.isAvailable) return;
+    if (!item.isAvailable || item.isOrderable === false) return;
     if (!isOpen) return;
     setSelectedItem(item);
+    setOptionNotice("");
     const firstVariant =
       item.variants.length > 0
         ? [...item.variants].sort((a, b) => a.displayOrder - b.displayOrder)[0]
@@ -323,15 +328,7 @@ export function StorefrontView({
     );
   }, [selectedItem, selectedVariantId]);
 
-  const optionGroups = useMemo(() => {
-    const groups: Record<string, MenuItemOption[]> = {};
-    for (const opt of availableOptions) {
-      const group = opt.optionGroup || "Extras";
-      if (!groups[group]) groups[group] = [];
-      groups[group].push(opt);
-    }
-    return groups;
-  }, [availableOptions]);
+  const optionGroups = useMemo(() => selectedItem ? productOptionGroups(selectedItem, selectedVariantId) : [], [selectedItem, selectedVariantId]);
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -347,15 +344,9 @@ export function StorefrontView({
     );
   }, [searchQuery, categories]);
 
-  const maxSelections = selectedVariant?.maxSelections ?? 0;
-
-  const toggleOption = (optionId: string) => {
-    setSelectedOptionIds((prev) => {
-      if (prev.includes(optionId)) return prev.filter((id) => id !== optionId);
-      if (maxSelections > 0 && prev.length >= maxSelections) return prev;
-      return [...prev, optionId];
-    });
-  };
+  const optionIssues = useMemo(() => selectionIssues(optionGroups, selectedOptionIds), [optionGroups, selectedOptionIds]);
+  const optionsValid = optionIssues.length === 0;
+  const toggleOption = (optionId: string) => setSelectedOptionIds((ids) => toggleProductOption(optionGroups, ids, optionId));
 
   const itemUnitPrice = useMemo(() => {
     if (!selectedItem) return 0;
@@ -372,6 +363,7 @@ export function StorefrontView({
   const addToCart = () => {
     if (!selectedItem) return;
     if (!isOpen) return;
+    if (!optionsValid) return;
     const selectedOpts = availableOptions.filter((o) =>
       selectedOptionIds.includes(o.id),
     );
@@ -436,11 +428,12 @@ export function StorefrontView({
     const restored: CartItem[] = [];
     for (const saved of repeatOrder.items) {
       const current = allItems.find(
-        (i) => i.id === saved.menuItemId && i.isAvailable && i.isVisible,
+        (i) => i.id === saved.menuItemId && i.isAvailable && i.isVisible && i.isOrderable !== false,
       );
       if (!current) continue;
       const variant = current.variants.find((v) => v.id === saved.variantId);
-      const validOptionIds = saved.selectedOptionIds.filter((oid: string) =>
+      if (current.variants.length > 0 && !variant) continue;
+      const validOptionIds = [...new Set(saved.selectedOptionIds)].filter((oid: string) =>
         current.options.some(
           (o) =>
             o.id === oid &&
@@ -448,6 +441,7 @@ export function StorefrontView({
             (o.variantId === null || o.variantId === saved.variantId),
         ),
       );
+      if (selectionIssues(productOptionGroups(current, variant?.id ?? null), validOptionIds).length > 0) continue;
       const validOptionNames = current.options
         .filter((o) => validOptionIds.includes(o.id))
         .map((o) => o.name);
@@ -457,7 +451,7 @@ export function StorefrontView({
         variantId: variant?.id,
         variantName: variant?.name,
         quantity: saved.quantity,
-        unitPrice: saved.unitPrice,
+        unitPrice: (variant?.priceOverride ?? current.basePrice) + current.options.filter((o) => validOptionIds.includes(o.id)).reduce((total, o) => total + o.priceDelta, 0),
         selectedOptionIds: validOptionIds,
         selectedOptionNames: validOptionNames,
         notes: saved.notes,
@@ -471,9 +465,12 @@ export function StorefrontView({
       setRepeatOrder(null);
       return;
     }
+    if (restored.length < repeatOrder.items.length) setRepeatError("Recuperamos los productos disponibles. Revisá las opciones de los que cambiaron antes de agregarlos nuevamente.");
     const count = cart.items.length;
     for (let i = 0; i < count; i++) cart.removeItem(0);
-    restored.forEach((item) => cart.addItem(item));
+    restored.forEach((item) => {
+      cart.addItem(item);
+    });
     cart.setCustomer({
       customerName: repeatOrder.customerName || "",
       customerPhone: repeatOrder.customerPhone || "",
@@ -494,6 +491,7 @@ export function StorefrontView({
   const handleCheckout = async () => {
     if (!isOpen) return;
     setSubmitting(true);
+    setCheckoutError("");
     try {
       const body = {
         items: cart.items.map((i) => ({
@@ -543,7 +541,7 @@ export function StorefrontView({
         e instanceof Error
           ? e.message
           : "Error al crear el pedido. Intenta de nuevo.";
-      alert(message);
+      setCheckoutError(message);
     } finally {
       setSubmitting(false);
     }
@@ -964,13 +962,12 @@ export function StorefrontView({
                               className="font-extrabold text-lg text-on-surface"
                               style={{ fontFamily: "var(--font-heading)" }}
                             >
-                              {formatCurrency(
-                                item.basePrice,
-                                restaurant.currency,
-                              )}
+                              {item.isOrderable === false ? "Para elegir en tu pote" : formatCurrency(item.basePrice, restaurant.currency)}
                             </span>
                             {!item.isAvailable ? (
                               <Badge variant="secondary">Agotado</Badge>
+                            ) : item.isOrderable === false ? (
+                              <Badge variant="secondary">Sabor</Badge>
                             ) : !isOpen ? (
                               <button
                                 disabled
@@ -979,7 +976,7 @@ export function StorefrontView({
                                 <MaterialIcon name="add" size="md" />
                               </button>
                             ) : (
-                              <button className="bg-primary text-white p-2 rounded-xl flex items-center justify-center active:scale-95 duration-150">
+                              <button aria-label={`Elegir ${item.name}`} aria-haspopup="dialog" className="bg-primary text-white p-2 rounded-xl flex items-center justify-center active:scale-95 duration-150">
                                 <MaterialIcon name="add" size="md" />
                               </button>
                             )}
@@ -1050,19 +1047,19 @@ export function StorefrontView({
       >
         <SheetContent
           side={isDesktop ? "right" : "bottom"}
-          className={`overflow-auto ${isDesktop ? "lg:max-w-md" : "h-[85vh] rounded-t-3xl"}`}
+          className={`overflow-auto ${isDesktop ? "lg:max-w-md" : "data-[side=bottom]:h-[85dvh] rounded-t-3xl"}`}
           showCloseButton={false}
         >
           {selectedItem && (
             <div className="space-y-5 p-6">
-              <div className="flex items-start justify-between">
+              <div className="sticky top-0 z-10 -mx-6 -mt-6 flex items-start justify-between bg-popover px-6 py-4">
                 <div className="flex-1">
-                  <h2
+                  <SheetTitle
                     className="text-xl font-bold"
                     style={{ fontFamily: "var(--font-heading)" }}
                   >
                     {selectedItem.name}
-                  </h2>
+                  </SheetTitle>
                   {selectedItem.description && (
                     <p className="mt-1 text-sm text-on-surface-variant">
                       {selectedItem.description}
@@ -1070,6 +1067,7 @@ export function StorefrontView({
                   )}
                 </div>
                 <button
+                  aria-label="Cerrar producto"
                   onClick={closeItemDetail}
                   className="ml-3 rounded-full p-2 hover:bg-surface-container-low transition-colors"
                 >
@@ -1098,7 +1096,7 @@ export function StorefrontView({
               {selectedItem.variants.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">
-                    Elegi una opcion
+                    Elegí un tamaño
                   </Label>
                   <div className="flex flex-wrap gap-2">
                     {[...selectedItem.variants]
@@ -1110,20 +1108,13 @@ export function StorefrontView({
                         return (
                           <button
                             key={variant.id}
+                            aria-pressed={isSelected}
                             onClick={() => {
                               setSelectedVariantId(variant.id);
-                              setSelectedOptionIds((prev) =>
-                                prev.filter((id) => {
-                                  const opt = selectedItem.options.find(
-                                    (o) => o.id === id,
-                                  );
-                                  return (
-                                    opt &&
-                                    (opt.variantId === null ||
-                                      opt.variantId === variant.id)
-                                  );
-                                }),
-                              );
+                              const groups = productOptionGroups(selectedItem, variant.id);
+                              const next = reconcileProductOptions(groups, selectedOptionIds);
+                              setSelectedOptionIds(next);
+                              setOptionNotice(next.length < selectedOptionIds.length ? 'Ajustamos las opciones al nuevo tamaño. Revisá tu selección.' : '');
                             }}
                             className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
                               isSelected
@@ -1140,70 +1131,8 @@ export function StorefrontView({
                 </div>
               )}
 
-              {/* Options */}
-              {Object.keys(optionGroups).length > 0 && (
-                <div className="space-y-4">
-                  {Object.entries(optionGroups).map(([group, options]) => (
-                    <div key={group} className="space-y-2">
-                      <Label className="text-sm font-semibold">
-                        {group}
-                        {maxSelections > 0 && (
-                          <span className="ml-1 font-normal text-on-surface-variant">
-                            (max. {maxSelections})
-                          </span>
-                        )}
-                      </Label>
-                      <div className="space-y-1.5">
-                        {options.map((opt) => {
-                          const isChecked = selectedOptionIds.includes(opt.id);
-                          const isDisabled =
-                            !isChecked &&
-                            maxSelections > 0 &&
-                            selectedOptionIds.length >= maxSelections;
-                          return (
-                            <button
-                              key={opt.id}
-                              onClick={() => toggleOption(opt.id)}
-                              disabled={isDisabled}
-                              className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-all ${
-                                isChecked
-                                  ? "bg-primary/10 ghost-border"
-                                  : isDisabled
-                                    ? "cursor-not-allowed bg-surface-container-low opacity-50"
-                                    : "bg-surface-container-low hover:bg-surface-container"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className={`flex h-5 w-5 items-center justify-center rounded ${
-                                    isChecked
-                                      ? "gradient-cta text-white"
-                                      : "border border-outline-variant"
-                                  }`}
-                                >
-                                  {isChecked && (
-                                    <MaterialIcon name="check" size="xs" />
-                                  )}
-                                </div>
-                                <span>{opt.name}</span>
-                              </div>
-                              {opt.priceDelta > 0 && (
-                                <span className="text-on-surface-variant">
-                                  +
-                                  {formatCurrency(
-                                    opt.priceDelta,
-                                    restaurant.currency,
-                                  )}
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {optionNotice && <p role="status" className="rounded-xl bg-primary/5 p-3 text-sm">{optionNotice}</p>}
+              <ProductOptions groups={optionGroups} selectedIds={selectedOptionIds} onToggle={toggleOption} currency={restaurant.currency} />
 
               {/* Notes */}
               <div className="space-y-2">
@@ -1219,6 +1148,8 @@ export function StorefrontView({
               <div className="sticky bottom-0 bg-white pt-4 pb-2 space-y-3">
                 <div className="flex items-center justify-center gap-4">
                   <button
+                    aria-label="Reducir cantidad"
+                    disabled={itemQuantity <= 1}
                     onClick={() => setItemQuantity((q) => Math.max(1, q - 1))}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-low hover:bg-surface-container transition-colors"
                   >
@@ -1228,18 +1159,22 @@ export function StorefrontView({
                     {itemQuantity}
                   </span>
                   <button
+                    aria-label="Aumentar cantidad"
                     onClick={() => setItemQuantity((q) => q + 1)}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-low hover:bg-surface-container transition-colors"
                   >
                     <MaterialIcon name="add" size="md" />
                   </button>
                 </div>
+                {optionIssues[0] && <p id="product-selection-issue" role="status" className="text-center text-sm text-primary">{optionIssues[0]}</p>}
                 <Button
                   className="w-full"
                   size="lg"
+                  aria-describedby={optionIssues.length ? "product-selection-issue" : undefined}
                   onClick={addToCart}
                   disabled={
                     !isOpen ||
+                    !optionsValid ||
                     (selectedItem.variants.length > 0 && !selectedVariantId)
                   }
                 >
@@ -1255,7 +1190,7 @@ export function StorefrontView({
       <Sheet open={searchOpen} onOpenChange={setSearchOpen}>
         <SheetContent
           side={isDesktop ? "right" : "bottom"}
-          className={`overflow-auto ${isDesktop ? "lg:max-w-md" : "h-[80vh] rounded-t-3xl"}`}
+          className={`overflow-auto ${isDesktop ? "lg:max-w-md" : "data-[side=bottom]:h-[80dvh] rounded-t-3xl"}`}
         >
           <SheetHeader className="p-6 pb-0">
             <SheetTitle>Buscar en el menu</SheetTitle>
@@ -1337,7 +1272,7 @@ export function StorefrontView({
       <Sheet open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <SheetContent
           side={isDesktop ? "right" : "bottom"}
-          className={`overflow-auto ${isDesktop ? "lg:max-w-md" : "h-[90vh] rounded-t-3xl"}`}
+          className={`overflow-auto ${isDesktop ? "lg:max-w-md" : "data-[side=bottom]:h-[90dvh] rounded-t-3xl"}`}
         >
           <SheetHeader className="p-6 pb-0">
             <SheetTitle>Tu pedido</SheetTitle>
@@ -1380,7 +1315,10 @@ export function StorefrontView({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => cart.removeItem(i)}
+                    aria-label={`Quitar ${item.menuItemName}`}
+                    onClick={() => {
+                      cart.removeItem(i);
+                    }}
                   >
                     <MaterialIcon name="remove" size="xs" />
                   </Button>
@@ -1638,6 +1576,7 @@ export function StorefrontView({
               </div>
             </div>
 
+            {checkoutError && <div role="alert" className="rounded-xl bg-error-container/30 p-3 text-sm"><p>{checkoutError}</p><button type="button" className="mt-2 min-h-10 font-semibold text-primary underline" onClick={() => setCheckoutOpen(false)}>Volver al menú para revisar</button></div>}
             <Button
               className="w-full"
               size="lg"

@@ -203,3 +203,240 @@ describe('CreateStorefrontOrderUseCase — guard de horarios', () => {
     }
   });
 });
+
+describe('CreateStorefrontOrderUseCase — límites de grupos de opciones', () => {
+  const options: Record<string, unknown> = {
+    o1: {
+      id: 'o1',
+      itemId: 'm1',
+      variantId: null,
+      name: 'Chocolate',
+      priceDelta: 0,
+      optionGroup: 'Clasicos',
+      isAvailable: true,
+    },
+    o2: {
+      id: 'o2',
+      itemId: 'm1',
+      variantId: null,
+      name: 'Frutilla',
+      priceDelta: 0,
+      optionGroup: 'Clasicos',
+      isAvailable: true,
+    },
+  };
+
+  function makeMenuItem(optionGroups: unknown[]) {
+    return {
+      id: 'm1',
+      restaurantId: 'r1',
+      categoryId: 'c1',
+      name: '1 Kg',
+      description: '',
+      basePrice: 15300,
+      imageUrl: '',
+      displayOrder: 0,
+      isAvailable: true,
+      isVisible: true,
+      itemType: 'simple',
+      optionGroups,
+    };
+  }
+
+  function build(
+    optionGroups: unknown[],
+    variants: unknown[] = [],
+    availableOptions: unknown[] = Object.values(options),
+  ) {
+    const restaurant = makeRestaurant();
+    const orderRepo = {
+      create: jest.fn().mockResolvedValue(makeOrder()),
+      generateNextCode: jest.fn().mockResolvedValue('A1'),
+      findByTrackingToken: jest.fn().mockResolvedValue(null),
+    };
+    const useCase = new CreateStorefrontOrderUseCase(
+      orderRepo as any,
+      { createBulk: jest.fn().mockResolvedValue([]) } as any,
+      { findBySlug: jest.fn().mockResolvedValue(restaurant) } as any,
+      {
+        findByRestaurantId: jest
+          .fn()
+          .mockResolvedValue(
+            makeHours([{ dayOfWeek: 4, opensAt: '09:00', closesAt: '22:00' }]),
+          ),
+      } as any,
+      {
+        findById: jest.fn().mockResolvedValue(makeMenuItem(optionGroups)),
+      } as any,
+      { findByItemId: jest.fn().mockResolvedValue(variants) } as any,
+      { findByItemId: jest.fn().mockResolvedValue(availableOptions) } as any,
+      { findByCode: jest.fn() } as any,
+      { emitToRestaurant: jest.fn() } as any,
+      { sendToRestaurant: jest.fn().mockResolvedValue(undefined) } as any,
+    );
+    return { useCase };
+  }
+
+  function inputWith(selectedOptionIds: string[]) {
+    return {
+      items: [{ menuItemId: 'm1', quantity: 1, selectedOptionIds, notes: '' }],
+      customerName: 'Juan',
+      customerPhone: '5491100000000',
+      deliveryType: DeliveryType.PICKUP,
+      paymentMethod: 'cash',
+      notes: '',
+    };
+  }
+
+  it('rechaza cuando se supera el máximo del grupo', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-20T14:00:00.000Z'));
+    try {
+      const { useCase } = build([
+        {
+          name: 'Clasicos',
+          minSelections: 0,
+          maxSelections: 1,
+          variantId: null,
+          displayOrder: 0,
+        },
+      ]);
+      const result = await useCase.execute('mi-resto', inputWith(['o1', 'o2']));
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.code).toBe('MENU_ITEM_OPTION_LIMIT');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('rechaza cuando no se alcanza el mínimo del grupo', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-20T14:00:00.000Z'));
+    try {
+      const { useCase } = build([
+        {
+          name: 'Clasicos',
+          minSelections: 2,
+          maxSelections: 4,
+          variantId: null,
+          displayOrder: 0,
+        },
+      ]);
+      const result = await useCase.execute('mi-resto', inputWith(['o1']));
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.code).toBe('MENU_ITEM_OPTION_LIMIT');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('permite una selección dentro del máximo', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-20T14:00:00.000Z'));
+    try {
+      const { useCase } = build([
+        {
+          name: 'Clasicos',
+          minSelections: 0,
+          maxSelections: 4,
+          variantId: null,
+          displayOrder: 0,
+        },
+      ]);
+      const result = await useCase.execute('mi-resto', inputWith(['o1', 'o2']));
+      expect(result.ok).toBe(true);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+  describe('validación de identidad, disponibilidad y tamaño', () => {
+    beforeEach(() =>
+      jest.useFakeTimers().setSystemTime(new Date('2026-08-20T14:00:00.000Z')),
+    );
+    afterEach(() => jest.useRealTimers());
+
+    it.each([['inexistente'], ['o1', 'o1']])(
+      'rechaza IDs inexistentes o repetidos: %j',
+      async (...ids) => {
+        const { useCase } = build([]);
+        const result = await useCase.execute('mi-resto', inputWith(ids));
+        expect(result.ok).toBe(false);
+        if (!result.ok)
+          expect(result.error.code).toBe('MENU_ITEM_OPTION_LIMIT');
+      },
+    );
+
+    it.each([
+      { ...(options.o1 as object), isAvailable: false },
+      { ...(options.o1 as object), itemId: 'otro' },
+      { ...(options.o1 as object), variantId: 'otro-tamano' },
+    ])('rechaza una opción incompatible: %j', async (option) => {
+      const { useCase } = build([], [], [option]);
+      expect((await useCase.execute('mi-resto', inputWith(['o1']))).ok).toBe(
+        false,
+      );
+    });
+
+    it('aplica la regla específica y no exige otros tamaños ni grupos borrados', async () => {
+      const { useCase } = build(
+        [
+          {
+            name: 'Clasicos',
+            minSelections: 2,
+            maxSelections: 2,
+            variantId: null,
+            displayOrder: 0,
+          },
+          {
+            name: 'Clasicos',
+            minSelections: 1,
+            maxSelections: 1,
+            variantId: 'v1',
+            displayOrder: 0,
+          },
+          {
+            name: 'Clasicos',
+            minSelections: 3,
+            maxSelections: 3,
+            variantId: 'v2',
+            displayOrder: 0,
+          },
+          {
+            name: 'Borrado',
+            minSelections: 1,
+            maxSelections: 1,
+            variantId: null,
+            displayOrder: 1,
+          },
+        ],
+        [
+          { id: 'v1', itemId: 'm1', maxSelections: 1 },
+          { id: 'v2', itemId: 'm1', maxSelections: 4 },
+        ],
+      );
+      const input = inputWith(['o1']);
+      const result = await useCase.execute('mi-resto', {
+        ...input,
+        items: [{ ...input.items[0], variantId: 'v1' }],
+      });
+      expect(result.ok).toBe(true);
+    });
+
+    it('conserva el límite histórico total entre grupos y exige un tamaño válido', async () => {
+      const variants = [
+        { id: 'v1', itemId: 'm1', maxSelections: 1, priceOverride: null },
+      ];
+      const { useCase } = build([], variants, [
+        options.o1,
+        { ...(options.o2 as object), optionGroup: 'Premium' },
+      ]);
+      const input = inputWith(['o1', 'o2']);
+      expect((await useCase.execute('mi-resto', input)).ok).toBe(false);
+      expect(
+        (
+          await useCase.execute('mi-resto', {
+            ...input,
+            items: [{ ...input.items[0], variantId: 'v1' }],
+          })
+        ).ok,
+      ).toBe(false);
+    });
+  });
+});

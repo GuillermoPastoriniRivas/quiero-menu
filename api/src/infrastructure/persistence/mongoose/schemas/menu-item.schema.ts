@@ -35,6 +35,29 @@ export class MenuItemModel {
 
   @Prop({ required: true, enum: MenuItemType, default: MenuItemType.SIMPLE })
   itemType: string;
+
+  @Prop({
+    type: [
+      {
+        _id: false,
+        name: { type: String, required: true },
+        minSelections: { type: Number, default: 0 },
+        maxSelections: { type: Number, default: 0 },
+        variantId: { type: Types.ObjectId, default: null },
+        sourceCategoryId: { type: Types.ObjectId, default: null },
+        displayOrder: { type: Number, default: 0 },
+      },
+    ],
+    default: [],
+  })
+  optionGroups: {
+    name: string;
+    minSelections: number;
+    maxSelections: number;
+    variantId: Types.ObjectId | null;
+    sourceCategoryId: Types.ObjectId | null;
+    displayOrder: number;
+  }[];
 }
 
 export const MenuItemSchema = SchemaFactory.createForClass(MenuItemModel);

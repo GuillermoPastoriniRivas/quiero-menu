@@ -35,6 +35,8 @@ import {
   CreateOptionRequestDto,
   UpdateOptionRequestSchema,
   UpdateOptionRequestDto,
+  UpdateOptionGroupsRequestSchema,
+  UpdateOptionGroupsRequestDto,
 } from '../request-dtos/menu.dto.js';
 import type { CreateMenuCategoryUseCase } from '../../application/use-cases/menu/create-menu-category.use-case.js';
 import type { UpdateMenuCategoryUseCase } from '../../application/use-cases/menu/update-menu-category.use-case.js';
@@ -43,6 +45,7 @@ import type { ListMenuCategoriesUseCase } from '../../application/use-cases/menu
 import type { ReorderMenuCategoriesUseCase } from '../../application/use-cases/menu/reorder-menu-categories.use-case.js';
 import type { CreateMenuItemUseCase } from '../../application/use-cases/menu/create-menu-item.use-case.js';
 import type { UpdateMenuItemUseCase } from '../../application/use-cases/menu/update-menu-item.use-case.js';
+import type { UpdateMenuItemOptionGroupsUseCase } from '../../application/use-cases/menu/update-menu-item-option-groups.use-case.js';
 import type { DeleteMenuItemUseCase } from '../../application/use-cases/menu/delete-menu-item.use-case.js';
 import type { ToggleMenuItemAvailabilityUseCase } from '../../application/use-cases/menu/toggle-menu-item-availability.use-case.js';
 import type { ReorderMenuItemsUseCase } from '../../application/use-cases/menu/reorder-menu-items.use-case.js';
@@ -71,6 +74,8 @@ export class MenuController {
     private readonly createItem: CreateMenuItemUseCase,
     @Inject('UpdateMenuItemUseCase')
     private readonly updateItem: UpdateMenuItemUseCase,
+    @Inject('UpdateMenuItemOptionGroupsUseCase')
+    private readonly updateOptionGroups: UpdateMenuItemOptionGroupsUseCase,
     @Inject('DeleteMenuItemUseCase')
     private readonly deleteItem: DeleteMenuItemUseCase,
     @Inject('ToggleMenuItemAvailabilityUseCase')
@@ -316,5 +321,28 @@ export class MenuController {
         ? new ForbiddenException(result.error.message)
         : new NotFoundException(result.error.message);
     return { success: true };
+  }
+
+  // Option groups (reglas min/max de selección por grupo)
+  @Patch('items/:id/option-groups')
+  async updateItemOptionGroups(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateOptionGroupsRequestSchema))
+    body: UpdateOptionGroupsRequestDto,
+  ) {
+    const result = await this.updateOptionGroups.execute(
+      id,
+      user.restaurantId,
+      body.groups,
+    );
+    if (!result.ok && result.error.code === 'MENU_ITEM_OPTION_LIMIT') {
+      throw new BadRequestException(result.error.message);
+    }
+    if (!result.ok)
+      throw result.error.code === 'CROSS_RESTAURANT_ACCESS'
+        ? new ForbiddenException(result.error.message)
+        : new NotFoundException(result.error.message);
+    return result.value;
   }
 }
