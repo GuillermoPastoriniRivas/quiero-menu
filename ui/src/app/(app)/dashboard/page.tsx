@@ -12,6 +12,7 @@ import { useActivationStore } from '@/stores/activation.store';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Money } from '@/components/ui/money';
 import { RecentOrdersList } from '@/components/dashboard/recent-orders-list';
+import { SupportWhatsAppBanner } from '@/components/dashboard/support-whatsapp-banner';
 import { ActivationPanel } from '@/components/activation/activation-panel';
 import { OrderStatus, PlanTier, type AnalyticsOverview } from '@/types';
 import { formatCurrency } from '@/lib/format';
@@ -252,6 +253,8 @@ export default function DashboardPage() {
           href="/analytics"
         />
       </section>
+
+      <SupportWhatsAppBanner restaurantName={restaurant?.name} />
 
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-lowest p-5 shadow-sm lg:col-span-2">

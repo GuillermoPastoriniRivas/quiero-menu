@@ -1,8 +1,7 @@
 import { WhatsAppIcon } from '@/components/ui/brand-icons';
-import { waMeUrl } from '@/lib/utils';
+import { supportWhatsAppUrl } from '@/lib/support';
 
-export const SUPPORT_WHATSAPP_PHONE = '+54 9 3442 490470';
-const SUPPORT_WA_URL = waMeUrl(SUPPORT_WHATSAPP_PHONE, 'Hola, tengo una consulta sobre quiero.menu');
+const SUPPORT_WA_URL = supportWhatsAppUrl('Hola, tengo una consulta sobre quiero.menu');
 
 export function SupportWhatsAppFloat() {
   return (
