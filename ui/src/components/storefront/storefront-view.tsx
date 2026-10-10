@@ -572,18 +572,6 @@ export function StorefrontView({
       <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-50 h-16 border-b border-outline-variant/10">
         <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 min-w-0">
-            {/* Volver: si entró desde el buscador/directorio vuelve a donde estaba
-                (con la búsqueda intacta); si entró directo por QR o link, a /locales. */}
-            <button
-              onClick={() => {
-                if (window.history.length > 1) router.back();
-                else router.push("/locales");
-              }}
-              aria-label="Volver a la lista de locales"
-              className="-ml-2 shrink-0 rounded-full p-2 transition-colors hover:bg-surface-container-low"
-            >
-              <MaterialIcon name="arrow_back" size="md" className="text-on-surface" />
-            </button>
             {restaurant.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
