@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getStorefrontIndexState } from '@/lib/storefront-index';
 import { getCategoryDef } from '@/lib/restaurant-categories';
+import { PUBLIC_GUIDES } from '@/lib/public-guides';
 import {
   buildGeoIndex,
   cityHref,
@@ -122,6 +123,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.3,
     },
     ...directory,
+    { url: `${BASE_URL}/guias`, lastModified: PUBLIC_GUIDES.reduce((latest, guide) => guide.updatedAt > latest ? guide.updatedAt : latest, ''), changeFrequency: 'monthly', priority: 0.7 },
+    ...PUBLIC_GUIDES.map((guide) => ({ url: `${BASE_URL}/guias/${guide.slug}`, lastModified: guide.updatedAt, changeFrequency: 'monthly' as const, priority: 0.7 })),
     ...storefronts,
   ];
 }

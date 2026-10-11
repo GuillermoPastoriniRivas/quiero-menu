@@ -15,6 +15,8 @@ export interface CreateUnclaimedRestaurantInput {
   restaurantName: string;
   restaurantSlug: string;
   city?: string;
+  country?: string;
+  region?: string;
   category?: RestaurantCategory;
   currency?: string;
   timezone?: string;
@@ -57,9 +59,13 @@ export class CreateUnclaimedRestaurantUseCase {
       address: input.address ?? '',
       city: input.city ?? '',
       citySlug: slugifyCity(input.city ?? ''),
-      ...deriveGeoFromCity(input.city ?? '', 'AR'),
+      ...deriveGeoFromCity(
+        input.city ?? '',
+        input.country ?? 'AR',
+        input.region,
+      ),
       category: input.category ?? RestaurantCategory.NONE,
-      country: 'AR',
+      country: input.country ?? 'AR',
       coordinates: null,
       phone: input.phone ?? '',
       timezone: input.timezone ?? 'America/Argentina/Buenos_Aires',

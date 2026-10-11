@@ -25,6 +25,7 @@ import {
   type CityGroup,
 } from "@/lib/directory-geo";
 import type { StorefrontIndexEntry } from "@/types";
+import { DirectoryBreadcrumbs } from "@/components/directory/directory-breadcrumbs";
 
 const BASE_URL = "https://quiero.menu";
 
@@ -117,9 +118,15 @@ function CountryHub({
     .map(([slug, { regionName, cities }]) => ({ slug, regionName, cities: [...cities.values()] }))
     .sort((a, b) => a.regionName.localeCompare(b.regionName));
   const total = regionList.reduce((acc, r) => acc + r.cities.length, 0);
+  const breadcrumbs = [
+    { name: "quiero.menu", url: BASE_URL },
+    { name: "Locales", url: `${BASE_URL}/locales` },
+    { name: country, url: `${BASE_URL}/en/${countrySlug}` },
+  ];
 
   return (
     <div className="min-h-screen bg-surface-container-lowest">
+      <DirectoryJsonLd items={regionList.map((r) => ({ name: r.regionName, url: `${BASE_URL}/en/${countrySlug}/${r.slug}` }))} />
       <BreadcrumbsJsonLd
         items={[
           { name: "quiero.menu", url: BASE_URL },
@@ -129,15 +136,16 @@ function CountryHub({
       />
       {siteHeader({ href: "/locales", label: "Todos los locales" })}
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+        <DirectoryBreadcrumbs items={breadcrumbs} />
         <p className="text-sm font-bold uppercase tracking-wide text-primary">
           {total} {total === 1 ? "ciudad" : "ciudades"} con menú online
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-heading)] text-3xl font-extrabold tracking-tight text-on-surface sm:text-4xl">
-          Menús y pedidos a domicilio en {country}
+          Locales de comida y menús en {country}
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-on-surface-variant">
-          Elegí tu ciudad y mirá la carta de cada local con precios reales y
-          pedidos directos por WhatsApp.
+          Elegí tu ciudad y explorá fichas de negocios y cartas publicadas.
+          Consultá precios, horarios y opciones de contacto cuando el local los informa.
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {regionList.map((region) => (
@@ -215,6 +223,12 @@ function RegionHub({
       />
       {siteHeader({ href: "/locales", label: "Todos los locales" })}
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+        <DirectoryBreadcrumbs items={[
+          { name: "quiero.menu", url: BASE_URL },
+          { name: "Locales", url: `${BASE_URL}/locales` },
+          { name: country, url: regionUrl },
+          { name: regionName, url: `${regionUrl}/${cities[0]?.regionSlug}` },
+        ]} />
         <p className="text-sm font-bold uppercase tracking-wide text-primary">
           {entries.length} {entries.length === 1 ? "local" : "locales"} en{" "}
           {cities.length} {cities.length === 1 ? "ciudad" : "ciudades"}
@@ -223,8 +237,8 @@ function RegionHub({
           Locales de comida en {regionName}, {country}
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-on-surface-variant">
-          Elegí tu ciudad. Cada local publica menú con precios reales y pedido
-          directo por WhatsApp.
+          Elegí tu ciudad y encontrá fichas de locales, cartas y formas de contacto.
+          Los menús y horarios disponibles dependen de la información publicada por cada negocio.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-2">
@@ -294,6 +308,7 @@ function CityView({
       <BreadcrumbsJsonLd items={breadcrumbsForCity(city)} />
       {siteHeader({ href, label: `Todos los locales de ${city.cityName}` })}
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+        <DirectoryBreadcrumbs items={breadcrumbsForCity(city)} />
         <p className="text-sm font-bold uppercase tracking-wide text-primary">
           {entries.length} {entries.length === 1 ? "local" : "locales"}{" "}
           publicados
@@ -302,8 +317,8 @@ function CityView({
           Locales de comida en {city.cityName}
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-on-surface-variant">
-          Explorá platos y precios publicados por cada local. Elegí una opción y
-          abrí la carta completa para pedir directo.
+          Encontrá {entries.length} {entries.length === 1 ? "local publicado" : "locales publicados"},
+          consultá sus datos y explorá las cartas disponibles. Revisá precios y horarios en la ficha de cada negocio.
         </p>
 
         {categories.length > 0 ? (
@@ -383,6 +398,7 @@ function CategoryView({
         label: `Todos los locales de ${city.cityName}`,
       })}
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+        <DirectoryBreadcrumbs items={[...breadcrumbsForCity(city), { name: categoryDef.pluralLabel, url: `${BASE_URL}${categoryHref(city, categoryDef.plural)}` }]} />
         <p className="text-sm font-bold uppercase tracking-wide text-primary">
           {entries.length} {entries.length === 1 ? "local" : "locales"}
         </p>
@@ -390,8 +406,8 @@ function CategoryView({
           {categoryDef.pluralLabel} en {city.cityName}
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-on-surface-variant">
-          Menús completos con precios reales, horarios actualizados y pedido
-          directo por WhatsApp. Sin apps y sin comisiones.
+          Compará {entries.length} {entries.length === 1 ? "local publicado" : "locales publicados"} de {categoryDef.pluralLabel.toLowerCase()}.
+          Abrí cada ficha para consultar dirección, contactos y la carta cuando está disponible.
         </p>
 
         <DirectorySearch
@@ -474,11 +490,11 @@ export async function generateMetadata({
 
   if (segs.length === 1 && geo.countries.has(segs[0])) {
     const canonical = `${BASE_URL}/en/${segs[0]}`;
-    const title = `Menús y pedidos a domicilio en ${countryLabel(segs[0])} | quiero.menu`;
+    const title = `Locales de comida y menús en ${countryLabel(segs[0])} | quiero.menu`;
     return withNoindexIfFiltered(
       {
         title: { absolute: title },
-        description: `Todos los locales de comida de ${countryLabel(segs[0])} con menú digital completo: precios, horarios y pedidos directos por WhatsApp.`,
+        description: `Explorá locales de comida en ${countryLabel(segs[0])} por provincia y ciudad. Fichas de negocios, cartas publicadas y datos de contacto.`,
         alternates: { canonical },
         openGraph: {
           title,
@@ -486,6 +502,7 @@ export async function generateMetadata({
           siteName: "quiero.menu",
           locale: "es_AR",
           type: "website",
+          images: [{ url: `${BASE_URL}/locales/opengraph-image`, width: 1200, height: 630, alt: "Directorio de locales de quiero.menu" }],
         },
       },
       query,
@@ -497,11 +514,11 @@ export async function generateMetadata({
     if (cities.length === 0) return NO_INDEX;
     const entries = cities.flatMap((c) => c.entries);
     const canonical = `${BASE_URL}/en/${segs[0]}/${segs[1]}`;
-    const title = `Menús y pedidos a domicilio en ${cities[0].regionName}, ${countryLabel(segs[0])} | quiero.menu`;
+    const title = `Locales de comida en ${cities[0].regionName} | quiero.menu`;
     return withNoindexIfFiltered(
       {
         title: { absolute: title },
-        description: `Locales de comida en ${cities[0].regionName}: menús con precios reales, horarios y pedidos directos. ${entries.length} locales publicados.`,
+        description: `${entries.length} locales publicados en ${cities[0].regionName}. Elegí una ciudad y consultá fichas, cartas disponibles y formas de contacto.`,
         alternates: { canonical },
         openGraph: {
           title,
@@ -509,6 +526,7 @@ export async function generateMetadata({
           siteName: "quiero.menu",
           locale: "es_AR",
           type: "website",
+          images: [{ url: `${BASE_URL}/locales/opengraph-image`, width: 1200, height: 630, alt: "Directorio de locales de quiero.menu" }],
         },
       },
       query,
@@ -534,9 +552,9 @@ export async function generateMetadata({
   const base = categoryDef
     ? {
         title: {
-          absolute: `${categoryDef.pluralLabel} en ${cityName} | Menús y pedidos | quiero.menu`,
+          absolute: `${categoryDef.pluralLabel} en ${cityName} | quiero.menu`,
         },
-        description: `${categoryDef.pluralLabel} en ${cityName} con menú completo y precios actualizados. Compara locales, mirá la carta y pedí directo por WhatsApp, sin apps y sin comisiones.`,
+        description: `Encontrá ${city.entries.filter((e) => e.category === categoryDef.value).length} locales de ${categoryDef.pluralLabel.toLowerCase()} en ${cityName}. Consultá direcciones, contactos y las cartas publicadas.`,
         keywords: [
           `${categoryDef.pluralLabel.toLowerCase()} ${cityName}`,
           `delivery de ${categoryDef.cuisine.toLowerCase()} ${cityName}`,
@@ -545,9 +563,9 @@ export async function generateMetadata({
       }
     : {
         title: {
-          absolute: `Menús y pedidos a domicilio en ${cityName} | quiero.menu`,
+          absolute: `Locales de comida en ${cityName} | Cartas y contactos | quiero.menu`,
         },
-        description: `Todos los locales de comida de ${cityName} con menú digital completo y actualizado: precios, horarios y pedidos directos por WhatsApp. Sin apps y sin comisiones.`,
+        description: `${city.entries.length} locales publicados en ${cityName}. Explorá por rubro, consultá las cartas disponibles y encontrá cómo contactar a cada negocio.`,
         keywords: [
           `comida ${cityName}`,
           `delivery ${cityName}`,
@@ -566,6 +584,7 @@ export async function generateMetadata({
         siteName: "quiero.menu",
         locale: "es_AR",
         type: "website",
+        images: [{ url: `${BASE_URL}/locales/opengraph-image`, width: 1200, height: 630, alt: "Directorio de locales de quiero.menu" }],
       },
     },
     query,

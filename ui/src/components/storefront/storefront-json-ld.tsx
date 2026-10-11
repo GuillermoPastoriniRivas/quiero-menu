@@ -1,5 +1,6 @@
 import type { StorefrontData } from "@/types";
 import { getCategoryDef } from "@/lib/restaurant-categories";
+import { serializeJsonLd } from "@/lib/json-ld";
 
 function omitEmpty(value: string | null | undefined): string | undefined {
   return value && value.trim() ? value : undefined;
@@ -48,6 +49,10 @@ export function StorefrontJsonLd({
   const image = omitEmpty(restaurant.logoUrl) || omitEmpty(restaurant.bannerUrl);
   const categoryDef = getCategoryDef(restaurant.category);
   const price = priceRange(data);
+  const sameAs = Object.values(restaurant.socialLinks ?? {}).filter((value) => {
+    try { return ["https:", "http:"].includes(new URL(value).protocol); } catch { return false; }
+  });
+  const updatedAt = new Date(restaurant.updatedAt);
 
   const openingHoursSpecification = data.operatingHours
     .filter((h) => !h.isClosed && isValidTime(h.opensAt) && isValidTime(h.closesAt))
@@ -61,8 +66,11 @@ export function StorefrontJsonLd({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Restaurant",
+    "@id": `${url}#restaurant`,
     name: restaurant.name,
+    ...(omitEmpty(restaurant.description) ? { description: restaurant.description } : {}),
     url,
+    ...(sameAs.length ? { sameAs } : {}),
     ...(image ? { image } : {}),
     ...(omitEmpty(restaurant.phone) ? { telephone: restaurant.phone } : {}),
     ...(categoryDef ? { servesCuisine: categoryDef.cuisine } : {}),
@@ -86,6 +94,7 @@ export function StorefrontJsonLd({
             ...(omitEmpty(restaurant.city)
               ? { addressLocality: restaurant.city }
               : {}),
+            ...(omitEmpty(restaurant.region) ? { addressRegion: restaurant.region } : {}),
             ...(omitEmpty(restaurant.country)
               ? { addressCountry: restaurant.country }
               : {}),
@@ -95,8 +104,9 @@ export function StorefrontJsonLd({
     ...(openingHoursSpecification.length > 0
       ? { openingHoursSpecification }
       : {}),
-    menu: {
+    ...(categories.some((cat) => cat.isVisible && cat.items.some((item) => item.isVisible)) ? { hasMenu: {
       "@type": "Menu",
+      url,
       hasMenuSection: categories
         .filter((cat) => cat.isVisible)
         .map((cat) => ({
@@ -121,13 +131,22 @@ export function StorefrontJsonLd({
               },
             })),
         })),
-    },
+    } } : {}),
+  };
+  const page = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${url}#webpage`,
+    url,
+    name: restaurant.name,
+    mainEntity: { "@id": `${url}#restaurant` },
+    ...(!Number.isNaN(updatedAt.getTime()) ? { dateModified: updatedAt.toISOString() } : {}),
   };
 
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd([jsonLd, page]) }}
     />
   );
 }

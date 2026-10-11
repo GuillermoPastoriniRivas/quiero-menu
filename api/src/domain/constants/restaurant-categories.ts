@@ -70,6 +70,12 @@ export const RESTAURANT_CATEGORIES: RestaurantCategoryDef[] = [
     plural: 'otros',
     cuisine: 'Comida',
   },
+  {
+    value: RestaurantCategory.PANADERIA,
+    label: 'Panadería',
+    plural: 'panaderias',
+    cuisine: 'Panadería',
+  },
 ];
 
 export function getCategoryDef(

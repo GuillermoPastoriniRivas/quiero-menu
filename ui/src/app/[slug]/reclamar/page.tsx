@@ -14,10 +14,10 @@ export async function generateMetadata({
   const { slug } = await params;
   const data = await fetchStorefrontData(slug);
   const name = data?.restaurant.name;
-  const title = name ? `Reclamá ${name} | quiero.menu` : "Reclamar local | quiero.menu";
+  const title = name ? `Contactanos | ${name} | quiero.menu` : "Contactanos | quiero.menu";
   const description = name
-    ? `¿${name} es tu local? Reclamá la cuenta gratis y editá tu menú desde el celular.`
-    : "Reclamá la cuenta de tu local y administrá tu menú digital gratis.";
+    ? `¿${name} es tu local? Contactanos para acceder a tu cuenta gratis y editar tu menú desde el celular.`
+    : "Contactanos para acceder a la cuenta de tu local y administrar tu menú digital gratis.";
   return {
     title: { absolute: title },
     description,
@@ -71,7 +71,7 @@ export default async function ClaimPage({
 
       <main className="mx-auto max-w-2xl px-5 py-10 sm:py-14">
         <h1 className="font-[family-name:var(--font-heading)] text-3xl font-extrabold tracking-tight text-on-surface">
-          Reclamá {restaurant.name}
+          Contactanos
         </h1>
 
         {alreadyClaimed ? (
@@ -93,7 +93,8 @@ export default async function ClaimPage({
         ) : (
           <>
             <p className="mt-3 text-lg text-on-surface-variant">
-              Publicamos tu menú para que la gente de tu ciudad lo encuentre.
+              Publicamos la página de {restaurant.name} para que la gente de tu
+              ciudad encuentre tu negocio.
               Si sos del local, te damos la cuenta gratis: lo editás vos desde
               el celular, recibís los pedidos y ves tus estadísticas.
             </p>

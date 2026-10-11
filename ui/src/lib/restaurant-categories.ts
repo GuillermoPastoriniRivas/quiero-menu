@@ -65,6 +65,7 @@ export const RESTAURANT_CATEGORIES: RestaurantCategoryDef[] = [
     cuisine: "Sushi",
   },
   { value: "bar", label: "Bar", plural: "bares", pluralLabel: "Bares", cuisine: "Bar" },
+  { value: "panaderia", label: "Panadería", plural: "panaderias", pluralLabel: "Panaderías", cuisine: "Panadería" },
   {
     value: "otro",
     label: "Otro",

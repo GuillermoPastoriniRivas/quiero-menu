@@ -21,6 +21,14 @@ const CITY_GEO: Record<string, { countrySlug: string; region: string }> = {
   chajari: { countrySlug: 'argentina', region: 'Entre Ríos' },
   nogoya: { countrySlug: 'argentina', region: 'Entre Ríos' },
   gualeguay: { countrySlug: 'argentina', region: 'Entre Ríos' },
+  'rosario-del-tala': { countrySlug: 'argentina', region: 'Entre Ríos' },
+  resistencia: { countrySlug: 'argentina', region: 'Chaco' },
+  'florencio-varela': { countrySlug: 'argentina', region: 'Buenos Aires' },
+  necochea: { countrySlug: 'argentina', region: 'Buenos Aires' },
+  lincoln: { countrySlug: 'argentina', region: 'Buenos Aires' },
+  'mar-del-plata': { countrySlug: 'argentina', region: 'Buenos Aires' },
+  'la-plata': { countrySlug: 'argentina', region: 'Buenos Aires' },
+  rosario: { countrySlug: 'argentina', region: 'Santa Fe' },
   paysandu: { countrySlug: 'uruguay', region: 'Paysandú' },
   zipaquira: { countrySlug: 'colombia', region: 'Cundinamarca' },
 };
@@ -37,11 +45,22 @@ export interface DerivedGeo {
  * - region vacía si la ciudad no está en el mapa: la página de ciudad no se
  *   generará hasta que se clasifique (mismo criterio "no inventar datos").
  */
-export function deriveGeoFromCity(city: string, country?: string): DerivedGeo {
+export function deriveGeoFromCity(
+  city: string,
+  country?: string,
+  explicitRegion?: string,
+): DerivedGeo {
   const citySlug = slugifyCity(city);
   if (!citySlug) return { countrySlug: '', region: '', regionSlug: '' };
-  const geo = CITY_GEO[citySlug];
-  const countrySlug = geo?.countrySlug ?? countrySlugFrom(country ?? '');
-  const region = geo?.region ?? '';
+  const requestedCountry = countrySlugFrom(country ?? '');
+  const candidate = CITY_GEO[citySlug];
+  const geo =
+    candidate &&
+    (!requestedCountry || candidate.countrySlug === requestedCountry)
+      ? candidate
+      : undefined;
+  const countrySlug = requestedCountry || geo?.countrySlug || '';
+  // Homonymous/unknown cities need a province supplied by the operator.
+  const region = explicitRegion?.trim() || geo?.region || '';
   return { countrySlug, region, regionSlug: slugifyCity(region) };
 }

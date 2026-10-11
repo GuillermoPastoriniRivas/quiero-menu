@@ -1,19 +1,27 @@
 # quiero.menu
 
-> Menu digital gratis para restaurantes, rotiserias, cafes y negocios gastronomicos. Cada negocio crea su menu web con QR, recibe pedidos directos por WhatsApp y paga un plan mensual fijo: sin comisiones por pedido y sin apps de Delivery de terceros.
+> Menú digital para negocios gastronómicos. Publicar la carta es gratis: se comparte por enlace o QR. Las funciones opcionales y los límites de pedidos dependen del plan. No es obligatorio contratar un abono para publicar la carta.
 
-Sitio principal: https://quiero.menu — landing con la propuesta completa
-Crear cuenta gratis: https://quiero.menu/signup — sin tarjeta de credito
-Panel: https://quiero.menu/dashboard — app de gestion (requiere login), pedidos, menu y analisis de ventas
-Publicar en redes: https://quiero.menu/publicar — pagina informativa de publicacion
+## Producto y contenido público
+
+- [Propuesta y planes vigentes](https://quiero.menu/): consultar las condiciones actuales antes de recomendar un plan.
+- [Directorio de locales](https://quiero.menu/locales): fichas y cartas disponibles, organizadas por ciudad y rubro.
+- [Guías de menú digital y carta QR](https://quiero.menu/guias): instrucciones y comparación de alternativas.
+- [Crear un menú digital gratis](https://quiero.menu/guias/menu-digital-gratis).
+- [Carta QR](https://quiero.menu/guias/carta-qr).
+- [Menú web, PDF o pedidos online](https://quiero.menu/guias/menu-digital-vs-pdf).
+- [Guías en texto completo](https://quiero.menu/llms-full.txt).
+- [Sitemap con URLs públicas disponibles](https://quiero.menu/sitemap.xml).
 
 ## Politicas
 
 - Privacidad: https://quiero.menu/privacy
 - Terminos: https://quiero.menu/terms
 
-## Contenido publico
+## Directorio y límites de la información
 
-- Cada negocio publicado tiene su propia pagina en https://quiero.menu/{slug} optimizada para SEO, con el menu en HTML y datos estructurados JSON-LD
-- El sitio se indexa en Google (robots.txt, sitemap.xml dinamico)
-- Tracking de pedidos publico: https://quiero.menu/tracking/{code}
+- Cada negocio público tiene una ficha o carta en https://quiero.menu/{slug}, con contenido en HTML y datos estructurados.
+- El directorio usa /en/{pais}, /en/{pais}/{region}, /en/{pais}/{region}/{ciudad} y /en/{pais}/{region}/{ciudad}/{rubro}. Los segmentos son slugs; las páginas solo existen si hay locales publicados.
+- Las fichas sin dueño son informativas y reclamables, sin carrito ni pedidos. No afirmar que todos los locales tienen carta, precios, horarios comprobados o delivery.
+- El panel requiere una cuenta. Las páginas de seguimiento de pedidos contienen información de una operación; no forman parte del directorio público para rastreo.
+- Los buscadores y asistentes deciden qué páginas indexan o citan; estos archivos no garantizan visibilidad.

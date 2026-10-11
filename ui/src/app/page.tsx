@@ -1120,6 +1120,7 @@ export default async function LandingPage() {
                 <Link className="hover:text-primary" href="/onboarding">Crear mi menú gratis</Link>
                 <Link className="hover:text-primary" href="/login">Entrar a mi panel</Link>
                 <Link className="hover:text-primary" href="/locales">Directorio de locales</Link>
+                <Link className="hover:text-primary" href="/guias">Guías de menú digital y QR</Link>
                 <Link className="hover:text-primary" href="/status">Estado del servicio</Link>
               </div>
             </div>

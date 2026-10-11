@@ -82,6 +82,8 @@ export const AdminCreateUnclaimedRestaurantRequestSchema = z.object({
       'Slug must be lowercase alphanumeric with hyphens',
     ),
   city: z.string().max(80).optional(),
+  country: z.enum(['AR', 'UY', 'CO']).optional(),
+  region: z.string().trim().min(1).max(80).optional(),
   category: z.nativeEnum(RestaurantCategory).optional(),
   currency: z.string().length(3).optional(),
   timezone: z.string().max(60).optional(),

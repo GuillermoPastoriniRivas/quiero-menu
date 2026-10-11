@@ -4,6 +4,9 @@ import { getCategoryDef } from "@/lib/restaurant-categories";
 import { FichaContactButtons } from "@/components/storefront/inventory-ficha";
 import { FichaGallery } from "@/components/storefront/ficha-gallery";
 import { FichaMenu } from "@/components/storefront/ficha-menu";
+import { DirectoryBreadcrumbs } from "@/components/directory/directory-breadcrumbs";
+import { BreadcrumbsJsonLd } from "@/components/directory/directory-json-ld";
+import { StorefrontDirectoryLinks } from "@/components/directory/storefront-directory-links";
 import {
   countryLabel,
   subdivisionLabel,
@@ -19,6 +22,15 @@ import {
 export function FichaView({ data, slug }: { data: StorefrontData; slug: string }) {
   const restaurant = data.restaurant;
   const categoryDef = getCategoryDef(restaurant.category);
+  const cityPath = restaurant.status === 'active' && restaurant.countrySlug && restaurant.regionSlug && restaurant.citySlug
+    ? `/en/${restaurant.countrySlug}/${restaurant.regionSlug}/${restaurant.citySlug}` : null;
+  const breadcrumbs = [
+    { name: "quiero.menu", url: "https://quiero.menu" },
+    { name: "Locales", url: "https://quiero.menu/locales" },
+    ...(cityPath ? [{ name: restaurant.city, url: `https://quiero.menu${cityPath}` }] : []),
+    ...(cityPath && categoryDef && categoryDef.value !== "otro" ? [{ name: categoryDef.pluralLabel, url: `https://quiero.menu${cityPath}/${categoryDef.plural}` }] : []),
+    { name: restaurant.name, url: `https://quiero.menu/${slug}` },
+  ];
 
   const hoursText = data.isOpen
     ? "Abierto ahora"
@@ -28,6 +40,7 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
 
   return (
     <div className="min-h-screen bg-surface-container-lowest">
+      <BreadcrumbsJsonLd items={breadcrumbs} />
       <header className="sticky top-0 z-50 border-b border-outline-variant/40 bg-surface-container-lowest/95 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4 sm:px-8">
           <Link
@@ -46,6 +59,7 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
       </header>
 
       <main className="mx-auto flex max-w-4xl flex-col px-5 pb-14 pt-4 sm:px-8 sm:pb-14 sm:pt-6">
+        <div className="order-first"><DirectoryBreadcrumbs items={breadcrumbs} /></div>
         {/* Orden (mobile y desktop): banner -> ficha (desc + botones) ->
             galería -> alert de reclamo al fondo. Ver orders en cada bloque. */}
         <div data-claim-banner className="order-last mt-10 rounded-3xl border border-primary/30 bg-primary/5 p-6 sm:p-8">
@@ -53,14 +67,14 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
             ¿Tenés este local? Es tuyo.
           </h2>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Armamos esta página con la información de tu negocio. Reclamala y
-            convertila en tu menú digital con pedidos directos, sin comision.
+            Armamos esta página con la información de tu negocio. Contactanos
+            para convertirla en tu menú digital con pedidos directos, sin comisión.
           </p>
           <Link
             href={`/${slug}/reclamar`}
             className="mt-4 inline-block rounded-full bg-primary px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
-            Reclamar este local
+            Contactanos
           </Link>
         </div>
 
@@ -159,6 +173,7 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
               address={restaurant.address}
             />
           </div>
+          <StorefrontDirectoryLinks restaurant={restaurant} />
         </div>
       </main>
     </div>

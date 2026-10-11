@@ -315,6 +315,8 @@ export class AdminController {
       currency: body.currency,
       timezone: body.timezone,
       address: body.address,
+      country: body.country,
+      region: body.region,
       phone: body.phone,
       description: body.description,
       photoGallery: body.photoGallery,

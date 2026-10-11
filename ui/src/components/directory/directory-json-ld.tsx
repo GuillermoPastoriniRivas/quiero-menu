@@ -1,3 +1,5 @@
+import { serializeJsonLd } from "@/lib/json-ld";
+
 type Item = { url: string; name: string };
 
 export function DirectoryJsonLd({ items }: { items: Item[] }) {
@@ -14,7 +16,7 @@ export function DirectoryJsonLd({ items }: { items: Item[] }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
     />
   );
 }
@@ -37,7 +39,7 @@ export function BreadcrumbsJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
     />
   );
 }

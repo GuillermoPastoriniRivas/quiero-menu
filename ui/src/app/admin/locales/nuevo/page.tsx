@@ -49,6 +49,7 @@ export default function AdminNuevoLocalPage() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [city, setCity] = useState(readLastCity);
+  const [region, setRegion] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [slug, setSlug] = useState('');
@@ -65,6 +66,7 @@ export default function AdminNuevoLocalPage() {
         restaurantName: name.trim(),
         restaurantSlug: candidate,
         city: city.trim() || undefined,
+        region: region.trim() || undefined,
         category: category || undefined,
         currency: 'ARS',
         timezone: 'America/Argentina/Buenos_Aires',
@@ -157,6 +159,12 @@ export default function AdminNuevoLocalPage() {
             </Label>
             <Input id="n-city" value={city} onChange={(e) => setCity(e.target.value)} className="h-11" />
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="n-region" className="text-xs font-bold text-on-surface-variant">Provincia (opcional)</Label>
+          <Input id="n-region" value={region} onChange={(e) => setRegion(e.target.value)} placeholder="Se completa para las ciudades conocidas" className="h-11" />
+          <p className="text-xs text-on-surface-variant">Completala para una ciudad nueva o con nombres repetidos, como 25 de Mayo, para incluirla en el directorio.</p>
         </div>
 
         <div className="space-y-1.5">

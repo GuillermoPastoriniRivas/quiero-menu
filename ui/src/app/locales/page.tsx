@@ -15,8 +15,14 @@ export const dynamic = "force-dynamic";
 const baseMetadata: Metadata = {
   title: { absolute: "Locales con menú digital | quiero.menu" },
   description:
-    "Mirá el menú de los locales de tu ciudad, pedí directo por WhatsApp y seguí tu pedido en vivo. Sin apps y sin comisiones.",
+    "Encontrá locales de comida por ciudad y rubro. Consultá fichas de negocios, cartas disponibles y datos de contacto, sin crear una cuenta.",
   alternates: { canonical: "https://quiero.menu/locales" },
+  openGraph: {
+    title: "Locales de comida, cartas y contactos | quiero.menu",
+    description: "Explorá negocios gastronómicos por ciudad y rubro y consultá las cartas publicadas.",
+    url: "https://quiero.menu/locales",
+    images: [{ url: "https://quiero.menu/locales/opengraph-image", width: 1200, height: 630 }],
+  },
 };
 
 export async function generateMetadata({
@@ -44,7 +50,8 @@ function groupByCity(
   const groups = new Map<string, CitySection>();
   for (const entry of entries) {
     if (!entry.citySlug) continue;
-    const existing = groups.get(entry.citySlug);
+    const key = [entry.countrySlug, entry.regionSlug, entry.citySlug].join('/');
+    const existing = groups.get(key);
     if (existing) {
       existing.entries.push(entry);
       continue;
@@ -55,7 +62,7 @@ function groupByCity(
       entry.countrySlug && entry.regionSlug
         ? `/en/${entry.countrySlug}/${entry.regionSlug}/${entry.citySlug}`
         : `/en/${entry.citySlug}`;
-    groups.set(entry.citySlug, {
+    groups.set(key, {
       slug: entry.citySlug,
       name: entry.city || entry.citySlug,
       href,
@@ -154,7 +161,7 @@ export default async function LocalesPage({
           <NearbyStores entries={index} />
 
           {groups.map((section) => (
-            <section key={section.slug} className="mt-12">
+            <section key={section.href} className="mt-12">
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="font-[family-name:var(--font-heading)] text-xl font-extrabold text-on-surface">
                   {section.name}
@@ -199,6 +206,8 @@ export default async function LocalesPage({
             </section>
           ) : null}
         </DirectorySearch>
+
+        <p className="mt-10 text-sm text-on-surface-variant">¿Buscás publicar tu carta? <Link href="/guias" className="font-semibold text-primary hover:underline">Leé las guías de menú digital y QR.</Link></p>
 
         <section className="mt-16 rounded-3xl bg-surface-container-low p-8 text-center sm:p-12">
           <h2 className="font-[family-name:var(--font-heading)] text-2xl font-extrabold text-on-surface">

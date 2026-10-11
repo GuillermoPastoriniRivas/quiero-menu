@@ -40,6 +40,7 @@ import { formatUpdatedDate } from "@/lib/restaurant-categories";
 import { ProductOptions } from '@/components/storefront/product-options';
 import { productOptionGroups, reconcileProductOptions, selectionIssues, toggleProductOption } from '@/lib/menu-options';
 import { behaviorContext, searchProperties, trackStorefront } from '@/lib/behavior';
+import { StorefrontDirectoryLinks } from '@/components/directory/storefront-directory-links';
 
 type FullMenuItem = MenuItem & {
   variants: MenuItemVariant[];
@@ -697,10 +698,10 @@ export function StorefrontView({
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-bold text-on-surface">
-                ¿Este local es tuyo?
+                ¿Este local es tuyo? Contactanos
               </span>
               <span className="block truncate text-xs text-on-surface-variant">
-                Reclamá tu menú gratis y editalo vos desde el celular
+                Accedé a tu menú gratis y editalo vos desde el celular
               </span>
             </span>
             <MaterialIcon
@@ -1059,6 +1060,7 @@ export function StorefrontView({
       {/* ── Powered by footer ── */}
       {showPoweredByFooter && (
         <div className="mx-auto max-w-7xl px-4 pb-20 lg:pb-8">
+          <StorefrontDirectoryLinks restaurant={restaurant} />
           <div className="pt-6 pb-4 text-center">
             <a
               href="https://quiero.menu?ref=powered"
