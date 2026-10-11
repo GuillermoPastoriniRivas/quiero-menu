@@ -11,10 +11,10 @@ interface Check {
 }
 
 const CHECKS: Check[] = [
-  { name: 'API (liveness)', url: '/api/v1/health', status: 'checking' },
+  { name: 'API (liveness)', url: '/health', status: 'checking' },
   {
     name: 'API (readiness + base de datos)',
-    url: '/api/v1/health/ready',
+    url: '/health/ready',
     status: 'checking',
   },
   { name: 'Sitio', url: '/', status: 'checking' },
@@ -31,7 +31,8 @@ export default function StatusPage() {
           const base =
             check.url === '/'
               ? ''
-              : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3015/api';
+              : (process.env.NEXT_PUBLIC_API_URL ||
+                  'http://localhost:3015/api') + '/v1';
           const res = await fetch(`${base}${check.url}`, {
             cache: 'no-store',
           });
