@@ -13,6 +13,7 @@ function makeRestaurant(
   citySlug?: string,
   category?: RestaurantCategory,
   geo?: { countrySlug: string; region: string; regionSlug: string },
+  country = 'AR',
 ) {
   return new Restaurant(
     id,
@@ -23,7 +24,7 @@ function makeRestaurant(
     '',
     '',
     city,
-    'AR',
+    country,
     null,
     '',
     'America/Argentina/Buenos_Aires',
@@ -79,7 +80,14 @@ function makeDeps(restaurants: Restaurant[], items: MenuItem[]) {
 describe('BackfillDirectoryDataUseCase', () => {
   it('deriva citySlug de la ciudad existente e infiere categoria de los platos', async () => {
     const r1 = makeRestaurant('1', 'Concepción del Uruguay');
-    const r2 = makeRestaurant('2', 'Paysandu');
+    const r2 = makeRestaurant(
+      '2',
+      'Paysandu',
+      undefined,
+      undefined,
+      undefined,
+      'UY',
+    );
     const { restaurantRepo, itemRepo, updates } = makeDeps(
       [r1, r2],
       [
@@ -116,6 +124,21 @@ describe('BackfillDirectoryDataUseCase', () => {
       id: '2',
       data: { category: 'hamburgueseria' },
     });
+  });
+
+  it('respeta el pais informado aunque la ciudad coincida con otro pais', async () => {
+    const r = makeRestaurant('1', 'Paysandu');
+    const { restaurantRepo, itemRepo, updates } = makeDeps([r], []);
+    const useCase = new BackfillDirectoryDataUseCase(restaurantRepo, itemRepo);
+
+    await useCase.execute();
+
+    expect(updates).toEqual([
+      {
+        id: '1',
+        data: { citySlug: 'paysandu', countrySlug: 'argentina' },
+      },
+    ]);
   });
 
   it('completa la jerarquia geo de locales con ciudades ya known', async () => {
