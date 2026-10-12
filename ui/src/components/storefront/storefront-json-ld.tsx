@@ -48,7 +48,10 @@ export function StorefrontJsonLd({
   const url = `https://quiero.menu/${slug}`;
   const image = omitEmpty(restaurant.logoUrl) || omitEmpty(restaurant.bannerUrl);
   const categoryDef = getCategoryDef(restaurant.category);
-  const price = priceRange(data);
+  // Las fichas sin dueño (claimed=false) se publican sin precios: el menú es
+  // informativo y no queremos fijar precios que pueden estar desactualizados.
+  const showPrices = restaurant.claimed !== false;
+  const price = showPrices ? priceRange(data) : undefined;
   const sameAs = Object.values(restaurant.socialLinks ?? {}).filter((value) => {
     try { return ["https:", "http:"].includes(new URL(value).protocol); } catch { return false; }
   });
@@ -124,11 +127,15 @@ export function StorefrontJsonLd({
                 ? { description: item.description }
                 : {}),
               ...(omitEmpty(item.imageUrl) ? { image: item.imageUrl } : {}),
-              offers: {
-                "@type": "Offer",
-                price: item.basePrice,
-                priceCurrency: restaurant.currency,
-              },
+              ...(showPrices
+                ? {
+                    offers: {
+                      "@type": "Offer",
+                      price: item.basePrice,
+                      priceCurrency: restaurant.currency,
+                    },
+                  }
+                : {}),
             })),
         })),
     } } : {}),

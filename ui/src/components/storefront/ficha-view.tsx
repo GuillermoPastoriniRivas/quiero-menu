@@ -99,7 +99,7 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
         ) : null}
 
         <div className="order-3 mt-10 empty:hidden">
-          <FichaMenu data={data} slug={slug} />
+          <FichaMenu data={data} />
         </div>
 
         <div className="order-2 mt-8">

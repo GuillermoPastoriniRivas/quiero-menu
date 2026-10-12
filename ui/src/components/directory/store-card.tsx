@@ -134,7 +134,7 @@ export function StoreCard({
                 className="max-w-full truncate rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
               >
                 {mi.name}
-                {mi.basePrice > 0
+                {!unclaimed && mi.basePrice > 0
                   ? ` · ${formatCurrency(mi.basePrice, currency!)}`
                   : ""}
               </span>
