@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ import { OrderStatus, DeliveryType } from '@/types';
 import type { OrderItem, OrderWithRedaction, Restaurant, OrderFeedbackInfo } from '@/types';
 import { formatCurrency, formatDate, formatMinutes, formatRelativeTime } from '@/lib/format';
 import { waMeUrl } from '@/lib/utils';
-import { NEXT_STATUS, STATUS_BADGE_VARIANT, STATUS_LABELS } from './status';
+import { NEXT_STATUS, STATUS_BADGE_VARIANT, STATUS_LABELS, isActiveStatus } from './status';
 
 interface OrderDetailDialogProps {
   order: OrderWithRedaction | null;
@@ -37,6 +38,8 @@ export function OrderDetailDialog({
   onStatusChange,
 }: OrderDetailDialogProps) {
   const currency = restaurant?.currency ?? 'ARS';
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const cancellable = order ? isActiveStatus(order.status) : false;
   const nextAction = order ? NEXT_STATUS[order.status] : undefined;
   const trackingHref =
     order && restaurant
@@ -333,7 +336,45 @@ export function OrderDetailDialog({
                       Ver tracking
                     </a>
                   )}
+                  {cancellable && !cancelConfirm && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setCancelConfirm(true)}
+                      className="w-full text-destructive hover:bg-destructive/10 sm:ml-auto sm:w-auto"
+                    >
+                      <MaterialIcon name="cancel" size="sm" />
+                      Cancelar pedido
+                    </Button>
+                  )}
                 </div>
+
+                {/* Confirmación de cancelación (destructiva, no se deshace) */}
+                {cancellable && cancelConfirm && (
+                  <div className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                    <p className="text-sm font-semibold text-on-surface">
+                      ¿Cancelar el pedido {order.code}?
+                    </p>
+                    <p className="text-xs text-on-surface-variant">
+                      Queda marcado como cancelado y se avisa al cliente. No se puede deshacer.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          onStatusChange(order.id, OrderStatus.CANCELLED);
+                          onOpenChange(false);
+                        }}
+                      >
+                        <MaterialIcon name="cancel" size="xs" className="mr-1" />
+                        Sí, cancelar pedido
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setCancelConfirm(false)}>
+                        Volver
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>

@@ -18,7 +18,7 @@ export const READINESS_STEPS: ReadinessStepMeta[] = [
     label: "Carta",
     title: "Cargá tu carta",
     doneTitle: "Carta cargada",
-    why: "Sacale una foto a la carta y la IA arma los platos con sus precios. También podés cargarlos a mano.",
+    why: "Empezá con el nombre y el precio de tus productos. Podés sumar fotos, tamaños y extras después, a tu ritmo.",
     cta: "Cargar la carta",
     href: "/menu",
   },

@@ -28,6 +28,7 @@ import { PaymentWebhookController } from './controllers/payment-webhook.controll
 import { HealthController } from './controllers/health.controller.js';
 import { UploadController } from './controllers/upload.controller.js';
 import { PushController } from './controllers/push.controller.js';
+import { NotificationsController } from './controllers/notifications.controller.js';
 import { AccountController } from './controllers/account.controller.js';
 import { CouponController } from './controllers/coupon.controller.js';
 import { CustomerController } from './controllers/customers.controller.js';
@@ -123,6 +124,9 @@ import { ListOrdersUseCase } from '../application/use-cases/order/list-orders.us
 import { GetOrderUseCase } from '../application/use-cases/order/get-order.use-case.js';
 import { UpdateOrderStatusUseCase } from '../application/use-cases/order/update-order-status.use-case.js';
 import { NotifyReceiptUploadedUseCase } from '../application/use-cases/order/notify-receipt-uploaded.use-case.js';
+import { NotifyNewOrderUseCase } from '../application/use-cases/order/notify-new-order.use-case.js';
+import { GetNotificationPreferencesUseCase } from '../application/use-cases/notifications/get-notification-preferences.use-case.js';
+import { UpdateNotificationPreferencesUseCase } from '../application/use-cases/notifications/update-notification-preferences.use-case.js';
 
 // Use Cases — Kitchen
 import { CreateKitchenTokenUseCase } from '../application/use-cases/kitchen/create-kitchen-token.use-case.js';
@@ -1265,6 +1269,50 @@ const useCaseProviders = [
       ConfigService,
     ],
   },
+  {
+    provide: 'NotifyNewOrderUseCase',
+    useFactory: (
+      orderRepo: any,
+      orderItemRepo: any,
+      restRepo: any,
+      urRepo: any,
+      userRepo: any,
+      emailService: any,
+      config: ConfigService,
+    ) =>
+      new NotifyNewOrderUseCase(
+        orderRepo,
+        orderItemRepo,
+        restRepo,
+        urRepo,
+        userRepo,
+        emailService,
+        config.get<string>('frontendUrl')!,
+      ),
+    inject: [
+      'OrderRepository',
+      'OrderItemRepository',
+      'RestaurantRepository',
+      'UserRestaurantRepository',
+      'UserRepository',
+      'EmailServicePort',
+      ConfigService,
+    ],
+  },
+
+  // Notifications
+  {
+    provide: 'GetNotificationPreferencesUseCase',
+    useFactory: (userRepo: any, subRepo: any) =>
+      new GetNotificationPreferencesUseCase(userRepo, subRepo),
+    inject: ['UserRepository', 'SubscriptionRepository'],
+  },
+  {
+    provide: 'UpdateNotificationPreferencesUseCase',
+    useFactory: (userRepo: any, subRepo: any) =>
+      new UpdateNotificationPreferencesUseCase(userRepo, subRepo),
+    inject: ['UserRepository', 'SubscriptionRepository'],
+  },
 
   // Onboarding
   {
@@ -1548,6 +1596,7 @@ const useCaseProviders = [
     PaymentWebhookController,
     UploadController,
     PushController,
+    NotificationsController,
     AccountController,
     CouponController,
     CustomerController,

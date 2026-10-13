@@ -57,6 +57,7 @@ export function resolveSharedMenuOptions(
           flavor.isAvailable,
           undefined,
           flavor.id,
+          flavor.description,
         ),
       );
     }

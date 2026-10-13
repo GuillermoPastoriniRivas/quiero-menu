@@ -35,7 +35,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Menú público',
     items: [
-      { href: '/mi-menu', label: 'Mi menú', icon: 'storefront' },
+      { href: '/mi-menu', label: 'Diseño', icon: 'palette' },
     ],
   },
   {
@@ -57,4 +57,5 @@ export const MOBILE_PRIMARY: NavItem[] = [
   { href: '/dashboard', label: 'Inicio', icon: 'today' },
   { href: '/orders', label: 'Pedidos', icon: 'receipt_long' },
   { href: '/menu', label: 'Menú', icon: 'restaurant_menu' },
+  { href: '/mi-menu', label: 'Diseño', icon: 'palette' },
 ];

@@ -87,6 +87,11 @@ export function ProductOptions({
                     />
                     <span className="flex-1">
                       {option.name}
+                      {option.description && (
+                        <span className="mt-0.5 block text-xs font-normal text-on-surface-variant">
+                          {option.description}
+                        </span>
+                      )}
                       {!option.isAvailable && (
                         <span className="ml-2 text-xs">Agotada</span>
                       )}

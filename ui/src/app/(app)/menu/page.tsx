@@ -37,7 +37,7 @@ type RichCategory = MenuCategory & {
 type CatDialog = { mode: 'create' } | { mode: 'edit'; cat: RichCategory } | null;
 type ItemDialog = { mode: 'create'; catId: string } | { mode: 'edit'; item: RichItem } | null;
 type VariantDialog = { mode: 'create'; itemId: string } | { mode: 'edit'; variant: MenuItemVariant } | null;
-type OptionDialog = { mode: 'create'; itemId: string } | { mode: 'edit'; option: MenuItemOption } | null;
+type OptionDialog = { mode: 'create'; item: RichItem } | { mode: 'edit'; option: MenuItemOption } | null;
 type GroupDialog = { item: RichItem; group: string } | null;
 
 /* ====================================================== */
@@ -69,7 +69,7 @@ export default function MenuPage() {
 
   /* --- dialog state --- */
   const [catDialog, setCatDialog] = useState<CatDialog>(null);
-  const [catForm, setCatForm] = useState({ name: '', description: '', isOptionSource: false });
+  const [catForm, setCatForm] = useState({ name: '', description: '' });
 
   const [itemDialog, setItemDialog] = useState<ItemDialog>(null);
   const [itemForm, setItemForm] = useState({ name: '', price: '', description: '', imageUrl: '' });
@@ -87,6 +87,7 @@ export default function MenuPage() {
   >(null);
   const [priceDraft, setPriceDraft] = useState('');
   const cancelBlurRef = useRef(false);
+  const appliedTarget = useRef('');
 
   /* ---------- load full menu via storefront ---------- */
   const loadMenu = useCallback(async (showLoading = true) => {
@@ -106,6 +107,29 @@ export default function MenuPage() {
   useEffect(() => {
     loadMenu();
   }, [loadMenu]);
+
+  // Dashboard shortcuts open the existing editor, including size/option controls.
+  useEffect(() => {
+    if (loading) return;
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get('producto');
+    const categoryId = params.get('categoria');
+    const target = productId || categoryId;
+    if (!target || appliedTarget.current === target) return;
+    if (productId) {
+      const category = richCategories.find((cat) => cat.items.some((item) => item.id === productId));
+      const item = category?.items.find((product) => product.id === productId);
+      if (!category || !item) return;
+      appliedTarget.current = target;
+      setExpandedCats((current) => new Set(current).add(category.id));
+      setExpandedItems((current) => new Set(current).add(item.id));
+      setItemForm({ name: item.name, price: String(item.basePrice), description: item.description || '', imageUrl: item.imageUrl || '' });
+      setItemDialog({ mode: 'edit', item });
+    } else if (categoryId && richCategories.some((cat) => cat.id === categoryId)) {
+      appliedTarget.current = target;
+      setExpandedCats((current) => new Set(current).add(categoryId));
+    }
+  }, [loading, richCategories]);
 
   /* ---------- toggle helpers ---------- */
   const toggleCat = (id: string) => {
@@ -218,11 +242,11 @@ export default function MenuPage() {
   /* ---------- dialog openers ---------- */
   const openCatCreate = () => {
     setCatDialog({ mode: 'create' });
-    setCatForm({ name: '', description: '', isOptionSource: false });
+    setCatForm({ name: '', description: '' });
   };
   const openCatEdit = (cat: RichCategory) => {
     setCatDialog({ mode: 'edit', cat });
-    setCatForm({ name: cat.name, description: cat.description || '', isOptionSource: cat.isOptionSource ?? false });
+    setCatForm({ name: cat.name, description: cat.description || '' });
   };
 
   const openItemCreate = (catId: string) => {
@@ -251,8 +275,8 @@ export default function MenuPage() {
     });
   };
 
-  const openOptionCreate = (itemId: string) => {
-    setOptionDialog({ mode: 'create', itemId });
+  const openOptionCreate = (item: RichItem) => {
+    setOptionDialog({ mode: 'create', item });
   };
   const openOptionEdit = (option: MenuItemOption) => {
     setOptionDialog({ mode: 'edit', option });
@@ -269,14 +293,12 @@ export default function MenuPage() {
         await updateCategory(catDialog.cat.id, {
           name,
           description: catForm.description.trim(),
-          isOptionSource: catForm.isOptionSource,
         });
         toast.success('Categoria actualizada');
       } else {
         await createCategory({
           name,
           description: catForm.description.trim() || undefined,
-          isOptionSource: catForm.isOptionSource,
         });
         toast.success('Categoria creada');
       }
@@ -448,9 +470,9 @@ export default function MenuPage() {
       {richCategories.map((cat) => {
         const catOpen = expandedCats.has(cat.id);
         return (
-          <Card key={cat.id} className="min-w-0 overflow-hidden">
+          <Card key={cat.id} className="min-w-0 gap-0 overflow-hidden p-0">
             <CardHeader
-              className="flex flex-row items-center justify-between gap-3 cursor-pointer select-none min-w-0 py-4"
+              className="flex flex-row items-center justify-between gap-3 cursor-pointer select-none min-w-0 px-3 py-2.5 sm:px-4"
               onClick={() => toggleCat(cat.id)}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -471,7 +493,7 @@ export default function MenuPage() {
             </CardHeader>
 
             {catOpen && (
-              <CardContent className="pt-0 space-y-2">
+              <CardContent className="space-y-2 pt-0 pb-4">
                 {cat.items.length === 0 && (
                   <p className="text-sm text-muted-foreground py-2">Sin productos en esta categoria.</p>
                 )}
@@ -707,13 +729,13 @@ export default function MenuPage() {
                             {/* add option (looks like an option row) */}
                             <button
                               type="button"
-                              onClick={() => openOptionCreate(item.id)}
+                              onClick={() => openOptionCreate(item)}
                               className="ml-2 flex w-full items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/30 px-2 py-1.5 pl-6 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted"
                             >
                               <MaterialIcon name="add" size="xs" />
                               <span className="text-sm">Agregar opciones</span>
                             </button>
-                            {richCategories.some((source) => source.isOptionSource && source.id !== item.categoryId) && <Button variant="outline" size="sm" className="mt-2 ml-2" onClick={() => openGroupEdit(item, 'Sabores')}>Usar una lista compartida</Button>}
+                            {richCategories.some((source) => source.isOptionSource && source.id !== item.categoryId) && <p className="mt-2 ml-2 text-xs text-muted-foreground">¿Repetís estos sabores en otros productos? Usá <strong>Agregar opciones → Lista compartida</strong>.</p>}
                           </div>
                         </div>
                       )}
@@ -772,7 +794,6 @@ export default function MenuPage() {
                 placeholder="Ej: Bebidas frias y calientes"
               />
             </div>
-            <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1" checked={catForm.isOptionSource} onChange={(e) => setCatForm((f) => ({ ...f, isOptionSource: e.target.checked }))} /><span>Usar como lista compartida de opciones<span className="block text-xs text-muted-foreground">Por ejemplo, sabores para varios potes. Se eligen dentro de un producto y no se venden por separado.</span></span></label>
             <Button className="w-full" onClick={handleSaveCategory}>
               {catDialog?.mode === 'edit' ? 'Guardar cambios' : 'Crear categoria'}
             </Button>
@@ -866,7 +887,20 @@ export default function MenuPage() {
         </DialogContent>
       </Dialog>
 
-      {optionDialog && <OptionEditorDialog dialog={optionDialog} onClose={() => setOptionDialog(null)} onChanged={() => loadMenu(false)} />}
+      {optionDialog && (
+        <OptionEditorDialog
+          dialog={optionDialog}
+          sources={richCategories
+            .filter((cat) => cat.isOptionSource && (optionDialog.mode !== 'create' || cat.id !== optionDialog.item.categoryId))
+            .map((cat) => ({
+              id: cat.id,
+              name: cat.name,
+              items: cat.items.map((i) => ({ id: i.id, name: i.name, isAvailable: i.isAvailable })),
+            }))}
+          onClose={() => setOptionDialog(null)}
+          onChanged={() => loadMenu(false)}
+        />
+      )}
       {groupDialog && <OptionGroupDialog item={groupDialog.item} group={groupDialog.group} sources={richCategories.filter((c) => c.isOptionSource && c.id !== groupDialog.item.categoryId)} onClose={() => setGroupDialog(null)} onSave={async (groups) => {
         await updateItemOptionGroups(groupDialog.item.id, groups);
         await loadMenu(false);

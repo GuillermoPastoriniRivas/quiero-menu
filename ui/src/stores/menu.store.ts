@@ -24,7 +24,7 @@ interface MenuState {
   updateVariant: (id: string, data: Partial<MenuItemVariant>) => Promise<void>;
   deleteVariant: (id: string) => Promise<void>;
 
-  createOption: (itemId: string, data: { name: string; optionGroup: string; priceDelta?: number; variantId?: string | null; clientRequestId?: string }) => Promise<MenuItemOption>;
+  createOption: (itemId: string, data: { name: string; description?: string; optionGroup: string; priceDelta?: number; variantId?: string | null; clientRequestId?: string }) => Promise<MenuItemOption>;
   updateOption: (id: string, data: Partial<MenuItemOption>) => Promise<void>;
   deleteOption: (id: string) => Promise<void>;
 }

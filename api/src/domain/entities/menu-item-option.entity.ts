@@ -9,5 +9,7 @@ export class MenuItemOption {
     public readonly isAvailable: boolean,
     public readonly clientRequestId?: string,
     public readonly sourceItemId?: string,
+    /** Aclaración opcional que ve el cliente (ej. qué lleva un sabor). */
+    public readonly description?: string,
   ) {}
 }

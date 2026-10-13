@@ -41,6 +41,7 @@ describe('CreateRestaurantAccountUseCase', () => {
       searchByEmail: jest.fn().mockResolvedValue([]),
       updatePasswordHash: jest.fn(),
       updateEmailVerified: jest.fn(),
+      updateNotificationPreferences: jest.fn(),
       delete: jest.fn(),
       ...overrides.userRepo,
     };

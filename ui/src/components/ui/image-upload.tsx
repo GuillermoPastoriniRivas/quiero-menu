@@ -9,6 +9,7 @@ import { Button } from './button';
 interface ImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
+  onUploadingChange?: (uploading: boolean) => void;
   type: ImageType;
   label?: string;
   className?: string;
@@ -18,6 +19,7 @@ interface ImageUploadProps {
 export function ImageUpload({
   value,
   onChange,
+  onUploadingChange,
   type,
   label,
   className,
@@ -42,6 +44,7 @@ export function ImageUpload({
 
       setError(null);
       setUploading(true);
+      onUploadingChange?.(true);
       setProgress(0);
 
       const objectUrl = URL.createObjectURL(file);
@@ -56,10 +59,11 @@ export function ImageUpload({
         setPreview(null);
       } finally {
         setUploading(false);
+        onUploadingChange?.(false);
         URL.revokeObjectURL(objectUrl);
       }
     },
-    [type, onChange],
+    [type, onChange, onUploadingChange],
   );
 
   const handleDrop = useCallback(

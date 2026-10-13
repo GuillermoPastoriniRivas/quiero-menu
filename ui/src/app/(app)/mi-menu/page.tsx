@@ -23,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { attributedUrl, trackOwner } from '@/lib/behavior';
+import { downloadQrPng } from '@/lib/qr-download';
 
 const DEFAULT_COLOR = '#E8532C';
 
@@ -192,30 +193,11 @@ function MiMenuPageInner() {
   };
 
   const downloadQR = () => {
-    const svg = qrRef.current?.querySelector('svg');
-    if (!svg) return;
-
-    const canvas = document.createElement('canvas');
-    const size = 1024;
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-    img.onload = () => {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, size, size);
-      ctx.drawImage(img, 0, 0, size, size);
-      const link = document.createElement('a');
-      link.download = `menu-qr-${restaurant?.slug || 'code'}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+    void downloadQrPng(qrRef.current, `menu-qr-${restaurant?.slug || 'code'}.png`).then((ok) => {
+      if (!ok) return;
       trackOwner('qr_downloaded');
       markShared();
-    };
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    });
   };
 
   const handleSaveSlug = async () => {
@@ -264,7 +246,7 @@ function MiMenuPageInner() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-background" style={{ fontFamily: 'var(--font-heading)' }}>
-            Mi menú
+            Diseño
           </h1>
           <p className="text-on-surface-variant text-lg">
             Personalizá cómo se ve tu menú público y compartilo con tus clientes.

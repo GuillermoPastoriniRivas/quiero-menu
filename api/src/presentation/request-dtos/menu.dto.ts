@@ -74,6 +74,7 @@ export const CreateOptionRequestSchema = z.object({
   clientRequestId: z.string().uuid().optional(),
   variantId: z.string().nullable().optional().default(null),
   name: z.string().min(1),
+  description: z.string().optional().default(''),
   priceDelta: z.number().optional().default(0),
   optionGroup: z.string().min(1),
   isAvailable: z.boolean().optional().default(true),
@@ -83,6 +84,7 @@ export type CreateOptionRequestDto = z.infer<typeof CreateOptionRequestSchema>;
 export const UpdateOptionRequestSchema = z.object({
   variantId: z.string().nullable().optional(),
   name: z.string().min(1).optional(),
+  description: z.string().optional(),
   priceDelta: z.number().optional(),
   optionGroup: z.string().optional(),
   isAvailable: z.boolean().optional(),

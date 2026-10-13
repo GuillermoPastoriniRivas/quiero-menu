@@ -25,6 +25,7 @@ describe('ResetPasswordUseCase', () => {
       findByEmail: jest.fn(),
       updatePasswordHash: jest.fn().mockResolvedValue(null),
       updateEmailVerified: jest.fn(),
+      updateNotificationPreferences: jest.fn(),
       searchByEmail: jest.fn().mockResolvedValue([]),
       delete: jest.fn(),
     };

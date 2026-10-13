@@ -14,6 +14,9 @@ export class MenuItemOptionModel {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ default: '' })
+  description: string;
+
   @Prop({ default: 0 })
   priceDelta: number;
 

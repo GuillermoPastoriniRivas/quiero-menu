@@ -11,6 +11,9 @@ export class MenuItemOptionMapper {
       doc.priceDelta,
       doc.optionGroup,
       doc.isAvailable,
+      undefined,
+      undefined,
+      doc.description,
     );
   }
 }

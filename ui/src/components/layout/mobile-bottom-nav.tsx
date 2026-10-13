@@ -53,52 +53,24 @@ export function MobileBottomNav() {
           <SheetHeader>
             <SheetTitle>Todas las secciones</SheetTitle>
           </SheetHeader>
-          <div className="max-h-[70vh] overflow-y-auto px-4 pt-2 space-y-5">
-            {NAV_SECTIONS.map((section) => (
-              <div key={section.label}>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/70 px-2 mb-2">
-                  {section.label}
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  {section.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMoreOpen(false)}
-                      className={cn(
-                        'flex flex-col items-center gap-2 rounded-2xl p-4 text-xs font-semibold transition-colors',
-                        isActive(item.href)
-                          ? 'bg-surface-container text-primary'
-                          : 'bg-surface-container-low text-on-surface'
-                      )}
-                    >
-                      <MaterialIcon name={item.icon} size="lg" fill={isActive(item.href)} />
-                      <span className="text-center leading-tight">{item.label}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant/70 px-2 mb-2">
-                Configuración
-              </p>
-              <div className="grid grid-cols-3 gap-3">
+          <div className="max-h-[70vh] overflow-y-auto px-4 pt-2">
+            <div className="grid grid-cols-3 gap-3">
+              {[...NAV_SECTIONS.flatMap((section) => section.items), NAV_SETTINGS_ITEM].map((item) => (
                 <Link
-                  href={NAV_SETTINGS_ITEM.href}
+                  key={item.href}
+                  href={item.href}
                   onClick={() => setMoreOpen(false)}
                   className={cn(
                     'flex flex-col items-center gap-2 rounded-2xl p-4 text-xs font-semibold transition-colors',
-                    isActive(NAV_SETTINGS_ITEM.href)
+                    isActive(item.href)
                       ? 'bg-surface-container text-primary'
                       : 'bg-surface-container-low text-on-surface'
                   )}
                 >
-                  <MaterialIcon name={NAV_SETTINGS_ITEM.icon} size="lg" fill={isActive(NAV_SETTINGS_ITEM.href)} />
-                  <span className="text-center leading-tight">{NAV_SETTINGS_ITEM.label}</span>
+                  <MaterialIcon name={item.icon} size="lg" fill={isActive(item.href)} />
+                  <span className="text-center leading-tight">{item.label}</span>
                 </Link>
-              </div>
+              ))}
             </div>
           </div>
         </SheetContent>

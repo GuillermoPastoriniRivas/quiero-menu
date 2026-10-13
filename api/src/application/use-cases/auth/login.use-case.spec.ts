@@ -65,6 +65,7 @@ describe('LoginUseCase', () => {
       findByEmail: jest.fn().mockResolvedValue(user),
       updatePasswordHash: jest.fn(),
       updateEmailVerified: jest.fn(),
+      updateNotificationPreferences: jest.fn(),
       searchByEmail: jest.fn().mockResolvedValue([]),
       delete: jest.fn(),
     };

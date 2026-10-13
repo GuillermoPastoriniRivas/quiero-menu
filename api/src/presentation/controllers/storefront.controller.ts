@@ -49,6 +49,7 @@ import {
 import { StorefrontEventType } from '../../domain/enums/storefront-event-type.enum.js';
 import type { GenerateUploadUrlUseCase } from '../../application/use-cases/upload/generate-upload-url.use-case.js';
 import type { NotifyReceiptUploadedUseCase } from '../../application/use-cases/order/notify-receipt-uploaded.use-case.js';
+import type { NotifyNewOrderUseCase } from '../../application/use-cases/order/notify-new-order.use-case.js';
 import type { OrderRepository } from '../../domain/repositories/order.repository.js';
 import { DeliveryType } from '../../domain/enums/delivery-type.enum.js';
 import {
@@ -84,6 +85,8 @@ export class StorefrontController {
     private readonly requestClaim: RequestStoreClaimUseCase,
     @Inject('NotifyReceiptUploadedUseCase')
     private readonly notifyReceipt: NotifyReceiptUploadedUseCase,
+    @Inject('NotifyNewOrderUseCase')
+    private readonly notifyNewOrder: NotifyNewOrderUseCase,
     @Inject('OrderRepository') private readonly orderRepo: OrderRepository,
     @Inject('TokenProviderPort') private readonly tokens: TokenProviderPort,
   ) {}
@@ -127,6 +130,10 @@ export class StorefrontController {
       }
       throw new BadRequestException(result.error.message);
     }
+
+    // Aviso por email al dueño (fire-and-forget)
+    this.notifyNewOrder.execute(result.value.order.id).catch(() => {});
+
     return result.value;
   }
 

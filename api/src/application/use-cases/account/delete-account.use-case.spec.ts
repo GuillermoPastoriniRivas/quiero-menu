@@ -64,6 +64,7 @@ describe('DeleteAccountUseCase', () => {
       findByEmail: jest.fn(),
       updatePasswordHash: jest.fn(),
       updateEmailVerified: jest.fn(),
+      updateNotificationPreferences: jest.fn(),
       searchByEmail: jest.fn().mockResolvedValue([]),
       delete: jest.fn().mockResolvedValue(true),
     };

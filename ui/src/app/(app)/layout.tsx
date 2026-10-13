@@ -30,7 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <OpenStatusBadge compact />
               <MobileUserMenu />
             </header>
-            <div className="max-w-5xl mx-auto w-full min-w-0 overflow-x-hidden p-4 sm:p-6">{children}</div>
+            <div className="max-w-5xl mx-auto w-full min-w-0 overflow-x-hidden px-3 py-4 sm:p-6">{children}</div>
           </main>
           <MobileBottomNav />
           <ImpersonationBanner />

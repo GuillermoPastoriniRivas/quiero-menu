@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRestaurantStore } from '@/stores/restaurant.store';
 import { BrandedQr } from '@/components/publicar/branded-qr';
@@ -30,11 +30,34 @@ function hoursLabel(hours: OperatingHours[]): string | null {
 
 export default function ImprimirPage() {
   const { restaurant, operatingHours, fetch, fetchHours } = useRestaurantStore();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [fitHeight, setFitHeight] = useState<number | null>(null);
 
   useEffect(() => {
     fetch();
     fetchHours();
   }, [fetch, fetchHours]);
+
+  // En pantallas angostas la hoja A4 (210mm) no entra: la escalamos para previsualizarla
+  // completa. En impresión se vuelve a escala 1 (ver @media print).
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const sheet = sheetRef.current;
+    if (!wrap || !sheet) return;
+    const A4_PX = (210 * 96) / 25.4;
+    const update = () => {
+      const next = Math.min(1, wrap.clientWidth / A4_PX);
+      setScale(next);
+      setFitHeight(next < 1 ? Math.round(sheet.offsetHeight * next) : null);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(wrap);
+    observer.observe(sheet);
+    return () => observer.disconnect();
+  }, [restaurant]);
 
   const brand = restaurant?.theme?.primaryColor || '#E8532C';
 
@@ -95,43 +118,48 @@ export default function ImprimirPage() {
       </div>
 
       {/* Hoja A4 */}
-      <div className="flex justify-center overflow-x-auto">
-        <div className="print-sheet w-[210mm] min-h-[297mm] bg-white text-on-surface flex flex-col shadow-ambient-lg rounded-2xl overflow-hidden">
+      <div
+        ref={wrapRef}
+        className="print-fit flex justify-center overflow-hidden"
+        style={fitHeight ? { height: `${fitHeight}px` } : undefined}
+      >
+        <div className="print-scale shrink-0" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
+        <div ref={sheetRef} className="print-sheet w-[210mm] min-h-[297mm] bg-white text-on-surface flex flex-col shadow-ambient-lg rounded-2xl overflow-hidden">
           {/* Banda de marca */}
-          <div className="rounded-[28px] bg-primary text-white mx-[10mm] mt-[10mm] p-[8mm] flex items-center gap-[6mm]">
+          <div className="rounded-[24px] bg-primary text-white mx-[8mm] mt-[8mm] p-[6mm] flex items-center gap-[5mm]">
             {/* eslint-disable-next-line @next/next/no-img-element -- imagen remota de usuario o logo local */}
             <img
               src={restaurant.logoUrl || '/logo.svg'}
               alt={restaurant.logoUrl ? restaurant.name : 'quiero.menu'}
-              className="w-[20mm] h-[20mm] rounded-2xl object-cover bg-white/20 ring-2 ring-white/30 shrink-0"
+              className="w-[16mm] h-[16mm] rounded-2xl object-cover bg-white/20 ring-2 ring-white/30 shrink-0"
             />
             <div className="min-w-0">
               <h2
-                className="text-[26px] leading-tight font-extrabold tracking-tight text-white truncate"
+                className="text-[22px] leading-tight font-extrabold tracking-tight text-white truncate"
                 style={{ fontFamily: 'var(--font-logo)' }}
               >
                 {restaurant.name}
               </h2>
-              <p className="text-white/85 text-[13px] font-medium mt-[1mm]">
+              <p className="text-white/85 text-[12px] font-medium mt-[1mm]">
                 Menú digital · pedí sin instalar nada
               </p>
             </div>
           </div>
 
           {/* QR */}
-          <div className="flex flex-col items-center pt-[10mm] px-[10mm]">
+          <div className="flex flex-col items-center pt-[6mm] px-[8mm]">
             <h3
-              className="text-[22px] font-extrabold tracking-tight text-on-background mb-[1mm]"
+              className="text-[20px] font-extrabold tracking-tight text-on-background mb-[1mm]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               ¡Escaneá y pedí!
             </h3>
-            <p className="text-[13px] text-on-surface-variant mb-[5mm]">
+            <p className="text-[12px] text-on-surface-variant mb-[4mm]">
               Apuntá tu cámara al código para ver el menú
             </p>
 
-            <div className="bg-white rounded-[20px] border-[3px] border-primary p-[6mm] shadow-ambient">
-              <div className="w-[118mm] h-[118mm]">
+            <div className="bg-white rounded-[20px] border-[3px] border-primary p-[4mm] shadow-ambient">
+              <div className="w-[92mm] h-[92mm]">
                 <BrandedQr
                   value={menuUrl}
                   size={520}
@@ -140,13 +168,13 @@ export default function ImprimirPage() {
                 />
               </div>
             </div>
-            <p className="mt-[4mm] text-[14px] font-bold text-on-surface tracking-wide select-all">
+            <p className="mt-[3mm] text-[13px] font-bold text-on-surface tracking-wide select-all">
               {shortUrl}
             </p>
           </div>
 
           {/* Pasos */}
-          <div className="flex flex-wrap items-center justify-center gap-x-[8mm] gap-y-[3mm] pt-[8mm] px-[10mm]">
+          <div className="flex flex-wrap items-center justify-center gap-x-[8mm] gap-y-[3mm] pt-[6mm] px-[8mm]">
             {['Escaneá el código', 'Mirá el menú y elegí', 'Hacé tu pedido'].map((step, i) => (
               <div key={step} className="flex items-center gap-[3mm]">
                 <span className="w-[9mm] h-[9mm] rounded-full bg-primary text-white flex items-center justify-center text-[16px] font-bold shrink-0">
@@ -158,65 +186,53 @@ export default function ImprimirPage() {
           </div>
 
           {/* Contacto */}
-          <div className="grid grid-cols-2 gap-[4mm] px-[10mm] pt-[8mm]">
+          <div className="grid grid-cols-2 gap-[4mm] px-[8mm] pt-[6mm]">
             {whatsapp && (
-              <div className="rounded-2xl bg-surface-container-low p-[5mm] flex items-center gap-[4mm]">
-                <span className="w-[12mm] h-[12mm] rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+              <div className="rounded-2xl bg-surface-container-low p-[4mm] flex items-center gap-[3mm]">
+                <span className="rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0 w-[10mm] h-[10mm]">
                   <WhatsAppIcon />
                 </span>
                 <div className="min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">WhatsApp</div>
-                  <div className="text-[15px] font-bold text-on-surface break-words">{restaurant.phone}</div>
+                  <div className="text-[13px] font-bold text-on-surface break-words">{restaurant.phone}</div>
                 </div>
               </div>
             )}
             {instagramHandle && (
-              <div className="rounded-2xl bg-surface-container-low p-[5mm] flex items-center gap-[4mm]">
-                <span className="w-[12mm] h-[12mm] rounded-xl bg-pink-100 text-pink-700 flex items-center justify-center shrink-0">
+              <div className="rounded-2xl bg-surface-container-low p-[4mm] flex items-center gap-[3mm]">
+                <span className="rounded-xl bg-pink-100 text-pink-700 flex items-center justify-center shrink-0 w-[10mm] h-[10mm]">
                   <InstagramIcon />
                 </span>
                 <div className="min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Instagram</div>
-                  <div className="text-[15px] font-bold text-on-surface break-words">@{instagramHandle}</div>
+                  <div className="text-[13px] font-bold text-on-surface break-words">@{instagramHandle}</div>
                 </div>
               </div>
             )}
             {address && (
-              <div className="rounded-2xl bg-surface-container-low p-[5mm] flex items-center gap-[4mm]">
-                <span className="w-[12mm] h-[12mm] rounded-xl bg-primary-container/15 text-primary flex items-center justify-center shrink-0">
+              <div className="rounded-2xl bg-surface-container-low p-[4mm] flex items-center gap-[3mm]">
+                <span className="rounded-xl bg-primary-container/15 text-primary flex items-center justify-center shrink-0 w-[10mm] h-[10mm]">
                   <MaterialIcon name="location_on" size="sm" />
                 </span>
                 <div className="min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Dirección</div>
-                  <div className="text-[15px] font-bold text-on-surface break-words">{address}</div>
+                  <div className="text-[13px] font-bold text-on-surface break-words">{address}</div>
                 </div>
               </div>
             )}
             {hours && (
-              <div className="rounded-2xl bg-surface-container-low p-[5mm] flex items-center gap-[4mm]">
-                <span className="w-[12mm] h-[12mm] rounded-xl bg-primary-container/15 text-primary flex items-center justify-center shrink-0">
+              <div className="col-span-2 rounded-2xl bg-surface-container-low p-[4mm] flex items-center gap-[3mm]">
+                <span className="rounded-xl bg-primary-container/15 text-primary flex items-center justify-center shrink-0 w-[10mm] h-[10mm]">
                   <MaterialIcon name="schedule" size="sm" />
                 </span>
                 <div className="min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Horarios</div>
-                  <div className="text-[15px] font-bold text-on-surface break-words">{hours}</div>
+                  <div className="text-[13px] font-bold text-on-surface break-words">{hours}</div>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Footer */}
-          <div className="mt-auto px-[10mm] pb-[8mm] pt-[10mm]">
-            <div className="border-t border-outline-variant/40 pt-[5mm] flex items-center justify-between text-[12px] text-on-surface-variant">
-              <span className="font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-logo)' }}>
-                quiero
-                <span className="text-primary">.menu</span>
-              </span>
-              <span className="font-medium">
-                Creado con quiero.menu · {shortUrl}
-              </span>
-            </div>
-          </div>
+        </div>
         </div>
       </div>
 
@@ -231,6 +247,8 @@ export default function ImprimirPage() {
           main > div { max-width: none !important; padding: 0 !important; margin: 0 !important; }
           .print-hidden { display: none !important; }
           .print-sheet { box-shadow: none !important; border-radius: 0 !important; }
+          .print-fit { height: auto !important; overflow: visible !important; }
+          .print-scale { transform: none !important; }
         }
       `}</style>
     </div>

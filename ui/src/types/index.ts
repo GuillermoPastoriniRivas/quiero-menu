@@ -173,6 +173,7 @@ export interface MenuItemOption {
   itemId: string;
   variantId: string | null;
   name: string;
+  description?: string;
   priceDelta: number;
   optionGroup: string;
   isAvailable: boolean;
@@ -338,6 +339,13 @@ export interface PlanInfo {
   ordersUsed: number;
   ordersLimit: number;
   redactedCount: number;
+}
+
+// Notificaciones
+export interface NotificationPreferences {
+  notifyEmail: boolean;
+  notifyWhatsapp: boolean;
+  whatsappAvailable: boolean;
 }
 
 export interface OrderWithRedaction extends Order {

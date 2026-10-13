@@ -10,6 +10,8 @@ export class UserMapper {
       doc.name,
       doc.emailVerified ?? false,
       doc.createdAt,
+      doc.notifyEmail ?? true,
+      doc.notifyWhatsapp ?? false,
     );
   }
 }

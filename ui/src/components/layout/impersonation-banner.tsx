@@ -23,7 +23,7 @@ export function ImpersonationBanner() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex justify-center px-4 lg:bottom-4">
+    <div className="print-hidden pointer-events-none fixed inset-x-0 bottom-20 z-50 flex justify-center px-4 lg:bottom-4">
       <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-full bg-on-surface py-2 pl-4 pr-2 text-surface shadow-ambient-lg sm:w-auto">
         <MaterialIcon name={user?.operating ? 'edit' : 'swap_horiz'} size="sm" />
         <span className="flex-1 truncate text-xs font-semibold">

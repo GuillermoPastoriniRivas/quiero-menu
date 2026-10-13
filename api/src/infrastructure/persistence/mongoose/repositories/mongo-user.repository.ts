@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { UserRepository } from '../../../../domain/repositories/user.repository.js';
+import {
+  UserRepository,
+  UserNotificationPreferences,
+  NewUser,
+} from '../../../../domain/repositories/user.repository.js';
 import { User } from '../../../../domain/entities/user.entity.js';
 import { UserModel, UserDocument } from '../schemas/user.schema.js';
 import { UserMapper } from '../mappers/user.mapper.js';
@@ -12,7 +16,7 @@ export class MongoUserRepository implements UserRepository {
     @InjectModel(UserModel.name) private readonly model: Model<UserDocument>,
   ) {}
 
-  async create(data: Omit<User, 'id' | 'createdAt'>): Promise<User> {
+  async create(data: NewUser): Promise<User> {
     const doc = await this.model.create(data);
     return UserMapper.toDomain(doc);
   }
@@ -56,6 +60,23 @@ export class MongoUserRepository implements UserRepository {
     const doc = await this.model.findByIdAndUpdate(
       id,
       { $set: { emailVerified } },
+      { returnDocument: 'after' },
+    );
+    return doc ? UserMapper.toDomain(doc) : null;
+  }
+
+  async updateNotificationPreferences(
+    id: string,
+    prefs: UserNotificationPreferences,
+  ): Promise<User | null> {
+    const $set: Record<string, boolean> = {};
+    if (prefs.notifyEmail !== undefined) $set.notifyEmail = prefs.notifyEmail;
+    if (prefs.notifyWhatsapp !== undefined)
+      $set.notifyWhatsapp = prefs.notifyWhatsapp;
+    if (Object.keys($set).length === 0) return this.findById(id);
+    const doc = await this.model.findByIdAndUpdate(
+      id,
+      { $set },
       { returnDocument: 'after' },
     );
     return doc ? UserMapper.toDomain(doc) : null;

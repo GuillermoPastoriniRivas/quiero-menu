@@ -20,6 +20,12 @@ export class UserModel {
   @Prop({ default: false })
   emailVerified: boolean;
 
+  @Prop({ default: true })
+  notifyEmail: boolean;
+
+  @Prop({ default: false })
+  notifyWhatsapp: boolean;
+
   @Prop({ type: Date, default: null })
   lastLoginAt: Date | null;
 

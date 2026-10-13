@@ -574,3 +574,8 @@
   0% { transform: translateX(-110%); }
   100% { transform: translateX(320%); }
 }
+
+/* En impresión no se muestran overlays del panel (banners, toasts, ayudas). */
+@media print {
+  .print-hidden { display: none !important; }
+}

@@ -36,6 +36,12 @@ import { toast } from 'sonner';
 type Tab = 'all' | 'active' | OrderStatus.DELIVERED | OrderStatus.CANCELLED;
 type DeliveryFilter = 'all' | 'pickup' | 'delivery';
 
+const DELIVERY_FILTER_LABELS: Record<DeliveryFilter, string> = {
+  all: 'Todos los tipos',
+  pickup: 'Retiro',
+  delivery: 'Delivery',
+};
+
 export default function OrdersPage() {
   const {
     orders,
@@ -63,6 +69,7 @@ export default function OrdersPage() {
   const [accessOpen, setAccessOpen] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushDenied, setPushDenied] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const inFlight = useRef<Set<string>>(new Set());
 
@@ -77,7 +84,21 @@ export default function OrdersPage() {
     (async () => {
       const supported = await isPushSupported();
       setPushSupported(supported);
-      if (supported) setPushEnabled(await isPushSubscribed());
+      if (!supported) return;
+      if (await isPushSubscribed()) {
+        setPushEnabled(true);
+        return;
+      }
+      // Encendido por defecto: intentamos suscribir apenas entran. Si el
+      // navegador lo tiene bloqueado, mostramos el aviso para habilitarlo.
+      if (typeof Notification === 'undefined' || Notification.permission === 'denied') {
+        setPushDenied(typeof Notification !== 'undefined' && Notification.permission === 'denied');
+        return;
+      }
+      const token = api.getAccessToken();
+      if (!token) return;
+      const ok = await subscribeStaffPush(token);
+      if (ok) setPushEnabled(true);
     })();
   }, []);
 
@@ -141,7 +162,7 @@ export default function OrdersPage() {
     try {
       const tokens = await api.get<{ token: string }[]>(`/${type}/tokens`);
       if (tokens.length === 0) {
-        toast.error(`No hay accesos de ${type === 'kitchen' ? 'cocina' : 'delivery'}. Creá uno en Accesos.`);
+        toast.error(`No hay pantallas de ${type === 'kitchen' ? 'cocina' : 'delivery'}. Creá una en Pantallas.`);
         return;
       }
       window.open(`${window.location.origin}/${type}/${tokens[0].token}`, '_blank');
@@ -215,8 +236,8 @@ export default function OrdersPage() {
               Avisos
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} title="Accesos del equipo">
-            <MaterialIcon name="key" size="sm" className="mr-1" />Accesos
+            <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} title="Pantallas del equipo">
+              <MaterialIcon name="devices" size="sm" className="mr-1" />Pantallas
           </Button>
         </div>
       </div>
@@ -237,6 +258,35 @@ export default function OrdersPage() {
           <Button size="sm" onClick={() => (window.location.href = '/billing')}>
             <MaterialIcon name="bolt" size="sm" />Subir a Pro
           </Button>
+        </Card>
+      )}
+
+      {/* Aviso persistente de notificaciones apagadas */}
+      {pushSupported && !pushEnabled && (
+        <Card size="sm" className="flex-row items-center gap-3 border border-amber-500/30 bg-amber-500/10">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
+            <MaterialIcon name="notifications_off" size="sm" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-on-surface">
+              {pushDenied ? 'Tenés los avisos bloqueados' : 'No pierdas ningún pedido'}
+            </p>
+            <p className="text-xs text-on-surface-variant">
+              {pushDenied
+                ? 'Los bloqueaste en el navegador. Habilitalos desde el candado de la barra de direcciones para que te avisemos al instante.'
+                : 'Activá los avisos para que te enteres al instante cuando entra un pedido.'}
+            </p>
+          </div>
+          {!pushDenied && (
+            <Button size="sm" onClick={handleTogglePush} disabled={pushBusy}>
+              {pushBusy ? (
+                <MaterialIcon name="progress_activity" size="sm" className="animate-spin" />
+              ) : (
+                <MaterialIcon name="notifications_active" size="sm" />
+              )}
+              Activar
+            </Button>
+          )}
         </Card>
       )}
 
@@ -277,12 +327,15 @@ export default function OrdersPage() {
           value={deliveryFilter}
           onValueChange={(v) => setDeliveryFilter((v as DeliveryFilter) ?? 'all')}
         >
-          <SelectTrigger size="sm" className="w-full md:w-auto">
+          <SelectTrigger className="h-11 w-full rounded-xl border-none bg-surface-container-low px-4 text-base font-medium text-on-surface focus-visible:ring-2 focus-visible:ring-primary/30 md:w-auto md:text-sm dark:bg-surface-container">
             <MaterialIcon
               name={deliveryFilter === 'all' ? 'swap_vert' : deliveryFilter === 'pickup' ? 'storefront' : 'local_shipping'}
               size="sm"
+              className="shrink-0 text-on-surface-variant"
             />
-            <SelectValue />
+            <SelectValue>
+              {(value) => DELIVERY_FILTER_LABELS[(value as DeliveryFilter) ?? 'all'] ?? 'Todos los tipos'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent align="end">
             <SelectItem value="all">Todos los tipos</SelectItem>
@@ -383,6 +436,7 @@ export default function OrdersPage() {
 
       {/* Detail dialog */}
       <OrderDetailDialog
+        key={selectedOrder?.id ?? 'none'}
         order={selectedOrder}
         items={selectedOrder ? (selectedOrder.items ?? orderItems[selectedOrder.id]) : undefined}
         itemsError={selectedOrder ? !!itemErrors[selectedOrder.id] : false}

@@ -17,17 +17,45 @@ function getVapidPublicKey(): Promise<string> {
     .then((data) => data.publicKey);
 }
 
-function getActivePushSubscription(): Promise<PushSubscription | null> {
-  if (!('serviceWorker' in navigator)) return Promise.resolve(null);
-  return navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription());
+const SW_READY_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
+/**
+ * `navigator.serviceWorker.ready` NUNCA resuelve si no hay un SW activo (en dev
+ * RegisterSW los desregistra). Por eso registramos el SW si falta y esperamos
+ * con timeout, para no colgar al que llama (ej. el botón "Activar").
+ */
+async function ensureActiveServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    const existing = await navigator.serviceWorker.getRegistration();
+    if (!existing) await navigator.serviceWorker.register('/sw.js').catch(() => {});
+  } catch {
+    return null;
+  }
+  return withTimeout(navigator.serviceWorker.ready, SW_READY_TIMEOUT_MS, null);
+}
+
+async function getActivePushSubscription(): Promise<PushSubscription | null> {
+  if (!('serviceWorker' in navigator)) return null;
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) return null;
+  return reg.pushManager.getSubscription();
 }
 
 async function getOrCreateSubscription(): Promise<PushSubscription | null> {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+  if (!('PushManager' in window)) return null;
 
-  await navigator.serviceWorker.ready;
+  const reg = await ensureActiveServiceWorker();
+  if (!reg) return null;
 
-  const existing = await navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription());
+  const existing = await reg.pushManager.getSubscription();
   if (existing) return existing;
 
   const publicKey = await getVapidPublicKey();
@@ -36,12 +64,10 @@ async function getOrCreateSubscription(): Promise<PushSubscription | null> {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') return null;
 
-  return navigator.serviceWorker.ready.then((reg) =>
-    reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    } as PushSubscriptionOptionsInit)
-  );
+  return reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(publicKey),
+  } as PushSubscriptionOptionsInit);
 }
 
 /** Staff: subscribe for order notifications. Returns true on success. */
@@ -90,7 +116,8 @@ export async function isPushSupported(): Promise<boolean> {
 
 export async function isPushSubscribed(): Promise<boolean> {
   if (!('serviceWorker' in navigator)) return false;
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg || !reg.active) return false;
   const sub = await reg.pushManager.getSubscription();
   return sub !== null;
 }

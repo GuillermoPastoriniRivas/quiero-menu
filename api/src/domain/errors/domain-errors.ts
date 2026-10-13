@@ -266,3 +266,12 @@ export class AccountHasRestaurantError extends DomainError {
     );
   }
 }
+
+export class WhatsappAlertsRequireProError extends DomainError {
+  constructor() {
+    super(
+      'WHATSAPP_ALERTS_REQUIRE_PRO',
+      'Los avisos por WhatsApp están disponibles en el plan Pro.',
+    );
+  }
+}

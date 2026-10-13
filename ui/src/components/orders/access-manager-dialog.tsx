@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import type { KitchenAccessToken, DeliveryAccessToken } from '@/types';
@@ -18,25 +19,70 @@ interface AccessManagerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function ScreenRow({
+  name,
+  url,
+  onOpen,
+  onCopy,
+  onRemove,
+}: {
+  name: string;
+  url: string;
+  onOpen: () => void;
+  onCopy: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-outline-variant/30 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-sm font-bold text-on-surface">{name}</p>
+        <div className="flex shrink-0 gap-1">
+          <button
+            type="button"
+            onClick={onCopy}
+            title="Copiar link"
+            aria-label={`Copiar link de ${name}`}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-low"
+          >
+            <MaterialIcon name="content_copy" size="sm" />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            title="Eliminar esta pantalla"
+            aria-label={`Eliminar ${name}`}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-error-container/40 hover:text-error"
+          >
+            <MaterialIcon name="delete" size="sm" />
+          </button>
+        </div>
+      </div>
+      <p className="mt-1 truncate font-mono text-xs text-on-surface-variant">{url}</p>
+      <Button size="sm" className="mt-2 w-full" onClick={onOpen}>
+        <MaterialIcon name="open_in_new" size="sm" />
+        Abrir en la pantalla
+      </Button>
+    </div>
+  );
+}
+
 export function AccessManagerDialog({ open, onOpenChange }: AccessManagerDialogProps) {
   const [tokens, setTokens] = useState<KitchenAccessToken[]>([]);
   const [deliveryTokens, setDeliveryTokens] = useState<DeliveryAccessToken[]>([]);
 
   const loadTokens = async () => {
     try {
-      const data = await api.get<KitchenAccessToken[]>('/kitchen/tokens');
-      setTokens(data);
+      setTokens(await api.get<KitchenAccessToken[]>('/kitchen/tokens'));
     } catch {
-      toast.error('No se pudieron cargar los accesos de cocina');
+      toast.error('No se pudieron cargar las pantallas de cocina');
     }
   };
 
   const loadDeliveryTokens = async () => {
     try {
-      const data = await api.get<DeliveryAccessToken[]>('/delivery/tokens');
-      setDeliveryTokens(data);
+      setDeliveryTokens(await api.get<DeliveryAccessToken[]>('/delivery/tokens'));
     } catch {
-      toast.error('No se pudieron cargar los accesos de delivery');
+      toast.error('No se pudieron cargar las pantallas de delivery');
     }
   };
 
@@ -49,7 +95,7 @@ export function AccessManagerDialog({ open, onOpenChange }: AccessManagerDialogP
         const data = await api.get<KitchenAccessToken[]>('/kitchen/tokens');
         if (!cancelled) setTokens(data);
       } catch {
-        if (!cancelled) toast.error('No se pudieron cargar los accesos de cocina');
+        if (!cancelled) toast.error('No se pudieron cargar las pantallas de cocina');
       }
     };
 
@@ -58,7 +104,7 @@ export function AccessManagerDialog({ open, onOpenChange }: AccessManagerDialogP
         const data = await api.get<DeliveryAccessToken[]>('/delivery/tokens');
         if (!cancelled) setDeliveryTokens(data);
       } catch {
-        if (!cancelled) toast.error('No se pudieron cargar los accesos de delivery');
+        if (!cancelled) toast.error('No se pudieron cargar las pantallas de delivery');
       }
     };
 
@@ -71,12 +117,12 @@ export function AccessManagerDialog({ open, onOpenChange }: AccessManagerDialogP
 
   const handleCreateToken = async () => {
     try {
-      const name = `Vista ${tokens.length + 1}`;
+      const name = `Cocina ${tokens.length + 1}`;
       await api.post('/kitchen/tokens', { name });
       loadTokens();
-      toast.success('Acceso creado');
+      toast.success('Pantalla de cocina creada');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Error al crear el acceso');
+      toast.error(e instanceof Error ? e.message : 'Error al crear la pantalla');
     }
   };
 
@@ -84,14 +130,13 @@ export function AccessManagerDialog({ open, onOpenChange }: AccessManagerDialogP
     try {
       await api.delete(`/kitchen/tokens/${id}`);
       loadTokens();
-      toast.success('Acceso eliminado');
+      toast.success('Pantalla eliminada');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Error al eliminar el acceso');
+      toast.error(e instanceof Error ? e.message : 'Error al eliminar la pantalla');
     }
   };
 
-  const getKitchenUrl = (token: string) =>
-    `${window.location.origin}/kitchen/${token}`;
+  const getKitchenUrl = (token: string) => `${window.location.origin}/kitchen/${token}`;
 
   const copyKitchenLink = (token: string) => {
     navigator.clipboard.writeText(getKitchenUrl(token));
@@ -103,9 +148,9 @@ export function AccessManagerDialog({ open, onOpenChange }: AccessManagerDialogP
       const name = `Delivery ${deliveryTokens.length + 1}`;
       await api.post('/delivery/tokens', { name });
       loadDeliveryTokens();
-      toast.success('Acceso delivery creado');
+      toast.success('Pantalla de delivery creada');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Error al crear el acceso');
+      toast.error(e instanceof Error ? e.message : 'Error al crear la pantalla');
     }
   };
 
@@ -113,14 +158,13 @@ export function AccessManagerDialog({ open, onOpenChange }: AccessManagerDialogP
     try {
       await api.delete(`/delivery/tokens/${id}`);
       loadDeliveryTokens();
-      toast.success('Acceso delivery eliminado');
+      toast.success('Pantalla eliminada');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Error al eliminar el acceso');
+      toast.error(e instanceof Error ? e.message : 'Error al eliminar la pantalla');
     }
   };
 
-  const getDeliveryUrl = (token: string) =>
-    `${window.location.origin}/delivery/${token}`;
+  const getDeliveryUrl = (token: string) => `${window.location.origin}/delivery/${token}`;
 
   const copyDeliveryLink = (token: string) => {
     navigator.clipboard.writeText(getDeliveryUrl(token));
@@ -129,137 +173,89 @@ export function AccessManagerDialog({ open, onOpenChange }: AccessManagerDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md sm:max-w-lg max-h-[85vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
-          <DialogTitle>Accesos del equipo</DialogTitle>
+          <DialogTitle>Pantallas del equipo</DialogTitle>
+          <DialogDescription>
+            Son links para abrir en las pantallas del local (la tablet de la cocina, el celular del
+            repartidor). No hace falta usuario ni contraseña: quien tenga el link ve los pedidos.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 mt-2">
+        <div className="space-y-5 mt-2 min-w-0">
           {/* Cocina */}
-          <section className="space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-bold text-sm">Acceso Cocina</p>
-                <p className="text-xs text-muted-foreground">
-                  Links para que cocina vea los pedidos en pantalla
-                </p>
+          <section className="space-y-3 min-w-0">
+            <div className="flex flex-wrap items-start justify-between gap-3 min-w-0">
+              <div className="flex min-w-0 items-start gap-2">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <MaterialIcon name="restaurant" size="sm" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-on-surface">Pantalla de Cocina</p>
+                  <p className="text-xs text-on-surface-variant">
+                    Muestra los pedidos nuevos y los que están en preparación.
+                  </p>
+                </div>
               </div>
               <Button size="sm" onClick={handleCreateToken} className="shrink-0">
                 <MaterialIcon name="add" size="sm" className="mr-1" />
-                Crear
+                {tokens.length === 0 ? 'Crear pantalla' : 'Crear otra'}
               </Button>
             </div>
             {tokens.length === 0 ? (
-              <p className="text-xs text-muted-foreground px-1 py-2 rounded-lg bg-surface-container-low">
-                Todavía no hay accesos de cocina.
+              <p className="rounded-xl bg-surface-container-low px-3 py-3 text-xs text-on-surface-variant">
+                Todavía no hay ninguna. Creá una y abrilo en la tablet de la cocina; dejala abierta.
               </p>
             ) : (
-              <div className="space-y-2">
-                {tokens.map((t) => (
-                  <div
+              <div className="space-y-2 min-w-0">
+                {tokens.map((t, i) => (
+                  <ScreenRow
                     key={t.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border p-2.5"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">
-                        {t.name || `Vista ${tokens.indexOf(t) + 1}`}
-                      </p>
-                      <p className="text-xs text-muted-foreground font-mono truncate">
-                        {getKitchenUrl(t.token)}
-                      </p>
-                    </div>
-                    <div className="flex gap-0.5 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(getKitchenUrl(t.token), '_blank')}
-                        title="Abrir cocina"
-                      >
-                        <MaterialIcon name="open_in_new" size="sm" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyKitchenLink(t.token)}
-                        title="Copiar link"
-                      >
-                        <MaterialIcon name="content_copy" size="sm" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRevokeToken(t.id)}
-                        title="Eliminar acceso"
-                      >
-                        <MaterialIcon name="delete" size="sm" className="text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
+                    name={t.name || `Cocina ${i + 1}`}
+                    url={getKitchenUrl(t.token)}
+                    onOpen={() => window.open(getKitchenUrl(t.token), '_blank')}
+                    onCopy={() => copyKitchenLink(t.token)}
+                    onRemove={() => handleRevokeToken(t.id)}
+                  />
                 ))}
               </div>
             )}
           </section>
 
           {/* Delivery */}
-          <section className="space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-bold text-sm">Acceso Delivery</p>
-                <p className="text-xs text-muted-foreground">
-                  Links para que los repartidores vean pedidos listos para recoger
-                </p>
+          <section className="space-y-3 min-w-0">
+            <div className="flex flex-wrap items-start justify-between gap-3 min-w-0">
+              <div className="flex min-w-0 items-start gap-2">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <MaterialIcon name="delivery_dining" size="sm" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-on-surface">Pantalla de Delivery</p>
+                  <p className="text-xs text-on-surface-variant">
+                    Muestra los pedidos listos para entregar o en camino.
+                  </p>
+                </div>
               </div>
               <Button size="sm" variant="outline" onClick={handleCreateDeliveryToken} className="shrink-0">
                 <MaterialIcon name="add" size="sm" className="mr-1" />
-                Crear
+                {deliveryTokens.length === 0 ? 'Crear pantalla' : 'Crear otra'}
               </Button>
             </div>
             {deliveryTokens.length === 0 ? (
-              <p className="text-xs text-muted-foreground px-1 py-2 rounded-lg bg-surface-container-low">
-                Todavía no hay accesos de delivery.
+              <p className="rounded-xl bg-surface-container-low px-3 py-3 text-xs text-on-surface-variant">
+                Todavía no hay ninguna. Creá una y abrilo en el celular del repartidor.
               </p>
             ) : (
-              <div className="space-y-2">
-                {deliveryTokens.map((t) => (
-                  <div
+              <div className="space-y-2 min-w-0">
+                {deliveryTokens.map((t, i) => (
+                  <ScreenRow
                     key={t.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border p-2.5"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">
-                        {t.name || `Delivery ${deliveryTokens.indexOf(t) + 1}`}
-                      </p>
-                      <p className="text-xs text-muted-foreground font-mono truncate">
-                        {getDeliveryUrl(t.token)}
-                      </p>
-                    </div>
-                    <div className="flex gap-0.5 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(getDeliveryUrl(t.token), '_blank')}
-                        title="Abrir delivery"
-                      >
-                        <MaterialIcon name="open_in_new" size="sm" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyDeliveryLink(t.token)}
-                        title="Copiar link"
-                      >
-                        <MaterialIcon name="content_copy" size="sm" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRevokeDeliveryToken(t.id)}
-                        title="Eliminar acceso"
-                      >
-                        <MaterialIcon name="delete" size="sm" className="text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
+                    name={t.name || `Delivery ${i + 1}`}
+                    url={getDeliveryUrl(t.token)}
+                    onOpen={() => window.open(getDeliveryUrl(t.token), '_blank')}
+                    onCopy={() => copyDeliveryLink(t.token)}
+                    onRemove={() => handleRevokeDeliveryToken(t.id)}
+                  />
                 ))}
               </div>
             )}

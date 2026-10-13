@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RestaurantDataSettings } from "@/components/settings/restaurant-data-settings";
 import { PaymentMethodsSettings } from "@/components/settings/payment-methods-settings";
 import { OperatingHoursSettings } from "@/components/settings/operating-hours-settings";
+import { NotificationsSettings } from "@/components/settings/notifications-settings";
 
-const SETTINGS_TABS = ["datos", "pagos", "horarios"] as const;
+const SETTINGS_TABS = ["datos", "pagos", "horarios", "notificaciones"] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 // Tabs legacy de la vieja /settings y de /business/* -> destino nuevo
@@ -21,7 +22,7 @@ const LEGACY_TAB_REDIRECTS: Record<string, string> = {
   billing: "/billing",
   kitchen: "/orders",
   "delivery-portal": "/orders",
-  notifications: "/account",
+  notifications: "/settings?tab=notificaciones",
 };
 
 function SettingsPageInner() {
@@ -63,6 +64,7 @@ function SettingsPageInner() {
             <TabsTrigger value="datos">Datos del local</TabsTrigger>
             <TabsTrigger value="pagos">Cobro</TabsTrigger>
             <TabsTrigger value="horarios">Horarios</TabsTrigger>
+            <TabsTrigger value="notificaciones">Notificaciones</TabsTrigger>
           </TabsList>
         </div>
 
@@ -76,6 +78,10 @@ function SettingsPageInner() {
 
         <TabsContent value="horarios" className="mt-4">
           <OperatingHoursSettings />
+        </TabsContent>
+
+        <TabsContent value="notificaciones" className="mt-4">
+          <NotificationsSettings />
         </TabsContent>
       </Tabs>
     </div>
