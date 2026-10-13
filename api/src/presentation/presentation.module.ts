@@ -995,15 +995,31 @@ const useCaseProviders = [
   // Menu — Categories
   {
     provide: 'GetMenuUseCase',
-    useFactory: (catRepo: any, itemRepo: any, varRepo: any, optRepo: any, restaurantRepo: any) =>
+    useFactory: (
+      catRepo: any,
+      itemRepo: any,
+      varRepo: any,
+      optRepo: any,
+      restaurantRepo: any,
+    ) =>
       new GetMenuUseCase(catRepo, itemRepo, varRepo, optRepo, restaurantRepo),
-    inject: ['MenuCategoryRepository', 'MenuItemRepository', 'MenuItemVariantRepository', 'MenuItemOptionRepository', 'RestaurantRepository'],
+    inject: [
+      'MenuCategoryRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+      'MenuItemOptionRepository',
+      'RestaurantRepository',
+    ],
   },
   {
     provide: 'UpdateMenuItemComponentsUseCase',
     useFactory: (itemRepo: any, catRepo: any, varRepo: any) =>
       new UpdateMenuItemComponentsUseCase(itemRepo, catRepo, varRepo),
-    inject: ['MenuItemRepository', 'MenuCategoryRepository', 'MenuItemVariantRepository'],
+    inject: [
+      'MenuItemRepository',
+      'MenuCategoryRepository',
+      'MenuItemVariantRepository',
+    ],
   },
   {
     provide: 'CreateMenuCategoryUseCase',
@@ -1046,7 +1062,8 @@ const useCaseProviders = [
   },
   {
     provide: 'UpdateMenuItemUseCase',
-    useFactory: (itemRepo: any, catRepo: any) => new UpdateMenuItemUseCase(itemRepo, catRepo),
+    useFactory: (itemRepo: any, catRepo: any) =>
+      new UpdateMenuItemUseCase(itemRepo, catRepo),
     inject: ['MenuItemRepository', 'MenuCategoryRepository'],
   },
   {
@@ -1112,13 +1129,21 @@ const useCaseProviders = [
     provide: 'CreateMenuItemOptionUseCase',
     useFactory: (optRepo: any, itemRepo: any, varRepo: any) =>
       new CreateMenuItemOptionUseCase(optRepo, itemRepo, varRepo),
-    inject: ['MenuItemOptionRepository', 'MenuItemRepository', 'MenuItemVariantRepository'],
+    inject: [
+      'MenuItemOptionRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+    ],
   },
   {
     provide: 'UpdateMenuItemOptionUseCase',
     useFactory: (optRepo: any, itemRepo: any, varRepo: any) =>
       new UpdateMenuItemOptionUseCase(optRepo, itemRepo, varRepo),
-    inject: ['MenuItemOptionRepository', 'MenuItemRepository', 'MenuItemVariantRepository'],
+    inject: [
+      'MenuItemOptionRepository',
+      'MenuItemRepository',
+      'MenuItemVariantRepository',
+    ],
   },
   {
     provide: 'DeleteMenuItemOptionUseCase',

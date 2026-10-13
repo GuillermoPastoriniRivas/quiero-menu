@@ -1,7 +1,11 @@
 import { MenuItemVariant } from '../entities/menu-item-variant.entity.js';
 
 export interface MenuItemVariantRepository {
-  create(data: Omit<MenuItemVariant, 'id' | 'isAvailable'> & { isAvailable?: boolean }): Promise<MenuItemVariant>;
+  create(
+    data: Omit<MenuItemVariant, 'id' | 'isAvailable'> & {
+      isAvailable?: boolean;
+    },
+  ): Promise<MenuItemVariant>;
   findByItemId(itemId: string): Promise<MenuItemVariant[]>;
   findByItemIds(itemIds: string[]): Promise<MenuItemVariant[]>;
   findById(id: string): Promise<MenuItemVariant | null>;

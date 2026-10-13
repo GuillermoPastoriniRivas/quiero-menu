@@ -24,7 +24,9 @@ export class UpdateMenuItemOptionUseCase {
   ): Promise<
     Result<
       MenuItemOption,
-      MenuItemOptionNotFoundError | CrossRestaurantAccessError | MenuItemOptionLimitError
+      | MenuItemOptionNotFoundError
+      | CrossRestaurantAccessError
+      | MenuItemOptionLimitError
     >
   > {
     const existing = await this.optionRepo.findById(id);
@@ -35,7 +37,11 @@ export class UpdateMenuItemOptionUseCase {
       return err(new CrossRestaurantAccessError());
 
     const variants = await this.variantRepo.findByItemId(item.id);
-    const error = validateLocalMenuOption(item, { ...existing, ...data }, variants);
+    const error = validateLocalMenuOption(
+      item,
+      { ...existing, ...data },
+      variants,
+    );
     if (error) return err(new MenuItemOptionLimitError(error));
 
     const updated = await this.optionRepo.update(id, data);

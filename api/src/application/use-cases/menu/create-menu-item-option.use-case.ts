@@ -21,7 +21,12 @@ export class CreateMenuItemOptionUseCase {
     restaurantId: string,
     data: Omit<MenuItemOption, 'id'>,
   ): Promise<
-    Result<MenuItemOption, MenuItemNotFoundError | CrossRestaurantAccessError | MenuItemOptionLimitError>
+    Result<
+      MenuItemOption,
+      | MenuItemNotFoundError
+      | CrossRestaurantAccessError
+      | MenuItemOptionLimitError
+    >
   > {
     const item = await this.itemRepo.findById(data.itemId);
     if (!item) return err(new MenuItemNotFoundError());

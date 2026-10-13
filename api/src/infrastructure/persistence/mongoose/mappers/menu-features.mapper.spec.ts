@@ -21,40 +21,133 @@ const third = '333333333333333333333333';
 
 describe('Carta fácil persistence contracts without a database', () => {
   it('casts every group/component reference and maps additive fields back without loss', () => {
-    const doc = new Item({ restaurantId: id, categoryId: second, name: 'Promo', basePrice: 100,
-      optionGroups: [{ name: 'Rellenos', groupId: 'fillings', selectionMode: 'quantities', requiredTotal: 6,
-        sourceCategoryId: third, variantId: second, optionPriceOverrides: [{ sourceItemId: id, priceDelta: 0 }] }],
-      components: [{ slotId: 'drink-1', name: 'Bebida 1', displayOrder: 2, parentVariantId: second, quantity: 1,
-        choices: [{ menuItemId: third, variantId: id, priceDelta: 5 }] }],
+    const doc = new Item({
+      restaurantId: id,
+      categoryId: second,
+      name: 'Promo',
+      basePrice: 100,
+      optionGroups: [
+        {
+          name: 'Rellenos',
+          groupId: 'fillings',
+          selectionMode: 'quantities',
+          requiredTotal: 6,
+          sourceCategoryId: third,
+          variantId: second,
+          optionPriceOverrides: [{ sourceItemId: id, priceDelta: 0 }],
+        },
+      ],
+      components: [
+        {
+          slotId: 'drink-1',
+          name: 'Bebida 1',
+          displayOrder: 2,
+          parentVariantId: second,
+          quantity: 1,
+          choices: [{ menuItemId: third, variantId: id, priceDelta: 5 }],
+        },
+      ],
     });
     expect(doc.validateSync()).toBeUndefined();
     const mapped = MenuItemMapper.toDomain(doc as any);
-    expect(mapped.optionGroups![0]).toMatchObject({ groupId: 'fillings', selectionMode: 'quantities', requiredTotal: 6,
-      sourceCategoryId: third, variantId: second, optionPriceOverrides: [{ sourceItemId: id, priceDelta: 0 }] });
-    expect(mapped.components).toEqual([{ slotId: 'drink-1', name: 'Bebida 1', displayOrder: 2, parentVariantId: second,
-      quantity: 1, choices: [{ menuItemId: third, variantId: id, priceDelta: 5 }] }]);
+    expect(mapped.optionGroups![0]).toMatchObject({
+      groupId: 'fillings',
+      selectionMode: 'quantities',
+      requiredTotal: 6,
+      sourceCategoryId: third,
+      variantId: second,
+      optionPriceOverrides: [{ sourceItemId: id, priceDelta: 0 }],
+    });
+    expect(mapped.components).toEqual([
+      {
+        slotId: 'drink-1',
+        name: 'Bebida 1',
+        displayOrder: 2,
+        parentVariantId: second,
+        quantity: 1,
+        choices: [{ menuItemId: third, variantId: id, priceDelta: 5 }],
+      },
+    ]);
   });
 
   it('defaults historical variant availability to true and preserves explicit false', () => {
-    const available = MenuItemVariantMapper.toDomain(new Variant({ itemId: id, name: 'Chico' }) as any);
-    const unavailable = MenuItemVariantMapper.toDomain(new Variant({ itemId: id, name: 'Grande', isAvailable: false }) as any);
+    const available = MenuItemVariantMapper.toDomain(
+      new Variant({ itemId: id, name: 'Chico' }) as any,
+    );
+    const unavailable = MenuItemVariantMapper.toDomain(
+      new Variant({ itemId: id, name: 'Grande', isAvailable: false }) as any,
+    );
     expect(available.isAvailable).toBe(true);
     expect(unavailable.isAvailable).toBe(false);
-    expect(MenuItemOptionMapper.toDomain(new Option({ itemId: id, name: 'Extra', optionGroup: 'Extras', groupId: 'extras' }) as any).groupId).toBe('extras');
+    expect(
+      MenuItemOptionMapper.toDomain(
+        new Option({
+          itemId: id,
+          name: 'Extra',
+          optionGroup: 'Extras',
+          groupId: 'extras',
+        }) as any,
+      ).groupId,
+    ).toBe('extras');
   });
 
   it('reads old order snapshots with quantity 1 and no components without repricing them', () => {
-    const historic = new OrderItem({ orderId: id, menuItemId: second, menuItemName: 'Old', quantity: 2,
-      unitPrice: 123, totalPrice: 246, selectedOptions: [{ optionId: 'source:historic:Sabores:all', name: 'Chocolate', priceDelta: 7 }] });
+    const historic = new OrderItem({
+      orderId: id,
+      menuItemId: second,
+      menuItemName: 'Old',
+      quantity: 2,
+      unitPrice: 123,
+      totalPrice: 246,
+      selectedOptions: [
+        {
+          optionId: 'source:historic:Sabores:all',
+          name: 'Chocolate',
+          priceDelta: 7,
+        },
+      ],
+    });
     const mapped = OrderItemMapper.toDomain(historic as any);
-    expect(mapped).toMatchObject({ unitPrice: 123, totalPrice: 246, components: [], selectedOptions: [{ quantity: 1, priceDelta: 7 }] });
+    expect(mapped).toMatchObject({
+      unitPrice: 123,
+      totalPrice: 246,
+      components: [],
+      selectedOptions: [{ quantity: 1, priceDelta: 7 }],
+    });
   });
 
   it('round trips independent component snapshots and their structured quantities', () => {
-    const components = [{ slotId: 'pastry', slotName: 'Medialunas', quantity: 1, menuItemId: third,
-      menuItemName: 'Media docena', variantId: null, variantName: null, priceDelta: 0,
-      selectedOptions: [{ optionId: 'oreo', name: 'Oreo', priceDelta: 2, quantity: 4, groupId: 'fillings', groupName: 'Rellenos' }] }];
-    const doc = new OrderItem({ orderId: id, menuItemId: second, menuItemName: 'Promo', quantity: 1, unitPrice: 100, totalPrice: 100, components });
+    const components = [
+      {
+        slotId: 'pastry',
+        slotName: 'Medialunas',
+        quantity: 1,
+        menuItemId: third,
+        menuItemName: 'Media docena',
+        variantId: null,
+        variantName: null,
+        priceDelta: 0,
+        selectedOptions: [
+          {
+            optionId: 'oreo',
+            name: 'Oreo',
+            priceDelta: 2,
+            quantity: 4,
+            groupId: 'fillings',
+            groupName: 'Rellenos',
+          },
+        ],
+      },
+    ];
+    const doc = new OrderItem({
+      orderId: id,
+      menuItemId: second,
+      menuItemName: 'Promo',
+      quantity: 1,
+      unitPrice: 100,
+      totalPrice: 100,
+      components,
+    });
     expect(OrderItemMapper.toDomain(doc as any).components).toEqual(components);
   });
 });

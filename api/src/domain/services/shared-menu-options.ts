@@ -1,7 +1,13 @@
 import { MenuItemOption } from '../entities/menu-item-option.entity.js';
 import type { MenuItem } from '../entities/menu-item.entity.js';
 import type { MenuCategory } from '../entities/menu-category.entity.js';
-import { effectiveGroupId, inheritOptionGroup, optionBelongsToGroup, optionGroupName, sameOptionGroup } from './menu-option-groups.js';
+import {
+  effectiveGroupId,
+  inheritOptionGroup,
+  optionBelongsToGroup,
+  optionGroupName,
+  sameOptionGroup,
+} from './menu-option-groups.js';
 
 /** Read the current source once; no duplicated flavor inventory to synchronize. */
 export function resolveSharedMenuOptions(
@@ -11,7 +17,9 @@ export function resolveSharedMenuOptions(
   sourceItems: MenuItem[],
   variantId?: string | null,
 ): MenuItemOption[] {
-  const configured = (item.optionGroups ?? []).map((g) => inheritOptionGroup(g, item.optionGroups ?? []));
+  const configured = (item.optionGroups ?? []).map((g) =>
+    inheritOptionGroup(g, item.optionGroups ?? []),
+  );
   const rules = configured.filter(
     (g) =>
       g.sourceCategoryId &&
@@ -23,18 +31,32 @@ export function resolveSharedMenuOptions(
               sameOptionGroup(specific, g) && specific.variantId === variantId,
           ))),
   );
-  const options: MenuItemOption[] = localOptions.filter(
-    (o) =>
-      !rules.some(
-        (g) =>
-          optionBelongsToGroup(o, g) &&
-          (g.variantId === null || g.variantId === o.variantId),
-      ),
-  ).map((option) => {
-    const rule = configured.find((g) => g.variantId === (variantId ?? option.variantId) && optionBelongsToGroup(option, g))
-      ?? configured.find((g) => g.variantId === null && optionBelongsToGroup(option, g));
-    return { ...option, groupId: effectiveGroupId(rule ?? { name: optionGroupName(option), groupId: option.groupId }) };
-  });
+  const options: MenuItemOption[] = localOptions
+    .filter(
+      (o) =>
+        !rules.some(
+          (g) =>
+            optionBelongsToGroup(o, g) &&
+            (g.variantId === null || g.variantId === o.variantId),
+        ),
+    )
+    .map((option) => {
+      const rule =
+        configured.find(
+          (g) =>
+            g.variantId === (variantId ?? option.variantId) &&
+            optionBelongsToGroup(option, g),
+        ) ??
+        configured.find(
+          (g) => g.variantId === null && optionBelongsToGroup(option, g),
+        );
+      return {
+        ...option,
+        groupId: effectiveGroupId(
+          rule ?? { name: optionGroupName(option), groupId: option.groupId },
+        ),
+      };
+    });
   for (const rule of rules) {
     const source = categories.find(
       (c) =>
@@ -57,7 +79,11 @@ export function resolveSharedMenuOptions(
           item.id,
           rule.variantId,
           flavor.name,
-          rule.optionPriceOverrides?.find((override) => override.sourceItemId === flavor.id)?.priceDelta ?? flavor.basePrice ?? 0,
+          rule.optionPriceOverrides?.find(
+            (override) => override.sourceItemId === flavor.id,
+          )?.priceDelta ??
+            flavor.basePrice ??
+            0,
           rule.name,
           flavor.isAvailable,
           undefined,

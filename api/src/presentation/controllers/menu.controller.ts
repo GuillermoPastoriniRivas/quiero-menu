@@ -113,12 +113,19 @@ export class MenuController {
   async updateItemComponents(
     @CurrentUser() user: RequestUser,
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(UpdateComponentsRequestSchema)) body: UpdateComponentsRequestDto,
+    @Body(new ZodValidationPipe(UpdateComponentsRequestSchema))
+    body: UpdateComponentsRequestDto,
   ) {
-    const result = await this.updateComponents.execute(id, user.restaurantId, body.components);
+    const result = await this.updateComponents.execute(
+      id,
+      user.restaurantId,
+      body.components,
+    );
     if (!result.ok) {
-      if (result.error.code === 'MENU_ITEM_OPTION_LIMIT') throw new BadRequestException(result.error.message);
-      if (result.error.code === 'CROSS_RESTAURANT_ACCESS') throw new ForbiddenException(result.error.message);
+      if (result.error.code === 'MENU_ITEM_OPTION_LIMIT')
+        throw new BadRequestException(result.error.message);
+      if (result.error.code === 'CROSS_RESTAURANT_ACCESS')
+        throw new ForbiddenException(result.error.message);
       throw new NotFoundException(result.error.message);
     }
     return result.value;
@@ -319,7 +326,8 @@ export class MenuController {
       ...body,
       itemId,
     });
-    if (!result.ok && result.error.code === 'MENU_ITEM_OPTION_LIMIT') throw new BadRequestException(result.error.message);
+    if (!result.ok && result.error.code === 'MENU_ITEM_OPTION_LIMIT')
+      throw new BadRequestException(result.error.message);
     if (!result.ok)
       throw result.error.code === 'CROSS_RESTAURANT_ACCESS'
         ? new ForbiddenException(result.error.message)
@@ -335,7 +343,8 @@ export class MenuController {
     body: UpdateOptionRequestDto,
   ) {
     const result = await this.updateOption.execute(id, user.restaurantId, body);
-    if (!result.ok && result.error.code === 'MENU_ITEM_OPTION_LIMIT') throw new BadRequestException(result.error.message);
+    if (!result.ok && result.error.code === 'MENU_ITEM_OPTION_LIMIT')
+      throw new BadRequestException(result.error.message);
     if (!result.ok)
       throw result.error.code === 'CROSS_RESTAURANT_ACCESS'
         ? new ForbiddenException(result.error.message)

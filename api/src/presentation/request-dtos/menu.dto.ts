@@ -102,10 +102,14 @@ export const UpdateOptionGroupsRequestSchema = z.object({
         groupId: z.string().trim().min(1).max(256).optional(),
         selectionMode: z.enum(['single', 'multiple', 'quantities']).optional(),
         requiredTotal: z.number().int().positive().nullable().optional(),
-        optionPriceOverrides: z.array(z.object({
-          sourceItemId: z.string().regex(/^[a-fA-F0-9]{24}$/),
-          priceDelta: z.number(),
-        })).optional(),
+        optionPriceOverrides: z
+          .array(
+            z.object({
+              sourceItemId: z.string().regex(/^[a-fA-F0-9]{24}$/),
+              priceDelta: z.number(),
+            }),
+          )
+          .optional(),
         name: z.string().trim().min(1),
         minSelections: z.number().int().min(0).optional().default(0),
         maxSelections: z.number().int().min(0).optional().default(0),
@@ -133,17 +137,35 @@ export type UpdateOptionGroupsRequestDto = z.infer<
 >;
 
 export const UpdateComponentsRequestSchema = z.object({
-  components: z.array(z.object({
-    slotId: z.string().trim().min(1).max(256),
-    name: z.string().trim().min(1),
-    displayOrder: z.number().optional().default(0),
-    parentVariantId: z.string().regex(/^[a-fA-F0-9]{24}$/).nullable().optional().default(null),
-    quantity: z.number().int().positive(),
-    choices: z.array(z.object({
-      menuItemId: z.string().regex(/^[a-fA-F0-9]{24}$/),
-      variantId: z.string().regex(/^[a-fA-F0-9]{24}$/).nullable().optional().default(null),
-      priceDelta: z.number().optional().default(0),
-    })).min(1),
-  })),
+  components: z.array(
+    z.object({
+      slotId: z.string().trim().min(1).max(256),
+      name: z.string().trim().min(1),
+      displayOrder: z.number().optional().default(0),
+      parentVariantId: z
+        .string()
+        .regex(/^[a-fA-F0-9]{24}$/)
+        .nullable()
+        .optional()
+        .default(null),
+      quantity: z.number().int().positive(),
+      choices: z
+        .array(
+          z.object({
+            menuItemId: z.string().regex(/^[a-fA-F0-9]{24}$/),
+            variantId: z
+              .string()
+              .regex(/^[a-fA-F0-9]{24}$/)
+              .nullable()
+              .optional()
+              .default(null),
+            priceDelta: z.number().optional().default(0),
+          }),
+        )
+        .min(1),
+    }),
+  ),
 });
-export type UpdateComponentsRequestDto = z.infer<typeof UpdateComponentsRequestSchema>;
+export type UpdateComponentsRequestDto = z.infer<
+  typeof UpdateComponentsRequestSchema
+>;

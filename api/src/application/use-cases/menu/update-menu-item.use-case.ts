@@ -9,14 +9,22 @@ import {
 } from '../../../domain/errors/domain-errors.js';
 
 export class UpdateMenuItemUseCase {
-  constructor(private readonly itemRepo: MenuItemRepository, private readonly categoryRepo: MenuCategoryRepository) {}
+  constructor(
+    private readonly itemRepo: MenuItemRepository,
+    private readonly categoryRepo: MenuCategoryRepository,
+  ) {}
 
   async execute(
     id: string,
     restaurantId: string,
     data: Partial<Omit<MenuItem, 'id' | 'restaurantId'>>,
   ): Promise<
-    Result<MenuItem, MenuItemNotFoundError | MenuCategoryNotFoundError | CrossRestaurantAccessError>
+    Result<
+      MenuItem,
+      | MenuItemNotFoundError
+      | MenuCategoryNotFoundError
+      | CrossRestaurantAccessError
+    >
   > {
     const existing = await this.itemRepo.findById(id);
     if (!existing) return err(new MenuItemNotFoundError());
@@ -26,7 +34,8 @@ export class UpdateMenuItemUseCase {
     if (data.categoryId !== undefined) {
       const category = await this.categoryRepo.findById(data.categoryId);
       if (!category) return err(new MenuCategoryNotFoundError());
-      if (category.restaurantId !== restaurantId) return err(new CrossRestaurantAccessError());
+      if (category.restaurantId !== restaurantId)
+        return err(new CrossRestaurantAccessError());
     }
 
     const updated = await this.itemRepo.update(id, data);

@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
-import type { SelectedOption, OrderItemComponent } from '../../../../domain/entities/order-item.entity.js';
+import type {
+  SelectedOption,
+  OrderItemComponent,
+} from '../../../../domain/entities/order-item.entity.js';
 
 export type OrderItemDocument = HydratedDocument<OrderItemModel>;
 

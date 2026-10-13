@@ -10,15 +10,18 @@ import {
 import { MenuItemMapper } from '../mappers/menu-item.mapper.js';
 import type { MenuItemComponent } from '../../../../domain/entities/menu-item-component.entity.js';
 
-const componentPayload = (components: MenuItemComponent[]) => components.map((slot) => ({
-  ...slot,
-  parentVariantId: slot.parentVariantId ? new Types.ObjectId(slot.parentVariantId) : null,
-  choices: slot.choices.map((choice) => ({
-    ...choice,
-    menuItemId: new Types.ObjectId(choice.menuItemId),
-    variantId: choice.variantId ? new Types.ObjectId(choice.variantId) : null,
-  })),
-}));
+const componentPayload = (components: MenuItemComponent[]) =>
+  components.map((slot) => ({
+    ...slot,
+    parentVariantId: slot.parentVariantId
+      ? new Types.ObjectId(slot.parentVariantId)
+      : null,
+    choices: slot.choices.map((choice) => ({
+      ...choice,
+      menuItemId: new Types.ObjectId(choice.menuItemId),
+      variantId: choice.variantId ? new Types.ObjectId(choice.variantId) : null,
+    })),
+  }));
 
 @Injectable()
 export class MongoMenuItemRepository implements MenuItemRepository {
@@ -36,11 +39,15 @@ export class MongoMenuItemRepository implements MenuItemRepository {
       optionGroups: (data.optionGroups ?? []).map((g) => ({
         ...g,
         variantId: g.variantId ? new Types.ObjectId(g.variantId) : null,
-        sourceCategoryId: g.sourceCategoryId ? new Types.ObjectId(g.sourceCategoryId) : null,
-        optionPriceOverrides: (g.optionPriceOverrides ?? []).map((override) => ({
-          ...override,
-          sourceItemId: new Types.ObjectId(override.sourceItemId),
-        })),
+        sourceCategoryId: g.sourceCategoryId
+          ? new Types.ObjectId(g.sourceCategoryId)
+          : null,
+        optionPriceOverrides: (g.optionPriceOverrides ?? []).map(
+          (override) => ({
+            ...override,
+            sourceItemId: new Types.ObjectId(override.sourceItemId),
+          }),
+        ),
       })),
     });
     return MenuItemMapper.toDomain(doc);
@@ -81,15 +88,20 @@ export class MongoMenuItemRepository implements MenuItemRepository {
     if (data.categoryId)
       update.categoryId = new Types.ObjectId(data.categoryId);
     if (data.components) update.components = componentPayload(data.components);
-    if (data.optionGroups) update.optionGroups = data.optionGroups.map((g) => ({
-      ...g,
-      variantId: g.variantId ? new Types.ObjectId(g.variantId) : null,
-      sourceCategoryId: g.sourceCategoryId ? new Types.ObjectId(g.sourceCategoryId) : null,
-      optionPriceOverrides: (g.optionPriceOverrides ?? []).map((override) => ({
-        ...override,
-        sourceItemId: new Types.ObjectId(override.sourceItemId),
-      })),
-    }));
+    if (data.optionGroups)
+      update.optionGroups = data.optionGroups.map((g) => ({
+        ...g,
+        variantId: g.variantId ? new Types.ObjectId(g.variantId) : null,
+        sourceCategoryId: g.sourceCategoryId
+          ? new Types.ObjectId(g.sourceCategoryId)
+          : null,
+        optionPriceOverrides: (g.optionPriceOverrides ?? []).map(
+          (override) => ({
+            ...override,
+            sourceItemId: new Types.ObjectId(override.sourceItemId),
+          }),
+        ),
+      }));
     const doc = await this.model.findByIdAndUpdate(
       id,
       { $set: update },

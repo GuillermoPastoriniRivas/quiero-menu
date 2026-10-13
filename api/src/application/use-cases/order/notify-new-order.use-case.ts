@@ -52,7 +52,8 @@ export class NotifyNewOrderUseCase {
                 line += ` [${item.selectedOptions.map((o) => `${(o.quantity ?? 1) > 1 ? `${o.quantity}x ` : ''}${o.name}`).join(', ')}]`;
               for (const component of item.components ?? []) {
                 line += `<br>&nbsp;&nbsp;${component.slotName}: ${component.quantity}x ${component.menuItemName}`;
-                if (component.variantName) line += ` (${component.variantName})`;
+                if (component.variantName)
+                  line += ` (${component.variantName})`;
                 if (component.selectedOptions.length)
                   line += ` [${component.selectedOptions.map((o) => `${(o.quantity ?? 1) > 1 ? `${o.quantity}x ` : ''}${o.name}`).join(', ')}]`;
               }
