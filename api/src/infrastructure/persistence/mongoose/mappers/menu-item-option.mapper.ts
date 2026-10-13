@@ -14,6 +14,7 @@ export class MenuItemOptionMapper {
       undefined,
       undefined,
       doc.description,
+      doc.groupId,
     );
   }
 }

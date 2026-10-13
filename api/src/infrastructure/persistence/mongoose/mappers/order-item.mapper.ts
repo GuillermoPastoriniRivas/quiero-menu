@@ -13,8 +13,15 @@ export class OrderItemMapper {
       doc.quantity,
       doc.unitPrice,
       doc.totalPrice,
-      doc.selectedOptions,
+      (doc.selectedOptions ?? []).map((option) => ({ ...option, quantity: option.quantity ?? 1 })),
       doc.notes,
+      (doc.components ?? []).map((component) => ({
+        ...component,
+        selectedOptions: (component.selectedOptions ?? []).map((option) => ({
+          ...option,
+          quantity: option.quantity ?? 1,
+        })),
+      })),
     );
   }
 }

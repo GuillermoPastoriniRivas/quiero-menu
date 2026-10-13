@@ -2,7 +2,8 @@
 
 import { create } from 'zustand';
 import { api } from '@/lib/api';
-import type { MenuCategory, MenuItem, MenuItemVariant, MenuItemOption, MenuItemOptionGroup } from '@/types';
+import type { MenuCategory, MenuItem, MenuItemOption } from '@/types';
+import type { EditorGroup, EditorVariant, PromoComponent } from '@/components/menu/editor-model';
 
 interface MenuState {
   categories: MenuCategory[];
@@ -18,13 +19,14 @@ interface MenuState {
   updateItem: (id: string, data: Partial<MenuItem>) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
   toggleAvailability: (id: string) => Promise<void>;
-  updateItemOptionGroups: (itemId: string, groups: MenuItemOptionGroup[]) => Promise<MenuItem>;
+  updateItemOptionGroups: (itemId: string, groups: EditorGroup[]) => Promise<MenuItem>;
+  updateItemComponents: (itemId: string, components: PromoComponent[]) => Promise<MenuItem>;
 
-  createVariant: (itemId: string, data: { name: string; priceOverride?: number | null; maxSelections?: number }) => Promise<MenuItemVariant>;
-  updateVariant: (id: string, data: Partial<MenuItemVariant>) => Promise<void>;
+  createVariant: (itemId: string, data: { name: string; priceOverride?: number | null; maxSelections?: number; isAvailable?: boolean }) => Promise<EditorVariant>;
+  updateVariant: (id: string, data: Partial<EditorVariant>) => Promise<void>;
   deleteVariant: (id: string) => Promise<void>;
 
-  createOption: (itemId: string, data: { name: string; description?: string; optionGroup: string; priceDelta?: number; variantId?: string | null; clientRequestId?: string }) => Promise<MenuItemOption>;
+  createOption: (itemId: string, data: { name: string; description?: string; optionGroup: string; groupId?: string; priceDelta?: number; variantId?: string | null; clientRequestId?: string }) => Promise<MenuItemOption>;
   updateOption: (id: string, data: Partial<MenuItemOption>) => Promise<void>;
   deleteOption: (id: string) => Promise<void>;
 }
@@ -87,8 +89,14 @@ export const useMenuStore = create<MenuState>((set) => ({
     return updated;
   },
 
+  updateItemComponents: async (itemId, components) => {
+    const updated = await api.patch<MenuItem>(`/menu/items/${itemId}/components`, { components });
+    set((s) => ({ items: s.items.map((i) => i.id === itemId ? updated : i) }));
+    return updated;
+  },
+
   createVariant: async (itemId, data) => {
-    return api.post<MenuItemVariant>(`/menu/items/${itemId}/variants`, data);
+    return api.post<EditorVariant>(`/menu/items/${itemId}/variants`, data);
   },
 
   updateVariant: async (id, data) => {

@@ -16,7 +16,7 @@ export class MongoMenuItemVariantRepository implements MenuItemVariantRepository
     private readonly model: Model<MenuItemVariantDocument>,
   ) {}
 
-  async create(data: Omit<MenuItemVariant, 'id'>): Promise<MenuItemVariant> {
+  async create(data: Omit<MenuItemVariant, 'id' | 'isAvailable'> & { isAvailable?: boolean }): Promise<MenuItemVariant> {
     const doc = await this.model.create({
       ...data,
       itemId: new Types.ObjectId(data.itemId),
@@ -25,14 +25,14 @@ export class MongoMenuItemVariantRepository implements MenuItemVariantRepository
   }
 
   async findByItemId(itemId: string): Promise<MenuItemVariant[]> {
-    const docs = await this.model.find({ itemId: new Types.ObjectId(itemId) });
+    const docs = await this.model.find({ itemId: new Types.ObjectId(itemId) }).sort({ displayOrder: 1 });
     return docs.map(MenuItemVariantMapper.toDomain);
   }
 
   async findByItemIds(itemIds: string[]): Promise<MenuItemVariant[]> {
     const docs = await this.model.find({
       itemId: { $in: itemIds.map((id) => new Types.ObjectId(id)) },
-    });
+    }).sort({ displayOrder: 1 });
     return docs.map(MenuItemVariantMapper.toDomain);
   }
 

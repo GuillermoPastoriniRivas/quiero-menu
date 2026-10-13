@@ -15,7 +15,7 @@ export class CreateMenuItemVariantUseCase {
 
   async execute(
     restaurantId: string,
-    data: Omit<MenuItemVariant, 'id'>,
+    data: Omit<MenuItemVariant, 'id' | 'isAvailable'> & { isAvailable?: boolean },
   ): Promise<
     Result<MenuItemVariant, MenuItemNotFoundError | CrossRestaurantAccessError>
   > {

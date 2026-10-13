@@ -1,5 +1,7 @@
 'use client';
 
+import { OrderItemSelections } from '@/components/storefront/order-item-selections';
+
 import { useState } from 'react';
 import {
   Dialog,
@@ -180,11 +182,7 @@ export function OrderDetailDialog({
                             {item.variantName && (
                               <span className="text-on-surface-variant"> ({item.variantName})</span>
                             )}
-                            {item.selectedOptions && item.selectedOptions.length > 0 && (
-                              <p className="text-xs text-on-surface-variant mt-0.5">
-                                {item.selectedOptions.map((o) => o.name).join(', ')}
-                              </p>
-                            )}
+                            <div className="text-xs"><OrderItemSelections options={item.selectedOptions} components={item.components} /></div>
                             {item.notes && (
                               <p className="text-xs italic text-on-surface-variant mt-0.5">{item.notes}</p>
                             )}

@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { MenuItemOption } from "@/types";
-import type { ProductWithOptions } from "@/lib/menu-options";
+import { sourceShadowsLocal, type EditorItem, type EditorOption } from './editor-model';
 import { useMenuStore } from "@/stores/menu.store";
 import { optionBatch, saveOptionBatch } from "@/lib/option-batch";
 import type { PendingOption } from "@/lib/option-batch";
@@ -30,8 +29,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export type OptionDialogState =
-  | { mode: "create"; item: ProductWithOptions }
-  | { mode: "edit"; option: MenuItemOption };
+  | { mode: "create"; item: EditorItem }
+  | { mode: "edit"; option: EditorOption; item?: EditorItem };
 
 export interface SharedList {
   id: string;
@@ -230,13 +229,18 @@ export function OptionEditorDialog({
   onChanged: () => Promise<void>;
 }) {
   const option = dialog.mode === "edit" ? dialog.option : null;
-  const item = dialog.mode === "create" ? dialog.item : null;
+  const item = dialog.item ?? null;
 
   const [mode, setMode] = useState<Mode>("product");
   const [name, setName] = useState(option?.name ?? "");
   const [optionDescription, setOptionDescription] = useState(option?.description ?? "");
   const [group, setGroup] = useState(option?.optionGroup ?? "");
   const [delta, setDelta] = useState(option?.priceDelta ? String(option.priceDelta) : "");
+  const [variantId, setVariantId] = useState(option?.variantId ?? '');
+  const [available, setAvailable] = useState(option?.isAvailable ?? true);
+  const [listGroupName, setListGroupName] = useState('');
+  const localGroupId = useRef(option?.groupId ?? '');
+  const optionsComplete = useRef(false);
   const [productItems, setProductItems] = useState<OptionDraft[]>([]);
   const [listId, setListId] = useState<string>(sources[0]?.id ?? NEW_LIST);
   const [listName, setListName] = useState("");
@@ -257,6 +261,7 @@ export function OptionEditorDialog({
   const updateItemOptionGroups = useMenuStore((s) => s.updateItemOptionGroups);
 
   const chosenList = sources.find((s) => s.id === listId) ?? null;
+  const shadowsSource = Boolean(item && mode === 'product' && sourceShadowsLocal(item, group.trim(), variantId || null, option?.groupId));
   const listLabel = (value: string) => {
     if (value === NEW_LIST) return "＋ Crear lista nueva";
     const source = sources.find((s) => s.id === value);
@@ -266,15 +271,17 @@ export function OptionEditorDialog({
   const ruleMin = chooseRule === "one" ? 1 : 0;
   const ruleMax = chooseRule === "one" ? 1 : chooseRule === "upto" ? Math.max(1, Number(chooseCount) || 1) : 0;
 
-  const canSave = option
+  const canSave = !shadowsSource && (option
     ? Boolean(name.trim())
     : mode === "product"
       ? productItems.length > 0 && Boolean(group.trim())
       : listId === NEW_LIST
         ? listItems.length > 0 && Boolean(listName.trim())
-        : Boolean(chosenList);
+        : Boolean(chosenList));
 
   const saveProduct = async () => {
+    localGroupId.current ||= item?.optionGroups?.find((g) => g.name === group.trim())?.groupId ?? crypto.randomUUID();
+    if (!optionsComplete.current) {
     const descriptionByName = new Map(
       productItems.map((draft) => [draft.name, draft.description?.trim() || undefined]),
     );
@@ -287,6 +294,8 @@ export function OptionEditorDialog({
           name: entry.name,
           description: descriptionByName.get(entry.name),
           optionGroup: group.trim(),
+          groupId: localGroupId.current,
+          variantId: variantId || null,
           priceDelta: Number(delta || 0),
           clientRequestId: entry.requestId,
         }),
@@ -301,13 +310,19 @@ export function OptionEditorDialog({
       await onChanged();
       return false;
     }
+    optionsComplete.current = true;
+    }
+    const exists = item!.optionGroups?.some((g) => g.name === group.trim() && (g.variantId === null || g.variantId === (variantId || null)));
+    if (!exists) await updateItemOptionGroups(item!.id, [...(item!.optionGroups ?? []), { name: group.trim(), groupId: localGroupId.current, minSelections: 0, maxSelections: 0, variantId: variantId || null, displayOrder: item!.optionGroups?.length ?? 0, selectionMode: 'multiple' }]);
     return true;
   };
 
   const saveList = async () => {
     if (!item) return false;
     let sourceId = listId;
-    let ruleName = chosenList?.name ?? listName.trim();
+    const ruleName = listGroupName.trim() || chosenList?.name || listName.trim();
+    if (item.options.some((o) => o.optionGroup.trim() === ruleName && (o.variantId === null || o.variantId === (variantId || null)))) throw new Error('Ese grupo ya tiene opciones propias. Usá otro nombre para la lista compartida.');
+    if (item.optionGroups?.some((g) => g.name === ruleName && g.variantId === (variantId || null))) throw new Error('Ese grupo ya tiene una regla. Editala desde Reglas para cambiar su fuente sin perder la configuración.');
 
     if (listId === NEW_LIST) {
       // Reusa la lista ya creada si un intento anterior falló a mitad.
@@ -316,7 +331,6 @@ export function OptionEditorDialog({
         createdList.current = { id: category.id, made: [] };
       }
       sourceId = createdList.current.id;
-      ruleName = listName.trim();
       const made = createdList.current.made;
       const todo = listItems.filter((entry) => !made.includes(entry.name));
       setProgress({ completed: made.length, total: listItems.length });
@@ -333,17 +347,19 @@ export function OptionEditorDialog({
     }
 
     const existing = (item.optionGroups ?? []).filter(
-      (g) => g.name !== ruleName || g.variantId !== null,
+      (g) => g.name !== ruleName || g.variantId !== (variantId || null),
     );
     await updateItemOptionGroups(item.id, [
       ...existing,
       {
         name: ruleName,
+        groupId: item.optionGroups?.find((g) => g.name === ruleName)?.groupId ?? crypto.randomUUID(),
         minSelections: ruleMin,
         maxSelections: ruleMax,
-        variantId: null,
+        variantId: variantId || null,
         displayOrder: existing.length,
         sourceCategoryId: sourceId,
+        selectionMode: chooseRule === 'one' ? 'single' : 'multiple',
       },
     ]);
     return true;
@@ -362,6 +378,9 @@ export function OptionEditorDialog({
           description: optionDescription.trim(),
           optionGroup: group.trim(),
           priceDelta: Number(delta || 0),
+          variantId: variantId || null,
+          isAvailable: available,
+          groupId: option.groupId,
         });
       } else if (mode === "product") {
         ok = await saveProduct();
@@ -399,7 +418,7 @@ export function OptionEditorDialog({
     >
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{option ? "Editar opción" : "Agregar opciones"}</DialogTitle>
+           <DialogTitle>{option ? "Editar opción" : "Agregar sabores o extras"}</DialogTitle>
           <DialogDescription>
             {option
               ? "Actualizá el nombre, la aclaración, el grupo y el precio."
@@ -439,13 +458,15 @@ export function OptionEditorDialog({
         )}
 
         <div className="space-y-4">
+          {item && item.variants.length > 0 && <label className="block space-y-1 text-sm font-medium">Se ofrecen en<select aria-label="Presentación de las opciones" value={variantId} disabled={busy || pending.current.length > 0} onChange={(e) => setVariantId(e.target.value)} className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"><option value="">Todas las presentaciones</option>{item.variants.map((v) => <option key={v.id} value={v.id}>{v.name || 'Presentación sin nombre'}</option>)}</select><span className="block text-xs text-muted-foreground">Por ejemplo, extras de bebida fría solo en la presentación Fría.</span></label>}
           {/* ----- Editar una opción ----- */}
           {option && (
             <>
               <div className="space-y-1">
                 <Label htmlFor="option-group">Grupo</Label>
-                <Input id="option-group" value={group} disabled={busy} onChange={(e) => setGroup(e.target.value)} placeholder="Sabores, salsas, extras…" />
+                 <Input id="option-group" value={group} disabled={busy || !!option.groupId} onChange={(e) => setGroup(e.target.value)} placeholder="Sabores, salsas, extras…" />
               </div>
+              <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={available} disabled={busy} onChange={(e) => setAvailable(e.target.checked)} />Disponible para elegir</label>
               <div className="space-y-1">
                 <Label htmlFor="option-name">Nombre</Label>
                 <Input id="option-name" value={name} disabled={busy} onChange={(e) => setName(e.target.value)} />
@@ -472,7 +493,7 @@ export function OptionEditorDialog({
             <>
               <div className="space-y-1">
                 <Label htmlFor="option-group">Grupo</Label>
-                <Input id="option-group" value={group} disabled={busy} onChange={(e) => setGroup(e.target.value)} placeholder="Salsas, extras…" />
+                <Input id="option-group" value={group} disabled={busy || pending.current.length > 0 || optionsComplete.current} onChange={(e) => { setGroup(e.target.value); localGroupId.current = ''; }} placeholder="Salsas, extras…" />
               </div>
               <div className="space-y-1">
                 <Label>Opciones</Label>
@@ -488,6 +509,7 @@ export function OptionEditorDialog({
           {/* ----- Modo: lista compartida ----- */}
           {!option && mode === "list" && (
             <>
+              <label className="block space-y-1 text-sm font-medium">Nombre del grupo en este producto (opcional)<Input value={listGroupName} disabled={busy || !!createdList.current} onChange={(e) => setListGroupName(e.target.value)} placeholder={chosenList?.name ?? (listName.trim() || 'Se usa el nombre de la lista')} /><span className="block text-xs text-muted-foreground">Permite reutilizar una lista en grupos diferentes, sin copiar sus opciones.</span></label>
               <div className="space-y-1">
                 <Label htmlFor="list-pick">Lista</Label>
                 <Select value={listId} onValueChange={(value) => setListId(value as string)}>
@@ -579,6 +601,7 @@ export function OptionEditorDialog({
               {error}
             </p>
           )}
+          {shadowsSource && <p role="alert" className="text-sm text-destructive">Este grupo usa una lista compartida. Editá esa lista o elegí un grupo propio distinto; las opciones nuevas no deben quedar ocultas detrás de una fuente.</p>}
           {busy && !option && (
             <p role="status" className="text-sm">
               Guardando {progress.completed} de {progress.total || "…"}…

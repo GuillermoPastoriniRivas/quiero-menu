@@ -11,5 +11,6 @@ export class MenuItemOption {
     public readonly sourceItemId?: string,
     /** Aclaración opcional que ve el cliente (ej. qué lleva un sabor). */
     public readonly description?: string,
+    public readonly groupId?: string,
   ) {}
 }

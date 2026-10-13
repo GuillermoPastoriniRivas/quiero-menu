@@ -6,6 +6,8 @@
  * - `maxSelections` 0 = ilimitado, >0 = tope de selecciones.
  * - `variantId` permite atar la regla a una variante puntual (null = todas).
  */
+export type SelectionMode = 'single' | 'multiple' | 'quantities';
+
 export class MenuItemOptionGroup {
   public readonly selectionScope?: 'group' | 'item';
   constructor(
@@ -17,6 +19,13 @@ export class MenuItemOptionGroup {
     /** Solo en reglas derivadas: el tope histórico se comparte entre grupos. */
     selectionScope: 'group' | 'item' = 'group',
     public readonly sourceCategoryId: string | null = null,
+    public readonly groupId?: string,
+    public readonly selectionMode?: SelectionMode,
+    public readonly requiredTotal?: number | null,
+    public readonly optionPriceOverrides?: {
+      sourceItemId: string;
+      priceDelta: number;
+    }[],
   ) {
     this.selectionScope = selectionScope;
   }

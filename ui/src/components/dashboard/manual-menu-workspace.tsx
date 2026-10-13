@@ -53,7 +53,7 @@ export function ManualMenuWorkspace({ data, loading, error, onChanged }: {
   const entries = manualEntries(categories);
   const products = entries.filter(({ category }) => !category.isOptionSource);
   const sourceCategories = categories.filter((category) => category.isOptionSource);
-  const currency = data?.restaurant.currency ?? 'ARS';
+  const currency = data?.restaurant?.currency ?? 'ARS';
   const resolvedCategoryId = categoryId || categories.find((category) => !category.isOptionSource)?.id || categories[0]?.id || NEW_CATEGORY;
   const selectedSource = categories.find((category) => category.id === resolvedCategoryId)?.isOptionSource;
   const filtered = entries.filter(({ category, item }) =>
@@ -101,7 +101,7 @@ export function ManualMenuWorkspace({ data, loading, error, onChanged }: {
         imageUrl,
       });
       toast.success(`${created.name} guardado`, {
-        action: { label: 'Editar detalles', onClick: () => router.push(`/menu?producto=${encodeURIComponent(created.id)}`) },
+        action: { label: selectedSource ? 'Editar lista' : 'Editar detalles', onClick: () => router.push(selectedSource ? `/menu?categoria=${encodeURIComponent(targetCategory)}` : `/menu?producto=${encodeURIComponent(created.id)}`) },
       });
       setName('');
       setPrice('');
@@ -175,9 +175,8 @@ export function ManualMenuWorkspace({ data, loading, error, onChanged }: {
       <div className="border-b border-outline-variant/25 bg-gradient-to-br from-primary/[0.07] via-surface-container-lowest to-surface-container-lowest p-5 sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">Tu carta</p>
-            <h2 id="manual-menu-title" className="mt-1.5 font-[family-name:var(--font-heading)] text-2xl font-extrabold tracking-tight text-on-surface sm:text-3xl">¿Qué cambiamos hoy?</h2>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-on-surface-variant">Un producto nuevo, un precio o algo que se agotó. Lo esencial, sin vueltas.</p>
+            <h2 id="manual-menu-title" className="font-[family-name:var(--font-heading)] text-2xl font-extrabold tracking-tight text-on-surface sm:text-3xl">Gestioná tu carta</h2>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-on-surface-variant">Sumá un producto, cambiá un precio o marcá algo como agotado.</p>
           </div>
           <button type="button" disabled={!data || Boolean(busy) || Boolean(error)} onClick={beginAdding} className={cn(actionClass, 'w-full gradient-cta text-white shadow-md shadow-primary/20 sm:w-auto')}>
             <MaterialIcon name="add" size="md" />{sourceCategories.some((category) => category.id === filter) ? 'Agregar opción' : 'Agregar producto'}
@@ -234,14 +233,14 @@ export function ManualMenuWorkspace({ data, loading, error, onChanged }: {
               const editablePrice = canEditBasePrice(entry);
               const displayPrice = item.variants.length > 0 ? Math.min(...item.variants.map((variant) => variant.priceOverride ?? item.basePrice)) : item.basePrice;
               return <div key={item.id} className="flex min-w-0 flex-wrap items-center gap-3 py-3.5 sm:flex-nowrap">
-                <Link href={`/menu?producto=${encodeURIComponent(item.id)}`} aria-label={`Editar ${item.name}`} className="flex min-w-0 flex-1 items-center gap-3">
+                <Link href={isSource ? `/menu?categoria=${encodeURIComponent(category.id)}` : `/menu?producto=${encodeURIComponent(item.id)}`} aria-label={`Editar ${item.name}`} className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-container-low text-on-surface-variant">{item.imageUrl ? <img src={item.imageUrl} alt="" className="h-full w-full object-cover" /> : <MaterialIcon name={isSource ? 'layers' : 'restaurant_menu'} size="md" />}</span>
                   <span className="min-w-0"><span className="block truncate text-sm font-bold text-on-surface">{item.name}</span><span className="mt-1 block truncate text-xs text-on-surface-variant">{category.name}{isSource ? ' · opción compartida' : !item.isVisible ? ' · oculto en el menú' : item.variants.length ? ' · con tamaños' : ''}</span></span>
                 </Link>
                 <div className="ml-auto flex shrink-0 items-center gap-2">
                   {view === 'prices' ? editablePrice ? <MoneyInput aria-label={`Precio de ${item.name}`} disabled={Boolean(busy)} value={drafts[item.id] ?? String(item.basePrice)} onChange={(value) => setDrafts((current) => ({ ...current, [item.id]: value }))} className={cn('h-11 w-28 px-3', drafts[item.id] !== undefined && drafts[item.id] !== String(item.basePrice) && 'border-primary bg-primary/5')} /> : <Link href={`/menu?producto=${encodeURIComponent(item.id)}`} className="inline-flex min-h-11 items-center text-xs font-semibold text-primary">{isSource ? 'Sin precio propio' : 'Editar tamaños'}<MaterialIcon name="chevron_right" size="xs" /></Link> : view === 'availability' ? <button type="button" role="switch" aria-checked={item.isAvailable} aria-label={`Disponibilidad de ${item.name}`} disabled={Boolean(busy)} onClick={() => void changeAvailability(item)} className={cn('inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-bold disabled:opacity-50', item.isAvailable ? 'bg-success-container text-success' : 'bg-surface-container-high text-on-surface-variant')}><span className={cn('h-2 w-2 rounded-full', item.isAvailable ? 'bg-success' : 'bg-outline')} />{busy === item.id ? 'Guardando…' : item.isAvailable ? 'Disponible' : 'Agotado'}</button> : <>
                     {!isSource && <span className="text-right text-sm font-bold text-on-surface">{item.variants.length > 0 && <span className="block text-[10px] font-medium text-on-surface-variant">Desde</span>}{formatCurrency(displayPrice, currency).replace(` ${currency}`, '')}</span>}
-                    <Link href={`/menu?producto=${encodeURIComponent(item.id)}`} aria-label={`Editar detalles de ${item.name}`} className="flex h-11 w-10 items-center justify-center rounded-xl text-on-surface-variant hover:bg-primary/5 hover:text-primary"><MaterialIcon name="edit" size="sm" /></Link>
+                    <Link href={isSource ? `/menu?categoria=${encodeURIComponent(category.id)}` : `/menu?producto=${encodeURIComponent(item.id)}`} aria-label={`Editar detalles de ${item.name}`} className="flex h-11 w-10 items-center justify-center rounded-xl text-on-surface-variant hover:bg-primary/5 hover:text-primary"><MaterialIcon name="edit" size="sm" /></Link>
                   </>}
                 </div>
               </div>;

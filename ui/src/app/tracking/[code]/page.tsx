@@ -1,5 +1,7 @@
 'use client';
 
+import { OrderItemSelections } from '@/components/storefront/order-item-selections';
+
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, usePathname } from 'next/navigation';
 import type { TrackingResponse, ConfirmDeliveryResponse } from '@/types';
@@ -522,9 +524,7 @@ export default function TrackingPage() {
               <div className="flex-1">
                 <span className="font-semibold">{item.quantity}x {item.menuItemName}</span>
                 {item.variantName && <span className="text-on-surface-variant"> ({item.variantName})</span>}
-                {item.selectedOptions.length > 0 && (
-                  <p className="text-xs text-on-surface-variant mt-0.5">{item.selectedOptions.map((o) => o.name).join(', ')}</p>
-                )}
+                <div className="text-xs"><OrderItemSelections options={item.selectedOptions} components={item.components} /></div>
                 {item.notes && <p className="text-xs italic text-on-surface-variant mt-0.5">{item.notes}</p>}
               </div>
               <span className="text-on-surface-variant ml-2 shrink-0">{formatCurrency(item.totalPrice, restaurant.currency)}</span>

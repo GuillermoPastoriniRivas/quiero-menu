@@ -70,6 +70,7 @@ describe('UpdateMenuItemOptionGroupsUseCase', () => {
         update,
       } as any,
       {
+        update: jest.fn(),
         findByItemId: jest.fn().mockResolvedValue([
           { optionGroup: 'Clasicos', variantId: null, isAvailable: true },
           { optionGroup: 'Clasicos', variantId: null, isAvailable: true },
@@ -94,6 +95,10 @@ describe('UpdateMenuItemOptionGroupsUseCase', () => {
           displayOrder: 0,
           selectionScope: 'group',
           sourceCategoryId: null,
+          groupId: 'legacy:Clasicos',
+          selectionMode: 'multiple',
+          requiredTotal: null,
+          optionPriceOverrides: [],
         },
       ],
     });

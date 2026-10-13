@@ -1,20 +1,21 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
+import type { SelectedOption, OrderItemComponent } from '../../../../domain/entities/order-item.entity.js';
 
 export type OrderItemDocument = HydratedDocument<OrderItemModel>;
 
 @Schema({ collection: 'order_items' })
 export class OrderItemModel {
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
   orderId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
   menuItemId: Types.ObjectId;
 
   @Prop({ required: true })
   menuItemName: string;
 
-  @Prop({ type: Types.ObjectId, default: null })
+  @Prop({ type: MongooseSchema.Types.ObjectId, default: null })
   variantId: Types.ObjectId | null;
 
   @Prop({ type: String, default: null })
@@ -30,7 +31,10 @@ export class OrderItemModel {
   totalPrice: number;
 
   @Prop({ type: [Object], default: [] })
-  selectedOptions: { optionId: string; name: string; priceDelta: number }[];
+  selectedOptions: SelectedOption[];
+
+  @Prop({ type: [Object], default: [] })
+  components: OrderItemComponent[];
 
   @Prop({ default: '' })
   notes: string;

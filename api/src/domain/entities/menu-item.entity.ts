@@ -1,5 +1,6 @@
 import { MenuItemType } from '../enums/menu-item-type.enum.js';
 import { MenuItemOptionGroup } from './menu-item-option-group.entity.js';
+import type { MenuItemComponent } from './menu-item-component.entity.js';
 
 export class MenuItem {
   constructor(
@@ -15,5 +16,6 @@ export class MenuItem {
     public readonly isVisible: boolean,
     public readonly itemType: MenuItemType,
     public readonly optionGroups?: MenuItemOptionGroup[],
+    public readonly components?: MenuItemComponent[],
   ) {}
 }

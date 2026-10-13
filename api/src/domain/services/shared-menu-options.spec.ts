@@ -149,7 +149,7 @@ describe('shared flavor source, publication and checkout', () => {
       );
       expect(valid.ok).toBe(true);
       if (valid.ok) {
-        expect(valid.value.order.total).toBe(100);
+        expect(valid.value.order.total).toBe(100 + max * 100);
         expect(valid.value.items[0].selectedOptions).toHaveLength(max);
       }
       expect(

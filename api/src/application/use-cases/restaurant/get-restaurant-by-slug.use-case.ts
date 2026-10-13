@@ -107,6 +107,7 @@ export class GetRestaurantBySlugUseCase {
           );
           return {
             ...item,
+            components: item.components ?? [],
             isOrderable: !cat.isOptionSource,
             optionGroups: deriveOptionGroups(item, variants, options),
             variants,

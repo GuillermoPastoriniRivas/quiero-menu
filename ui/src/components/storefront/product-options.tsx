@@ -4,21 +4,25 @@ import { useId } from "react";
 import {
   describeOptionRule,
   selectedInGroup,
+  selectedUnitsInGroup,
   selectionIssues,
-  toggleProductOption,
+  setProductOptionQuantity,
+  stableOptionId,
+  optionSelectionMode,
 } from "@/lib/menu-options";
 import type { ProductOptionGroup } from "@/lib/menu-options";
 import { formatCurrency } from "@/lib/format";
+import type { SelectedOptionInput } from '@/types';
 
 export function ProductOptions({
   groups,
-  selectedIds,
-  onToggle,
+  selections,
+  onChange,
   currency,
 }: {
   groups: ProductOptionGroup[];
-  selectedIds: string[];
-  onToggle: (id: string) => void;
+  selections: SelectedOptionInput[];
+  onChange: (selections: SelectedOptionInput[]) => void;
   currency: string;
 }) {
   const id = useId();
@@ -32,13 +36,16 @@ export function ProductOptions({
         </p>
       )}
       {groups.map((group, index) => {
-        const count = selectedInGroup(group, selectedIds);
-        const single = group.maxSelections === 1;
+        const count = selectedInGroup(group, selections);
+        const units = selectedUnitsInGroup(group, selections);
+        const mode = optionSelectionMode(group);
+        const single = mode === 'single';
+        const quantities = mode === 'quantities';
         const descriptionId = `${id}-${index}`;
-        const issue = selectionIssues([group], selectedIds)[0];
+        const issue = selectionIssues([group], selections.filter(s => s.groupId === group.groupId))[0];
         return (
           <fieldset
-            key={group.name}
+            key={group.groupId}
             className="space-y-2"
             aria-describedby={descriptionId}
           >
@@ -56,23 +63,25 @@ export function ProductOptions({
                 {describeOptionRule(group.minSelections, group.maxSelections)}
               </span>
               <span aria-live="polite">
-                {count} {count === 1 ? "seleccionada" : "seleccionadas"}
+                {quantities ? `${units}${group.requiredTotal != null ? ` / ${group.requiredTotal}` : ''} unidades · ` : ''}{count} {count === 1 ? "opción" : "opciones"}
               </span>
             </div>
             <div className="space-y-1.5">
               {group.options.map((option) => {
-                const checked = selectedIds.includes(option.id);
-                const atLimit =
-                  !checked &&
-                  toggleProductOption(groups, selectedIds, option.id) ===
-                    selectedIds;
-                const disabled = !option.isAvailable || atLimit;
+                const optionId = stableOptionId(option);
+                const quantity = selections.find(s => s.groupId === group.groupId && s.optionId === optionId)?.quantity ?? 0;
+                const checked = quantity > 0;
+                const increment = () => setProductOptionQuantity(groups, selections, group.groupId, optionId, quantities ? quantity + 1 : 1);
+                const atLimit = increment() === selections;
+                const disabled = !option.isAvailable || (!checked && atLimit);
+                const inputId = `${id}-${index}-${option.id}`;
                 return (
-                  <label
+                  <div
                     key={option.id}
-                    className={`flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors ${checked ? "bg-primary/10 ring-1 ring-primary/30" : "bg-surface-container-low"} ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-surface-container"}`}
+                    className={`flex min-h-12 flex-wrap items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors ${checked ? "bg-primary/10 ring-1 ring-primary/30" : "bg-surface-container-low"} ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-surface-container"}`}
                   >
-                    <input
+                    {!quantities && <input
+                      id={inputId}
                       type={single ? "radio" : "checkbox"}
                       name={
                         single
@@ -80,12 +89,12 @@ export function ProductOptions({
                           : undefined
                       }
                     checked={checked}
-                    aria-label={!option.isAvailable ? `${option.name} · Agotada` : undefined}
+                     aria-label={`${option.name} en ${group.name}${!option.isAvailable ? ' · Agotada' : ''}`}
                       disabled={disabled}
-                      onChange={() => onToggle(option.id)}
+                      onChange={() => onChange(setProductOptionQuantity(groups, selections, group.groupId, optionId, checked ? 0 : 1))}
                       className="h-5 w-5 shrink-0 accent-primary"
-                    />
-                    <span className="flex-1">
+                    />}
+                    <label htmlFor={quantities ? undefined : inputId} className="min-w-24 flex-1">
                       {option.name}
                       {option.description && (
                         <span className="mt-0.5 block text-xs font-normal text-on-surface-variant">
@@ -95,14 +104,24 @@ export function ProductOptions({
                       {!option.isAvailable && (
                         <span className="ml-2 text-xs">Agotada</span>
                       )}
-                    </span>
+                    </label>
                     {option.priceDelta !== 0 && (
                       <span className="text-on-surface-variant">
                         {option.priceDelta > 0 ? "+" : ""}
                         {formatCurrency(option.priceDelta, currency)}
                       </span>
                     )}
-                  </label>
+                    {quantities && <div className="flex items-center gap-2">
+                      <button type="button" aria-label={`Reducir ${option.name} en ${group.name}`} disabled={!option.isAvailable || quantity === 0}
+                        onClick={() => onChange(setProductOptionQuantity(groups, selections, group.groupId, optionId, quantity - 1))}
+                        className="h-10 w-10 rounded-lg bg-surface-container disabled:opacity-40">−</button>
+                      <input type="number" min={0} step={1} aria-label={`Cantidad de ${option.name} en ${group.name}`} value={quantity} disabled={!option.isAvailable}
+                        onChange={e => onChange(setProductOptionQuantity(groups, selections, group.groupId, optionId, e.target.valueAsNumber))}
+                        className="h-10 w-14 rounded-lg bg-surface text-center" />
+                      <button type="button" aria-label={`Aumentar ${option.name} en ${group.name}`} disabled={!option.isAvailable || atLimit}
+                        onClick={() => onChange(increment())} className="h-10 w-10 rounded-lg bg-surface-container disabled:opacity-40">+</button>
+                    </div>}
+                  </div>
                 );
               })}
             </div>
@@ -111,10 +130,7 @@ export function ProductOptions({
                 type="button"
                 className="min-h-10 text-xs font-semibold text-primary underline"
                 onClick={() => {
-                  const selected = group.options.find((o) =>
-                    selectedIds.includes(o.id),
-                  );
-                  if (selected) onToggle(selected.id);
+                  onChange(selections.filter(s => s.groupId !== group.groupId));
                 }}
               >
                 Quitar selección de {group.name}

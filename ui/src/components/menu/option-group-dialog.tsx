@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { MenuItemOptionGroup } from "@/types";
 import { describeOptionRule, optionGroupName } from "@/lib/menu-options";
-import type { ProductWithOptions } from "@/lib/menu-options";
+import { sameGroup, optionInGroup, type EditorGroup, type EditorItem } from './editor-model';
+import { MoneyInput } from '@/components/ui/money-input';
 import {
   Dialog,
   DialogContent,
@@ -25,24 +25,28 @@ export function OptionGroupDialog({
   onClose,
   onSave,
   sources = [],
+  initialVariantId,
+  groupId,
 }: {
-  item: ProductWithOptions;
+  item: EditorItem;
   group: string;
   onClose: () => void;
-  onSave: (groups: MenuItemOptionGroup[]) => Promise<void>;
-  sources?: { id: string; name: string; items: { id: string; name: string; isAvailable: boolean }[] }[];
+  onSave: (groups: EditorGroup[]) => Promise<void>;
+  sources?: { id: string; name: string; items: { id: string; name: string; isAvailable: boolean; basePrice?: number }[] }[];
+  initialVariantId?: string | null;
+  groupId?: string;
 }) {
   const stored = (item.optionGroups ?? []).filter(
     (g) => g.selectionScope !== "item",
   );
-  const initialScope = stored.some(
+  const initialScope = initialVariantId !== undefined ? initialVariantId || '' : stored.some(
     (g) => g.name === group && g.variantId === null,
   )
     ? ""
-    : (item.variants[0]?.id ?? "");
+    : (stored.find((g) => sameGroup(g, { name: group, groupId }))?.variantId ?? "");
   const initial =
     item.optionGroups?.find(
-      (g) => g.name === group && g.variantId === (initialScope || null),
+      (g) => sameGroup(g, { name: group, groupId }) && g.variantId === (initialScope || null),
     ) ??
     item.optionGroups?.find((g) => g.name === group && g.variantId === null);
   const initialMin = initial?.minSelections ?? 0;
@@ -58,6 +62,10 @@ export function OptionGroupDialog({
             : "optional"
           : "custom";
   const [variantId, setVariantId] = useState(initialScope);
+  const [name, setName] = useState(group);
+  const [selectionMode, setSelectionMode] = useState<NonNullable<EditorGroup['selectionMode']>>(initial?.selectionMode ?? (initialMax === 1 ? 'single' : 'multiple'));
+  const [requiredTotal, setRequiredTotal] = useState(String(initial?.requiredTotal ?? 6));
+  const [overrides, setOverrides] = useState<Record<string, string>>(() => Object.fromEntries((initial?.optionPriceOverrides ?? []).map((o) => [o.sourceItemId, String(o.priceDelta)])));
   const [sourceCategoryId, setSourceCategoryId] = useState(initial?.sourceCategoryId ?? '');
   const [required, setRequired] = useState(initialMin > 0);
   const [preset, setPreset] = useState<Preset>(initialPreset);
@@ -93,7 +101,12 @@ export function OptionGroupDialog({
     ? "Usá cantidades enteras válidas."
     : maximum > 0 && minimum > maximum
       ? "El mínimo no puede superar el máximo."
-      : "";
+       : "";
+  if (!name.trim()) issue ||= 'Dale un nombre al grupo.';
+  if (selectionMode === 'single' && (maximum !== 1 || minimum > 1)) issue ||= 'Para elegir una opción, usá máximo 1 y mínimo 0 o 1.';
+  if (selectionMode === 'quantities' && (!/^\d+$/.test(requiredTotal) || !Number.isSafeInteger(Number(requiredTotal)) || Number(requiredTotal) < 1 || minimum > Number(requiredTotal))) issue ||= 'Indicá el total entero del pack, igual o mayor al mínimo de variedades.';
+  if (Object.values(overrides).some((value) => !/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))) issue ||= 'Revisá los precios extra de este producto.';
+  if (sourceCategoryId && item.options.some((o) => optionInGroup(o, { name, groupId } as EditorGroup) && (o.variantId === null || o.variantId === (variantId || null)))) issue ||= 'Este grupo tiene opciones propias. Usá otro nombre para la lista compartida, o quitá las opciones propias antes de vincularla.';
   const scopes = variantId
     ? [variantId]
     : item.variants.length
@@ -110,11 +123,11 @@ export function OptionGroupDialog({
       ? (sources.find((s) => s.id === sourceCategoryId)?.items ?? [])
       : item.options.filter(
       (o) =>
-        optionGroupName(o) === group &&
+         optionGroupName(o) === name.trim() &&
         (o.variantId === null || o.variantId === scope),
     );
     const available = options.filter((o) => o.isAvailable).length;
-    if (options.length > 0 && minimum > available)
+    if (minimum > available)
       issue ||= `Solo hay ${available} opciones disponibles${scope ? ` en ${item.variants.find((v) => v.id === scope)?.name}` : ""}. Reducí el mínimo.`;
   }
   const save = async () => {
@@ -124,17 +137,23 @@ export function OptionGroupDialog({
     setError("");
     try {
       const others = stored.filter(
-        (g) => g.name !== group || g.variantId !== (variantId || null),
+        (g) => !sameGroup(g, { name: group || name.trim(), groupId }) || g.variantId !== (variantId || null),
       );
+      const stableId = initial?.groupId ?? groupId ?? stored.find((g) => g.name === name.trim())?.groupId ?? crypto.randomUUID();
       await onSave([
         ...others,
         {
-          name: group,
+          ...initial,
+          name: name.trim(),
+          groupId: stableId,
           minSelections: minimum,
           maxSelections: maximum,
           variantId: variantId || null,
           displayOrder: initial?.displayOrder ?? stored.length,
           sourceCategoryId: sourceCategoryId || null,
+          selectionMode,
+          requiredTotal: selectionMode === 'quantities' ? Number(requiredTotal) : null,
+          optionPriceOverrides: sourceCategoryId ? Object.entries(overrides).map(([sourceItemId, priceDelta]) => ({ sourceItemId, priceDelta: Number(priceDelta) })) : [],
         },
       ]);
       onClose();
@@ -158,12 +177,13 @@ export function OptionGroupDialog({
     >
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cómo elegir {group}</DialogTitle>
+           <DialogTitle>{group ? `Cómo elegir ${group}` : 'Agregar grupo de elecciones'}</DialogTitle>
           <DialogDescription>
             Configurá lo que puede elegir tu cliente en {item.name}.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {!group && <label className="block space-y-1 text-sm font-medium">Nombre del grupo<Input value={name} disabled={busy} onChange={(e) => setName(e.target.value)} placeholder="Sabores, salsas, rellenos…" /></label>}
           {sources.length > 0 && <div className="space-y-1">
             <Label htmlFor="group-source">Lista de opciones</Label>
             <select id="group-source" className={selectClass} disabled={busy} value={sourceCategoryId} onChange={(e) => {
@@ -185,8 +205,7 @@ export function OptionGroupDialog({
                 disabled={busy}
                 onChange={(e) => {
                   const next = e.target.value;
-                  setVariantId(next);
-                  setPreset("custom");
+                   setVariantId(next);
                   const rule =
                     item.optionGroups?.find(
                       (g) => g.name === group && g.variantId === (next || null),
@@ -194,8 +213,13 @@ export function OptionGroupDialog({
                     item.optionGroups?.find(
                       (g) => g.name === group && g.variantId === null,
                     );
-                  setMin(String(rule?.minSelections ?? 0));
-                  setMax(String(rule?.maxSelections ?? 0));
+                   setMin(String(rule?.minSelections ?? 0));
+                   setMax(String(rule?.maxSelections ?? 0));
+                   setPreset('custom');
+                   setSourceCategoryId(rule?.sourceCategoryId ?? '');
+                   setSelectionMode(rule?.selectionMode ?? ((rule?.maxSelections ?? 0) === 1 ? 'single' : 'multiple'));
+                   setRequiredTotal(String(rule?.requiredTotal ?? 6));
+                   setOverrides(Object.fromEntries((rule?.optionPriceOverrides ?? []).map((o) => [o.sourceItemId, String(o.priceDelta)])));
                 }}
               >
                 <option value="">Todos los tamaños (regla general)</option>
@@ -211,7 +235,19 @@ export function OptionGroupDialog({
             </div>
           )}
           <div className="space-y-1">
-            <Label htmlFor="group-preset">Tipo de elección</Label>
+            <Label htmlFor="group-mode">¿Cómo elige el cliente?</Label>
+            <select id="group-mode" className={selectClass} disabled={busy} value={selectionMode} onChange={(e) => {
+              const mode = e.target.value as NonNullable<EditorGroup['selectionMode']>;
+              setSelectionMode(mode);
+              if (mode === 'single') { setPreset('custom'); setMin(initialMin > 0 ? '1' : '0'); setMax('1'); }
+              else if (selectionMode === 'single') { setPreset('optional'); }
+            }}>
+              <option value="single">Una opción</option><option value="multiple">Varias opciones distintas</option><option value="quantities">Repartir unidades de un pack</option>
+            </select>
+          </div>
+          {selectionMode === 'quantities' && <div className="space-y-1"><Label htmlFor="pack-total">Total de unidades del pack</Label><Input id="pack-total" type="number" min="1" step="1" value={requiredTotal} disabled={busy} onChange={(e) => setRequiredTotal(e.target.value)} /><p className="text-xs text-muted-foreground">Por ejemplo: 4 Oreo + 2 Tiramisú = 6 unidades. El mínimo y máximo de abajo cuentan variedades distintas.</p></div>}
+          <div className="space-y-1">
+             <Label htmlFor="group-preset">{selectionMode === 'quantities' ? 'Variedades permitidas' : 'Regla de elección'}</Label>
             <select
               id="group-preset"
               value={preset}
@@ -277,15 +313,17 @@ export function OptionGroupDialog({
           <div className="rounded-xl bg-primary/5 p-4">
             <p className="text-xs text-muted-foreground">Tu cliente verá</p>
             <p className="mt-1 font-semibold">
-              {group} ·{" "}
+               {name} ·{" "}
               {issue
                 ? "Revisá la configuración"
                 : describeOptionRule(minimum, maximum)}
             </p>
+            {selectionMode === 'quantities' && <p className="mt-1 text-sm">Repartí exactamente {requiredTotal} unidades.</p>}
             <p className="text-xs text-muted-foreground">
               {minimum > 0 ? "Obligatorio" : "Opcional"}
             </p>
           </div>
+          {sourceCategoryId && <details className="rounded-xl border p-3"><summary className="cursor-pointer text-sm font-semibold">Precios extra solo en este producto/presentación</summary><p className="my-2 text-xs text-muted-foreground">Sin ajuste se usa el adicional de la lista. Un ajuste en 0 hace que la opción esté incluida acá; la fuente no cambia.</p><div className="space-y-2">{(sources.find((s) => s.id === sourceCategoryId)?.items ?? []).map((option) => <div key={option.id} className="flex flex-wrap items-center gap-2"><span className="min-w-0 flex-1 text-sm">{option.name}</span><label className="flex items-center gap-2 text-xs"><input type="checkbox" disabled={busy} checked={overrides[option.id] !== undefined} onChange={(e) => setOverrides((current) => { const next = { ...current }; if (e.target.checked) next[option.id] = String(option.basePrice ?? 0); else delete next[option.id]; return next; })} />Ajustar</label>{overrides[option.id] !== undefined && <MoneyInput aria-label={`Adicional de ${option.name} en ${item.name}`} disabled={busy} value={overrides[option.id]} onChange={(value) => setOverrides((current) => ({ ...current, [option.id]: value || '0' }))} className="w-24" />}</div>)}</div></details>}
           {!stored.some((g) => g.name === group) && (
             <p className="text-xs text-muted-foreground">
               Al guardar, este grupo tendrá su propia regla. Los otros grupos

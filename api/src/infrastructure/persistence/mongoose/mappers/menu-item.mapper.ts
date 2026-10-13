@@ -27,8 +27,27 @@ export class MenuItemMapper {
             g.displayOrder,
             'group',
             g.sourceCategoryId?.toHexString() ?? null,
+            g.groupId,
+            g.selectionMode,
+            g.requiredTotal ?? null,
+            (g.optionPriceOverrides ?? []).map((override) => ({
+              sourceItemId: override.sourceItemId.toHexString(),
+              priceDelta: override.priceDelta,
+            })),
           ),
       ),
+      (doc.components ?? []).map((component) => ({
+        slotId: component.slotId,
+        name: component.name,
+        displayOrder: component.displayOrder ?? 0,
+        parentVariantId: component.parentVariantId?.toHexString() ?? null,
+        quantity: component.quantity,
+        choices: component.choices.map((choice) => ({
+          menuItemId: choice.menuItemId.toHexString(),
+          variantId: choice.variantId?.toHexString() ?? null,
+          priceDelta: choice.priceDelta,
+        })),
+      })),
     );
   }
 }

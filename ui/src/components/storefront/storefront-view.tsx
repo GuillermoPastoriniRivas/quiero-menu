@@ -9,8 +9,10 @@ import type {
   MenuItemVariant,
   MenuItemOption,
   CouponValidation,
+  SelectedOptionInput,
+  OrderComponentInput,
 } from "@/types";
-import { useCartStore, CartItem } from "@/stores/cart.store";
+import { useCartStore, serializeCartItem, CartItem } from "@/stores/cart.store";
 import { formatCurrency, dayName } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,12 +35,16 @@ import {
   saveLastOrder,
   clearLastOrder,
   LastOrder,
+  rebuildCartItem,
+  restoreOrderItems,
 } from "@/lib/repeat-order";
 import { getApiBase } from "@/lib/storefront-context";
 import { formatArPhone, arPhoneToWhatsApp, toWhatsAppNumber } from "@/lib/ar-phone";
 import { formatUpdatedDate } from "@/lib/restaurant-categories";
 import { ProductOptions } from '@/components/storefront/product-options';
-import { productOptionGroups, reconcileProductOptions, selectionIssues, toggleProductOption } from '@/lib/menu-options';
+import { ProductComponents } from '@/components/storefront/product-components';
+import { OrderItemSelections } from '@/components/storefront/order-item-selections';
+import { activeComponentSlots, componentSelectionIssues, componentSnapshots, productOptionGroups, productStartingPrice, productUnitPrice, reconcileOptionSelections, selectedOptionSnapshots, selectionIssues } from '@/lib/menu-options';
 import { behaviorContext, searchProperties, trackStorefront } from '@/lib/behavior';
 import { StorefrontDirectoryLinks } from '@/components/directory/storefront-directory-links';
 
@@ -113,6 +119,7 @@ export function StorefrontView({
     isOpen,
     todayHours,
   } = data;
+  const catalog = useMemo(() => categories.flatMap(c => c.items), [categories]);
   const cart = useCartStore();
   const router = useRouter();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -200,6 +207,7 @@ export function StorefrontView({
   const [couponError, setCouponError] = useState("");
   const [repeatOrder, setRepeatOrder] = useState<LastOrder | null>(null);
   const [repeatError, setRepeatError] = useState("");
+  const [repeatBusy, setRepeatBusy] = useState(false);
   const [hoursOpen, setHoursOpen] = useState(false);
 
   // One view per real 30-minute session/local. Previews and owners are excluded.
@@ -299,11 +307,13 @@ export function StorefrontView({
   };
 
   // Item detail dialog state
-  const [selectedItem, setSelectedItem] = useState<FullMenuItem | null>(null);
+  const [openedItem, setSelectedItem] = useState<FullMenuItem | null>(null);
+  const selectedItem = catalog.find(i => i.id === openedItem?.id) ?? null;
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     null,
   );
-  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<SelectedOptionInput[]>([]);
+  const [selectedComponents, setSelectedComponents] = useState<OrderComponentInput[]>([]);
   const [itemQuantity, setItemQuantity] = useState(1);
   const [itemNotes, setItemNotes] = useState("");
   const [optionNotice, setOptionNotice] = useState("");
@@ -316,10 +326,11 @@ export function StorefrontView({
     setOptionNotice("");
     const firstVariant =
       item.variants.length > 0
-        ? [...item.variants].sort((a, b) => a.displayOrder - b.displayOrder)[0]
+        ? [...item.variants].filter(v => v.isAvailable !== false).sort((a, b) => a.displayOrder - b.displayOrder)[0]
         : null;
     setSelectedVariantId(firstVariant?.id ?? null);
-    setSelectedOptionIds([]);
+    setSelectedOptions([]);
+    setSelectedComponents([]);
     setItemQuantity(1);
     setItemNotes("");
   };
@@ -327,7 +338,8 @@ export function StorefrontView({
   const closeItemDetail = () => {
     setSelectedItem(null);
     setSelectedVariantId(null);
-    setSelectedOptionIds([]);
+    setSelectedOptions([]);
+    setSelectedComponents([]);
     setItemQuantity(1);
     setItemNotes("");
   };
@@ -339,16 +351,8 @@ export function StorefrontView({
     );
   }, [selectedItem, selectedVariantId]);
 
-  const availableOptions = useMemo(() => {
-    if (!selectedItem) return [];
-    return selectedItem.options.filter(
-      (o) =>
-        o.isAvailable &&
-        (o.variantId === null || o.variantId === selectedVariantId),
-    );
-  }, [selectedItem, selectedVariantId]);
-
   const optionGroups = useMemo(() => selectedItem ? productOptionGroups(selectedItem, selectedVariantId) : [], [selectedItem, selectedVariantId]);
+  const componentSlots = useMemo(() => selectedItem ? activeComponentSlots(selectedItem, selectedVariantId) : [], [selectedItem, selectedVariantId]);
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -370,19 +374,18 @@ export function StorefrontView({
     return () => clearTimeout(timer);
   }, [slug, trackView, searchOpen, searchQuery, searchResults.length]);
 
-  const optionIssues = useMemo(() => selectionIssues(optionGroups, selectedOptionIds), [optionGroups, selectedOptionIds]);
+  const optionIssues = useMemo(() => [
+    ...selectionIssues(optionGroups, selectedOptions),
+    ...componentSelectionIssues(componentSlots, selectedComponents, catalog),
+    ...(selectedItem && (!selectedItem.isAvailable || !selectedItem.isVisible || selectedItem.isOrderable === false ||
+      (selectedItem.variants.length > 0 && (!selectedVariant || selectedVariant.isAvailable === false))) ? ['Este producto o tamaño está agotado.'] : []),
+  ], [optionGroups, selectedOptions, componentSlots, selectedComponents, catalog, selectedItem, selectedVariant]);
   const optionsValid = optionIssues.length === 0;
-  const toggleOption = (optionId: string) => setSelectedOptionIds((ids) => toggleProductOption(optionGroups, ids, optionId));
 
   const itemUnitPrice = useMemo(() => {
     if (!selectedItem) return 0;
-    const base = selectedVariant?.priceOverride ?? selectedItem.basePrice;
-    const optionsTotal = selectedOptionIds.reduce((sum, id) => {
-      const opt = availableOptions.find((o) => o.id === id);
-      return sum + (opt?.priceDelta ?? 0);
-    }, 0);
-    return base + optionsTotal;
-  }, [selectedItem, selectedVariant, selectedOptionIds, availableOptions]);
+    return productUnitPrice(selectedItem, selectedVariantId, selectedOptions, selectedComponents, catalog);
+  }, [selectedItem, selectedVariantId, selectedOptions, selectedComponents, catalog]);
 
   const itemTotalPrice = itemUnitPrice * itemQuantity;
 
@@ -390,9 +393,7 @@ export function StorefrontView({
     if (!selectedItem) return;
     if (!isOpen) return;
     if (!optionsValid) return;
-    const selectedOpts = availableOptions.filter((o) =>
-      selectedOptionIds.includes(o.id),
-    );
+    const selectedOpts = selectedOptionSnapshots(optionGroups, selectedOptions);
     const cartItem: CartItem = {
       menuItemId: selectedItem.id,
       menuItemName: selectedItem.name,
@@ -400,11 +401,15 @@ export function StorefrontView({
       variantName: selectedVariant?.name,
       quantity: itemQuantity,
       unitPrice: itemUnitPrice,
-      selectedOptionIds: selectedOpts.map((o) => o.id),
+      selectedOptions: selectedOpts,
+      components: componentSnapshots(componentSlots, selectedComponents, catalog),
+      selectedOptionIds: [],
       selectedOptionNames: selectedOpts.map((o) => o.name),
       notes: itemNotes,
     };
-    cart.addItem(cartItem);
+    const checked = rebuildCartItem(cartItem, catalog);
+    if (!checked) return;
+    cart.addItem(checked);
     if (trackView) trackStorefront(slug, 'item_add', { itemId: selectedItem.id, quantity: itemQuantity, value: itemTotalPrice, currency: restaurant.currency });
     closeItemDetail();
   };
@@ -447,67 +452,44 @@ export function StorefrontView({
     }
   };
 
-  const handleRepeatOrder = () => {
-    if (!repeatOrder) return;
-    if (!isOpen) return;
+  const handleRepeatOrder = async () => {
+    if (!repeatOrder || !isOpen || repeatBusy) return;
     setRepeatError("");
-    const allItems = categories.flatMap((c) => c.items);
-    const restored: CartItem[] = [];
-    for (const saved of repeatOrder.items) {
-      const current = allItems.find(
-        (i) => i.id === saved.menuItemId && i.isAvailable && i.isVisible && i.isOrderable !== false,
-      );
-      if (!current) continue;
-      const variant = current.variants.find((v) => v.id === saved.variantId);
-      if (current.variants.length > 0 && !variant) continue;
-      const validOptionIds = [...new Set(saved.selectedOptionIds)].filter((oid: string) =>
-        current.options.some(
-          (o) =>
-            o.id === oid &&
-            o.isAvailable &&
-            (o.variantId === null || o.variantId === saved.variantId),
-        ),
-      );
-      if (selectionIssues(productOptionGroups(current, variant?.id ?? null), validOptionIds).length > 0) continue;
-      const validOptionNames = current.options
-        .filter((o) => validOptionIds.includes(o.id))
-        .map((o) => o.name);
-      restored.push({
-        menuItemId: current.id,
-        menuItemName: current.name,
-        variantId: variant?.id,
-        variantName: variant?.name,
-        quantity: saved.quantity,
-        unitPrice: (variant?.priceOverride ?? current.basePrice) + current.options.filter((o) => validOptionIds.includes(o.id)).reduce((total, o) => total + o.priceDelta, 0),
-        selectedOptionIds: validOptionIds,
-        selectedOptionNames: validOptionNames,
-        notes: saved.notes,
+    setRepeatBusy(true);
+    try {
+      const response = await fetch(`${getApiBase()}/storefront/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error('No pudimos comprobar el menú actual. Intentá nuevamente.');
+      const latest: StorefrontData = await response.json();
+      if (!latest.isOpen) throw new Error('El local está cerrado ahora.');
+      const { items: restored } = restoreOrderItems(repeatOrder.items, latest.categories.flatMap(c => c.items));
+      if (restored.length === 0) {
+        setRepeatError(
+          "No pudimos recuperar tu pedido: algunos productos ya no estan disponibles.",
+        );
+        clearLastOrder(slug);
+        setRepeatOrder(null);
+        return;
+      }
+      if (restored.length < repeatOrder.items.length) setRepeatError("Recuperamos los productos disponibles. Revisá las opciones de los que cambiaron antes de agregarlos nuevamente.");
+      cart.replaceItems([]);
+      restored.forEach((item) => {
+        cart.addItem(item);
+        if (trackView) trackStorefront(slug, 'item_add', { itemId: item.menuItemId, quantity: item.quantity });
       });
-    }
-    if (restored.length === 0) {
-      setRepeatError(
-        "No pudimos recuperar tu pedido: algunos productos ya no estan disponibles.",
-      );
-      clearLastOrder(slug);
+      if (trackView) trackStorefront(slug, 'repeat_order');
+      cart.setCustomer({
+        customerName: repeatOrder.customerName || "",
+        customerPhone: repeatOrder.customerPhone || "",
+        customerAddress: repeatOrder.customerAddress || "",
+      });
+      cart.setDelivery({ deliveryType: repeatOrder.deliveryType });
+      cart.setPaymentMethod(repeatOrder.paymentMethod);
       setRepeatOrder(null);
-      return;
+    } catch (error) {
+      setRepeatError(error instanceof Error ? error.message : 'No pudimos recuperar tu pedido.');
+    } finally {
+      setRepeatBusy(false);
     }
-    if (restored.length < repeatOrder.items.length) setRepeatError("Recuperamos los productos disponibles. Revisá las opciones de los que cambiaron antes de agregarlos nuevamente.");
-    const count = cart.items.length;
-    for (let i = 0; i < count; i++) cart.removeItem(0);
-    restored.forEach((item) => {
-      cart.addItem(item);
-      if (trackView) trackStorefront(slug, 'item_add', { itemId: item.menuItemId, quantity: item.quantity });
-    });
-    if (trackView) trackStorefront(slug, 'repeat_order');
-    cart.setCustomer({
-      customerName: repeatOrder.customerName || "",
-      customerPhone: repeatOrder.customerPhone || "",
-      customerAddress: repeatOrder.customerAddress || "",
-    });
-    cart.setDelivery({ deliveryType: repeatOrder.deliveryType });
-    cart.setPaymentMethod(repeatOrder.paymentMethod);
-    setRepeatOrder(null);
   };
 
   const scrollToCategory = (id: string) => {
@@ -518,19 +500,25 @@ export function StorefrontView({
   };
 
   const handleCheckout = async () => {
-    if (!isOpen) return;
+    if (!isOpen || submitting || cart.items.length === 0) return;
     setSubmitting(true);
     setCheckoutError("");
     try {
+      const menuResponse = await fetch(`${getApiBase()}/storefront/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+      if (!menuResponse.ok) throw new Error('No pudimos comprobar la disponibilidad. Intentá nuevamente.');
+      const latest: StorefrontData = await menuResponse.json();
+      if (!latest.isOpen) throw new Error('El local está cerrado ahora.');
+      const { items: checkedItems, rejected } = restoreOrderItems(cart.items, latest.categories.flatMap(c => c.items));
+      if (rejected) throw new Error('Algunos productos, tamaños u opciones de tu carrito ya no están disponibles. Quitalos y volvé a elegirlos.');
+      const pricesChanged = checkedItems.some((item, index) => item.unitPrice !== cart.items[index].unitPrice);
+      cart.replaceItems(checkedItems);
+      if (pricesChanged) {
+        cart.setCoupon(null, null);
+        throw new Error('Los precios del menú cambiaron. Actualizamos tu carrito; revisá el total y confirmá nuevamente.');
+      }
       const body = {
         attribution: trackView ? behaviorContext(slug) : undefined,
-        items: cart.items.map((i) => ({
-          menuItemId: i.menuItemId,
-          variantId: i.variantId,
-          quantity: i.quantity,
-          selectedOptionIds: i.selectedOptionIds,
-          notes: i.notes,
-        })),
+        items: checkedItems.map(serializeCartItem),
         customerName: cart.customerName,
         customerPhone:
           arPhoneToWhatsApp(cart.customerPhone) || cart.customerPhone,
@@ -557,7 +545,7 @@ export function StorefrontView({
       }
       const result: StorefrontOrderResponse = await res.json();
       saveLastOrder(slug, {
-        items: cart.items,
+        items: checkedItems,
         customerName: cart.customerName,
         customerPhone: cart.customerPhone,
         customerAddress: cart.customerAddress,
@@ -800,9 +788,9 @@ export function StorefrontView({
               <Button
               size="sm"
               onClick={handleRepeatOrder}
-              disabled={!isOpen}>
+              disabled={!isOpen || repeatBusy}>
                 <MaterialIcon name="replay" size="sm" className="mr-1" />
-                Repetir pedido
+                {repeatBusy ? 'Comprobando menú…' : 'Repetir pedido'}
               </Button>
               <Button
                 size="sm"
@@ -816,13 +804,9 @@ export function StorefrontView({
               </Button>
             </div>
           </div>
-          {repeatError && (
-            <p className="mx-auto max-w-7xl text-xs text-destructive mt-2">
-              {repeatError}
-            </p>
-          )}
         </section>
       )}
+      {repeatError && <p role="status" className="mx-auto max-w-7xl px-4 py-2 text-sm text-destructive">{repeatError}</p>}
 
       {/* ── Main Content ── */}
       <main className="pb-40">
@@ -997,9 +981,9 @@ export function StorefrontView({
                               className="font-extrabold text-lg text-on-surface"
                               style={{ fontFamily: "var(--font-heading)" }}
                             >
-                              {item.isOrderable === false ? "Para elegir en tu pote" : formatCurrency(item.basePrice, restaurant.currency)}
+                              {item.isOrderable === false ? "Para elegir en tu pote" : productStartingPrice(item, catalog) === null ? 'No disponible' : `${item.variants.length || item.optionGroups?.some(g => g.minSelections > 0) || item.components?.length ? 'Desde ' : ''}${formatCurrency(productStartingPrice(item, catalog)!, restaurant.currency)}`}
                             </span>
-                            {!item.isAvailable ? (
+                            {!item.isAvailable || productStartingPrice(item, catalog) === null ? (
                               <Badge variant="secondary">Agotado</Badge>
                             ) : item.isOrderable === false ? (
                               <Badge variant="secondary">Sabor</Badge>
@@ -1145,14 +1129,18 @@ export function StorefrontView({
                           <button
                             key={variant.id}
                             aria-pressed={isSelected}
+                            disabled={variant.isAvailable === false}
                             onClick={() => {
+                              if (variant.isAvailable === false) return;
                               setSelectedVariantId(variant.id);
                               const groups = productOptionGroups(selectedItem, variant.id);
-                              const next = reconcileProductOptions(groups, selectedOptionIds);
-                              setSelectedOptionIds(next);
-                              setOptionNotice(next.length < selectedOptionIds.length ? 'Ajustamos las opciones al nuevo tamaño. Revisá tu selección.' : '');
+                              const next = reconcileOptionSelections(groups, selectedOptions);
+                              setSelectedOptions(next);
+                              const slots = activeComponentSlots(selectedItem, variant.id);
+                              setSelectedComponents(selectedComponents.filter(c => slots.some(s => s.slotId === c.slotId && s.choices.some(ch => ch.menuItemId === c.menuItemId && ch.variantId === (c.variantId ?? null)))));
+                              setOptionNotice('Revisá las opciones y componentes del nuevo tamaño. Conservamos las selecciones compatibles.');
                             }}
-                            className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                            className={`rounded-xl px-4 py-2 text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                               isSelected
                                 ? "gradient-cta text-white shadow-md shadow-primary/20"
                                 : "bg-surface-container-low text-on-surface hover:bg-surface-container"
@@ -1160,6 +1148,7 @@ export function StorefrontView({
                           >
                             {variant.name}{" "}
                             {formatCurrency(price, restaurant.currency)}
+                            {variant.isAvailable === false && ' · Agotado'}
                           </button>
                         );
                       })}
@@ -1168,7 +1157,8 @@ export function StorefrontView({
               )}
 
               {optionNotice && <p role="status" className="rounded-xl bg-primary/5 p-3 text-sm">{optionNotice}</p>}
-              <ProductOptions groups={optionGroups} selectedIds={selectedOptionIds} onToggle={toggleOption} currency={restaurant.currency} />
+              <ProductOptions groups={optionGroups} selections={selectedOptions} onChange={setSelectedOptions} currency={restaurant.currency} />
+              <ProductComponents slots={componentSlots} selections={selectedComponents} onChange={setSelectedComponents} catalog={catalog} currency={restaurant.currency} />
 
               {/* Notes */}
               <div className="space-y-2">
@@ -1267,7 +1257,7 @@ export function StorefrontView({
                       </p>
                     </div>
                     <span className="shrink-0 text-sm font-semibold">
-                      {formatCurrency(item.basePrice, restaurant.currency)}
+                      {productStartingPrice(item, catalog) === null ? 'Agotado' : `Desde ${formatCurrency(productStartingPrice(item, catalog)!, restaurant.currency)}`}
                     </span>
                   </button>
                 ))}
@@ -1370,7 +1360,7 @@ export function StorefrontView({
             {cart.items.map((item, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between bg-surface-container-low rounded-xl p-3"
+                className="flex flex-col gap-3 bg-surface-container-low rounded-xl p-3"
               >
                 <div>
                   <span className="font-medium">
@@ -1382,18 +1372,18 @@ export function StorefrontView({
                       ({item.variantName})
                     </span>
                   )}
-                  {item.selectedOptionNames.length > 0 && (
-                    <p className="text-xs text-on-surface-variant">
-                      {item.selectedOptionNames.join(", ")}
-                    </p>
-                  )}
+                  <div className="text-xs"><OrderItemSelections options={item.selectedOptions} components={item.components} legacyNames={item.selectedOptions ? [] : item.selectedOptionNames} /></div>
                   {item.notes && (
                     <p className="text-xs italic text-on-surface-variant">
                       {item.notes}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <button type="button" aria-label={`Reducir cantidad de ${item.menuItemName}`} disabled={item.quantity <= 1}
+                    onClick={() => cart.updateQuantity(i, item.quantity - 1)} className="h-9 w-9 rounded-lg bg-surface-container disabled:opacity-40">−</button>
+                  <button type="button" aria-label={`Aumentar cantidad de ${item.menuItemName}`} onClick={() => cart.updateQuantity(i, item.quantity + 1)}
+                    className="h-9 w-9 rounded-lg bg-surface-container">+</button>
                   <span className="text-sm font-semibold">
                     {formatCurrency(
                       item.unitPrice * item.quantity,

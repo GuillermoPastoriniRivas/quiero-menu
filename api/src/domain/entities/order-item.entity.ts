@@ -2,6 +2,22 @@ export interface SelectedOption {
   optionId: string;
   name: string;
   priceDelta: number;
+  quantity?: number;
+  groupId?: string;
+  groupName?: string;
+  sourceItemId?: string;
+}
+
+export interface OrderItemComponent {
+  slotId: string;
+  slotName: string;
+  quantity: number;
+  menuItemId: string;
+  menuItemName: string;
+  variantId: string | null;
+  variantName: string | null;
+  priceDelta: number;
+  selectedOptions: SelectedOption[];
 }
 
 export class OrderItem {
@@ -17,5 +33,6 @@ export class OrderItem {
     public readonly totalPrice: number,
     public readonly selectedOptions: SelectedOption[],
     public readonly notes: string,
+    public readonly components: OrderItemComponent[] = [],
   ) {}
 }

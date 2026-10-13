@@ -10,6 +10,7 @@ export class MenuItemVariantMapper {
       doc.priceOverride,
       doc.maxSelections,
       doc.displayOrder ?? 0,
+      doc.isAvailable ?? true,
     );
   }
 }

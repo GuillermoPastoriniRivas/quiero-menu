@@ -1,14 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
 
 export type MenuItemOptionDocument = HydratedDocument<MenuItemOptionModel>;
 
 @Schema({ collection: 'menu_item_options' })
 export class MenuItemOptionModel {
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
   itemId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, default: null })
+  @Prop({ type: MongooseSchema.Types.ObjectId, default: null })
   variantId: Types.ObjectId | null;
 
   @Prop({ required: true })
@@ -22,6 +22,9 @@ export class MenuItemOptionModel {
 
   @Prop({ required: true })
   optionGroup: string;
+
+  @Prop({ type: String })
+  groupId?: string;
 
   @Prop({ default: true })
   isAvailable: boolean;

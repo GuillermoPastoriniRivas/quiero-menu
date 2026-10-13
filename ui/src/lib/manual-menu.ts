@@ -1,6 +1,6 @@
-import type { StorefrontData } from '@/types';
+import type { EditorCategory } from '@/components/menu/editor-model';
 
-export type ManualCategory = StorefrontData['categories'][number];
+export type ManualCategory = EditorCategory;
 export type ManualEntry = { category: ManualCategory; item: ManualCategory['items'][number] };
 export type PriceChange = { id: string; name: string; basePrice: number };
 
@@ -26,12 +26,12 @@ export function priceChanges(entries: ManualEntry[], drafts: Record<string, stri
 }
 
 // These endpoints aren't transactional: keep failed drafts and never retry successes.
-export async function savePriceChanges(
-  changes: PriceChange[],
-  update: (change: PriceChange) => Promise<void>,
-): Promise<{ saved: PriceChange[]; failed: { change: PriceChange; message: string }[] }> {
-  const saved: PriceChange[] = [];
-  const failed: { change: PriceChange; message: string }[] = [];
+export async function savePriceChanges<T extends PriceChange>(
+  changes: T[],
+  update: (change: T) => Promise<void>,
+): Promise<{ saved: T[]; failed: { change: T; message: string }[] }> {
+  const saved: T[] = [];
+  const failed: { change: T; message: string }[] = [];
   for (const change of changes) {
     try {
       await update(change);
@@ -41,4 +41,44 @@ export async function savePriceChanges(
     }
   }
   return { saved, failed };
+}
+
+export type MaintenanceEntry = {
+  key: string;
+  kind: 'item' | 'variant' | 'option' | 'source';
+  id: string;
+  name: string;
+  context: string;
+  categoryId: string;
+  itemId: string;
+  price: number;
+  available: boolean;
+  shared: boolean;
+  priceEditable?: boolean;
+};
+/** One authoritative row per price/availability target, without synthetic source options. */
+export function maintenanceEntries(categories: ManualCategory[]): MaintenanceEntry[] {
+  return categories.flatMap((category) => category.items.flatMap((item) => {
+    const shared = Boolean(category.isOptionSource);
+    const context = `${category.name}${!category.isVisible || !item.isVisible ? ' · oculto en la carta' : ''}`;
+    const base = { categoryId: category.id, itemId: item.id, shared };
+    const rows: MaintenanceEntry[] = [];
+    if (shared || item.variants.length === 0) rows.push({ ...base, kind: shared ? 'source' : 'item', key: `${shared ? 'source' : 'item'}:${item.id}`, id: item.id, name: item.name, context: shared ? `${context} · adicional compartido` : context, price: item.basePrice, available: item.isAvailable });
+    else rows.push({ ...base, kind: 'item', key: `item:${item.id}`, id: item.id, name: item.name, context: `${context} · producto con presentaciones`, price: item.basePrice, available: item.isAvailable, priceEditable: false });
+    if (!shared) {
+      for (const variant of item.variants) rows.push({ ...base, kind: 'variant', key: `variant:${variant.id}`, id: variant.id, name: variant.name || 'Presentación sin nombre', context: `${item.name} · ${context}${!item.isAvailable ? ' · producto agotado' : ''}`, price: variant.priceOverride ?? item.basePrice, available: variant.isAvailable !== false });
+      for (const option of item.options.filter((o) => !o.sourceItemId)) rows.push({ ...base, kind: 'option', key: `option:${option.id}`, id: option.id, name: option.name, context: `${item.name} · ${option.optionGroup} · ${option.variantId ? item.variants.find((v) => v.id === option.variantId)?.name ?? 'Presentación pendiente' : 'todas las presentaciones'}`, price: option.priceDelta, available: option.isAvailable });
+    }
+    return rows;
+  }));
+}
+
+export function maintenancePriceChanges(entries: MaintenanceEntry[], drafts: Record<string, string>) {
+  return entries.flatMap((entry) => {
+    if (entry.priceEditable === false) return [];
+    const draft = drafts[entry.key];
+    if (draft === undefined) return [];
+    if (!/^\d+$/.test(draft) || !Number.isSafeInteger(Number(draft))) throw new Error(`Revisá el precio de ${entry.name}. Usá un entero igual o mayor a cero.`);
+    return Number(draft) === entry.price ? [] : [{ id: entry.id, name: entry.name, basePrice: Number(draft), kind: entry.kind, key: entry.key }];
+  });
 }

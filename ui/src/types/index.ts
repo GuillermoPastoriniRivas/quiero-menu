@@ -145,9 +145,13 @@ export interface MenuItem {
   itemType: MenuItemType;
   /** Reglas min/max de selección por grupo de opciones (API nueva). */
   optionGroups?: MenuItemOptionGroup[];
+  components?: MenuItemComponent[];
 }
 
+export type OptionSelectionMode = 'single' | 'multiple' | 'quantities';
+
 export interface MenuItemOptionGroup {
+  groupId?: string;
   sourceCategoryId?: string | null;
   name: string;
   minSelections: number;
@@ -156,9 +160,13 @@ export interface MenuItemOptionGroup {
   displayOrder: number;
   /** Las reglas derivadas comparten el límite original del tamaño. */
   selectionScope?: 'group' | 'item';
+  selectionMode?: OptionSelectionMode;
+  requiredTotal?: number | null;
+  optionPriceOverrides?: { sourceItemId: string; priceDelta: number }[];
 }
 
 export interface MenuItemVariant {
+  isAvailable?: boolean;
   id: string;
   itemId: string;
   name: string;
@@ -168,6 +176,7 @@ export interface MenuItemVariant {
 }
 
 export interface MenuItemOption {
+  groupId?: string;
   sourceItemId?: string;
   id: string;
   itemId: string;
@@ -177,6 +186,66 @@ export interface MenuItemOption {
   priceDelta: number;
   optionGroup: string;
   isAvailable: boolean;
+}
+
+export interface MenuItemComponentChoice {
+  menuItemId: string;
+  variantId: string | null;
+  priceDelta: number;
+}
+
+export interface MenuItemComponent {
+  slotId: string;
+  name: string;
+  displayOrder: number;
+  parentVariantId: string | null;
+  quantity: number;
+  choices: MenuItemComponentChoice[];
+}
+
+export interface SelectedOptionInput {
+  groupId: string;
+  optionId: string;
+  quantity: number;
+}
+
+export interface OrderComponentInput {
+  slotId: string;
+  menuItemId: string;
+  variantId?: string | null;
+  selectedOptions?: SelectedOptionInput[];
+}
+
+export interface StorefrontOrderItemInput {
+  menuItemId: string;
+  variantId?: string;
+  quantity: number;
+  selectedOptions?: SelectedOptionInput[];
+  selectedOptionIds?: string[];
+  components?: OrderComponentInput[];
+  notes: string;
+}
+
+export interface SelectedOption {
+  optionId: string;
+  name: string;
+  priceDelta: number;
+  quantity?: number;
+  groupId?: string;
+  groupName?: string;
+  sourceItemId?: string;
+}
+
+export interface OrderItemComponent {
+  slotId: string;
+  slotName: string;
+  quantity: number;
+  menuItemId: string;
+  menuItemName: string;
+  variantId: string | null;
+  variantName: string | null;
+  priceDelta: number;
+  selectedOptions: SelectedOption[];
 }
 
 export interface Order {
@@ -224,7 +293,8 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  selectedOptions: { optionId: string; name: string; priceDelta: number }[];
+  selectedOptions: SelectedOption[];
+  components?: OrderItemComponent[];
   notes: string;
 }
 

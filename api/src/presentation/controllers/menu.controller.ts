@@ -37,6 +37,8 @@ import {
   UpdateOptionRequestDto,
   UpdateOptionGroupsRequestSchema,
   UpdateOptionGroupsRequestDto,
+  UpdateComponentsRequestSchema,
+  UpdateComponentsRequestDto,
 } from '../request-dtos/menu.dto.js';
 import type { CreateMenuCategoryUseCase } from '../../application/use-cases/menu/create-menu-category.use-case.js';
 import type { UpdateMenuCategoryUseCase } from '../../application/use-cases/menu/update-menu-category.use-case.js';
@@ -56,6 +58,8 @@ import type { CreateMenuItemOptionUseCase } from '../../application/use-cases/me
 import type { UpdateMenuItemOptionUseCase } from '../../application/use-cases/menu/update-menu-item-option.use-case.js';
 import type { DeleteMenuItemOptionUseCase } from '../../application/use-cases/menu/delete-menu-item-option.use-case.js';
 import { MenuItemType } from '../../domain/enums/menu-item-type.enum.js';
+import type { GetMenuUseCase } from '../../application/use-cases/menu/get-menu.use-case.js';
+import type { UpdateMenuItemComponentsUseCase } from '../../application/use-cases/menu/update-menu-item-components.use-case.js';
 
 @Controller('menu')
 export class MenuController {
@@ -94,7 +98,31 @@ export class MenuController {
     private readonly updateOption: UpdateMenuItemOptionUseCase,
     @Inject('DeleteMenuItemOptionUseCase')
     private readonly deleteOption: DeleteMenuItemOptionUseCase,
+    @Inject('GetMenuUseCase')
+    private readonly getMenu: GetMenuUseCase,
+    @Inject('UpdateMenuItemComponentsUseCase')
+    private readonly updateComponents: UpdateMenuItemComponentsUseCase,
   ) {}
+
+  @Get()
+  async fullMenu(@CurrentUser() user: RequestUser) {
+    return this.getMenu.execute(user.restaurantId);
+  }
+
+  @Patch('items/:id/components')
+  async updateItemComponents(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateComponentsRequestSchema)) body: UpdateComponentsRequestDto,
+  ) {
+    const result = await this.updateComponents.execute(id, user.restaurantId, body.components);
+    if (!result.ok) {
+      if (result.error.code === 'MENU_ITEM_OPTION_LIMIT') throw new BadRequestException(result.error.message);
+      if (result.error.code === 'CROSS_RESTAURANT_ACCESS') throw new ForbiddenException(result.error.message);
+      throw new NotFoundException(result.error.message);
+    }
+    return result.value;
+  }
 
   // Categories
   @Get('categories')
@@ -291,6 +319,7 @@ export class MenuController {
       ...body,
       itemId,
     });
+    if (!result.ok && result.error.code === 'MENU_ITEM_OPTION_LIMIT') throw new BadRequestException(result.error.message);
     if (!result.ok)
       throw result.error.code === 'CROSS_RESTAURANT_ACCESS'
         ? new ForbiddenException(result.error.message)
@@ -306,6 +335,7 @@ export class MenuController {
     body: UpdateOptionRequestDto,
   ) {
     const result = await this.updateOption.execute(id, user.restaurantId, body);
+    if (!result.ok && result.error.code === 'MENU_ITEM_OPTION_LIMIT') throw new BadRequestException(result.error.message);
     if (!result.ok)
       throw result.error.code === 'CROSS_RESTAURANT_ACCESS'
         ? new ForbiddenException(result.error.message)

@@ -6,5 +6,6 @@ export class MenuItemVariant {
     public readonly priceOverride: number | null,
     public readonly maxSelections: number,
     public readonly displayOrder: number = 0,
+    public readonly isAvailable: boolean = true,
   ) {}
 }

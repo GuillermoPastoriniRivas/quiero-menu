@@ -11,15 +11,13 @@ import { PushServicePort } from '../../ports/push-service.port.js';
 import { OperatingHoursPolicy } from '../../../domain/services/operating-hours-policy.js';
 import type { MenuCategoryRepository } from '../../../domain/repositories/menu-category.repository.js';
 import { resolveSharedMenuOptions } from '../../../domain/services/shared-menu-options.js';
-import {
-  resolveOptionGroups,
-  validateOptionSelection,
-} from '../../../domain/services/menu-option-groups.js';
+import { resolveMenuSelection, type SelectedOptionInput } from '../../../domain/services/menu-selection.js';
+import { componentsForVariant, validateMenuComponents } from '../../../domain/services/menu-components.js';
 import { Order } from '../../../domain/entities/order.entity.js';
 import type { BehaviorContext } from '../../../domain/entities/behavior-event.entity.js';
 import {
   OrderItem,
-  SelectedOption,
+  OrderItemComponent,
 } from '../../../domain/entities/order-item.entity.js';
 import { OrderStatus } from '../../../domain/enums/order-status.enum.js';
 import { OrderSource } from '../../../domain/enums/order-source.enum.js';
@@ -48,7 +46,14 @@ interface OrderItemInput {
   menuItemId: string;
   variantId?: string;
   quantity: number;
-  selectedOptionIds: string[];
+  selectedOptionIds?: string[];
+  selectedOptions?: SelectedOptionInput[];
+  components?: {
+    slotId: string;
+    menuItemId: string;
+    variantId?: string;
+    selectedOptions?: SelectedOptionInput[];
+  }[];
   notes: string;
 }
 
@@ -124,11 +129,15 @@ export class CreateStorefrontOrderUseCase {
       | undefined;
 
     for (const itemInput of input.items) {
+      if (!Number.isSafeInteger(itemInput.quantity) || itemInput.quantity < 1)
+        return err(new MenuItemOptionLimitError('La cantidad del producto debe ser un entero positivo.'));
       const menuItem = await this.menuItemRepo.findById(itemInput.menuItemId);
       if (!menuItem || !menuItem.isAvailable || !menuItem.isVisible)
         return err(new MenuItemNotFoundError());
       if (menuItem.restaurantId !== restaurant.id)
         return err(new CrossRestaurantAccessError());
+      if (categories.some((c) => c.id === menuItem.categoryId && !c.isVisible))
+        return err(new MenuItemNotFoundError());
       if (
         categories.some((c) => c.id === menuItem.categoryId && c.isOptionSource)
       )
@@ -160,7 +169,7 @@ export class CreateStorefrontOrderUseCase {
       const variant = variants.find((v) => v.id === variantId);
       if (
         (variants.length > 0 && !variant) ||
-        (variantId !== null && !variant)
+        (variantId !== null && !variant) || variant?.isAvailable === false
       ) {
         return err(
           new MenuItemOptionLimitError(
@@ -172,39 +181,47 @@ export class CreateStorefrontOrderUseCase {
         unitPrice = variant.priceOverride ?? menuItem.basePrice;
         variantName = variant.name;
       }
-      const uniqueIds = new Set(itemInput.selectedOptionIds);
-      const selected = options.filter((option) => uniqueIds.has(option.id));
-      if (
-        uniqueIds.size !== itemInput.selectedOptionIds.length ||
-        selected.length !== uniqueIds.size ||
-        selected.some(
-          (option) =>
-            option.itemId !== menuItem.id ||
-            !option.isAvailable ||
-            (option.variantId !== null && option.variantId !== variantId),
-        )
-      ) {
-        return err(
-          new MenuItemOptionLimitError(
-            `"${menuItem.name}": algunas opciones ya no están disponibles. Revisá tu selección.`,
-          ),
-        );
+      const selection = resolveMenuSelection(menuItem, variants, options, variantId, itemInput);
+      if (typeof selection === 'string') return err(new MenuItemOptionLimitError(`"${menuItem.name}": ${selection}`));
+      const selectedOptions = selection.selectedOptions;
+      unitPrice += selection.priceDelta;
+
+      const components: OrderItemComponent[] = [];
+      const slots = componentsForVariant(menuItem.components ?? [], variantId);
+      const requested = itemInput.components ?? [];
+      if (requested.length !== slots.length || new Set(requested.map((c) => c.slotId)).size !== requested.length ||
+        requested.some((c) => !slots.some((slot) => slot.slotId === c.slotId)))
+        return err(new MenuItemOptionLimitError('Completá cada componente de la promo, sin slots repetidos o ajenos.'));
+      if (slots.length) {
+        sourceItems ??= await this.menuItemRepo.findByRestaurantId(restaurant.id);
+        const componentVariants = await this.variantRepo.findByItemIds(sourceItems.map((item) => item.id));
+        const configError = validateMenuComponents(menuItem, slots, categories, sourceItems, componentVariants);
+        if (configError) return err(new MenuItemOptionLimitError(configError));
+        for (const slot of slots) {
+          const componentInput = requested.find((c) => c.slotId === slot.slotId)!;
+          const choice = slot.choices.find((c) => c.menuItemId === componentInput.menuItemId && c.variantId === (componentInput.variantId ?? null));
+          if (!choice) return err(new MenuItemOptionLimitError(`Elegí un producto y presentación válidos en "${slot.name}".`));
+          const componentItem = sourceItems.find((item) => item.id === choice.menuItemId)!;
+          const componentCategory = categories.find((c) => c.id === componentItem.categoryId)!;
+          const childVariants = componentVariants.filter((v) => v.itemId === componentItem.id);
+          const childVariant = childVariants.find((v) => v.id === choice.variantId);
+          if (!componentItem.isAvailable || !componentItem.isVisible || !componentCategory.isVisible || childVariant?.isAvailable === false)
+            return err(new MenuItemOptionLimitError(`"${slot.name}": el producto o presentación ya no está disponible.`));
+          const childOptions = resolveSharedMenuOptions(componentItem,
+            await this.optionRepo.findByItemId(componentItem.id), categories, sourceItems, choice.variantId);
+          const childSelection = resolveMenuSelection(componentItem, childVariants, childOptions, choice.variantId, componentInput);
+          if (typeof childSelection === 'string') return err(new MenuItemOptionLimitError(`"${slot.name}": ${childSelection}`));
+          unitPrice += slot.quantity * (choice.priceDelta + childSelection.priceDelta);
+          components.push({
+            slotId: slot.slotId, slotName: slot.name, quantity: slot.quantity,
+            menuItemId: componentItem.id, menuItemName: componentItem.name,
+            variantId: choice.variantId, variantName: childVariant?.name ?? null,
+            priceDelta: choice.priceDelta, selectedOptions: childSelection.selectedOptions,
+          });
+        }
       }
-      const rules = resolveOptionGroups(menuItem, variants, options, variantId);
-      const selectionError = validateOptionSelection(rules, selected);
-      if (selectionError)
-        return err(
-          new MenuItemOptionLimitError(`"${menuItem.name}": ${selectionError}`),
-        );
-      const selectedOptions: SelectedOption[] = selected.map((option) => ({
-        optionId: option.id,
-        name: option.name,
-        priceDelta: option.priceDelta,
-      }));
-      unitPrice += selected.reduce(
-        (total, option) => total + option.priceDelta,
-        0,
-      );
+      if (!Number.isFinite(unitPrice) || unitPrice < 0 || !Number.isFinite(unitPrice * itemInput.quantity))
+        return err(new MenuItemOptionLimitError('El precio final del producto no es válido.'));
 
       const totalPrice = unitPrice * itemInput.quantity;
       subtotal += totalPrice;
@@ -219,6 +236,7 @@ export class CreateStorefrontOrderUseCase {
         unitPrice,
         totalPrice,
         selectedOptions,
+        components,
         notes: itemInput.notes,
       });
     }
@@ -286,7 +304,13 @@ export class CreateStorefrontOrderUseCase {
         let line = `- ${item.quantity}x ${item.menuItemName}`;
         if (item.variantName) line += ` (${item.variantName})`;
         if (item.selectedOptions.length > 0) {
-          line += ` [${item.selectedOptions.map((o) => o.name).join(', ')}]`;
+          line += ` [${item.selectedOptions.map((o) => `${o.quantity ?? 1}x ${o.name}`).join(', ')}]`;
+        }
+        for (const component of item.components ?? []) {
+          line += `\n  ${component.slotName}: ${component.quantity}x ${component.menuItemName}`;
+          if (component.variantName) line += ` (${component.variantName})`;
+          if (component.selectedOptions.length)
+            line += ` [${component.selectedOptions.map((o) => `${o.quantity ?? 1}x ${o.name}`).join(', ')}]`;
         }
         return line;
       }),

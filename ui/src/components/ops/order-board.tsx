@@ -1,5 +1,7 @@
 'use client';
 
+import { OrderItemSelections } from '@/components/storefront/order-item-selections';
+
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, usePathname } from 'next/navigation';
 import type { Order, OrderItem } from '@/types';
@@ -73,9 +75,7 @@ function ItemsList({ items }: { items?: OrderItem[] }) {
           <div className="min-w-0 flex-1">
             <p className="text-lg font-bold leading-snug text-on-surface">{item.menuItemName}</p>
             {item.variantName && <p className="text-sm text-on-surface-variant">{item.variantName}</p>}
-            {item.selectedOptions && item.selectedOptions.length > 0 && (
-              <p className="text-sm text-on-surface-variant">{item.selectedOptions.map((o) => o.name).join(', ')}</p>
-            )}
+            <div className="text-sm"><OrderItemSelections options={item.selectedOptions} components={item.components} /></div>
             {item.notes && <p className="text-base font-semibold italic text-amber-300">“{item.notes}”</p>}
           </div>
         </div>

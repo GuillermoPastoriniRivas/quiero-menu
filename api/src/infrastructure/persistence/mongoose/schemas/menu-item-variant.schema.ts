@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
 
 export type MenuItemVariantDocument = HydratedDocument<MenuItemVariantModel>;
 
 @Schema({ collection: 'menu_item_variants' })
 export class MenuItemVariantModel {
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
   itemId: Types.ObjectId;
 
   @Prop({ required: true })
@@ -19,6 +19,9 @@ export class MenuItemVariantModel {
 
   @Prop({ default: 0 })
   displayOrder: number;
+
+  @Prop({ default: true })
+  isAvailable: boolean;
 }
 
 export const MenuItemVariantSchema =

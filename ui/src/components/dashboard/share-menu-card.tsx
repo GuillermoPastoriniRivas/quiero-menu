@@ -13,11 +13,6 @@ import { attributedUrl, trackOwner } from '@/lib/behavior';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { WhatsAppIcon } from '@/components/ui/brand-icons';
-
-const outlineLink =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-outline-variant/40 px-4 text-sm font-bold text-on-surface transition-colors hover:border-primary/40';
-
 /**
  * Acceso directo, desde el Inicio, a las dos cosas que más se usan para difundir:
  * la URL pública (editable) y el QR (se muestra a pedido).
@@ -26,6 +21,7 @@ export function ShareMenuCard() {
   const { restaurant, update } = useRestaurantStore();
   const [slugDraft, setSlugDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
@@ -49,6 +45,7 @@ export function ShareMenuCard() {
     try {
       await update({ slug: candidate });
       setSlugDraft(null);
+      setEditing(false);
       const user = useAuthStore.getState().user;
       if (user) useAuthStore.getState().setUser({ ...user, restaurantSlug: candidate });
       toast.success('URL actualizada');
@@ -74,10 +71,6 @@ export function ShareMenuCard() {
     }
   };
 
-  const shareWhatsApp = restaurant
-    ? `https://wa.me/?text=${encodeURIComponent(`Mirá la carta de ${restaurant.name} y hacé tu pedido acá: ${attributedUrl(menuUrl, 'wa')}`)}`
-    : '';
-
   const download = async () => {
     const ok = await downloadQrPng(qrRef.current, `menu-qr-${restaurant?.slug || 'code'}.png`);
     if (!ok) return;
@@ -86,65 +79,46 @@ export function ShareMenuCard() {
   };
 
   return (
-    <section className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-4 shadow-sm sm:p-5">
-      <div className="flex items-center gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+    <section aria-labelledby="share-menu-heading" className="min-w-0 rounded-3xl border border-outline-variant/30 bg-surface-container-lowest p-4 sm:p-5">
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <MaterialIcon name="share" size="sm" />
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-bold text-on-surface">Tu menú público</p>
-          <p className="text-xs text-on-surface-variant">Tu link y el QR para imprimir.</p>
+          <h2 id="share-menu-heading" className="text-sm font-bold text-on-surface">Tu menú público</h2>
+          <p className="mt-0.5 text-xs text-on-surface-variant">Compartilo con tus clientes.</p>
         </div>
       </div>
 
       <div className="mt-4 space-y-3">
-        <div className="space-y-1.5">
-          <label htmlFor="share-slug" className="text-sm font-semibold text-on-surface">
-            Tu dirección
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="whitespace-nowrap text-sm text-on-surface-variant">quiero.menu/</span>
-            <Input
-              id="share-slug"
-              value={slug}
-              onChange={(e) => setSlugDraft(e.target.value)}
-              placeholder="mi-restaurante"
-              className="h-11 min-w-0 flex-1"
-            />
-            {dirty && (
-              <Button onClick={saveSlug} disabled={saving || !slug.trim()} className="h-11 shrink-0">
-                {saving ? 'Guardando…' : 'Guardar'}
-              </Button>
-            )}
+        <div className="rounded-2xl bg-surface-container-low p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-on-surface-variant">Tu dirección</p>
+            <button type="button" disabled={!restaurant || saving} aria-expanded={editing} aria-controls="share-slug-editor" onClick={() => { setSlugDraft(null); setEditing((value) => !value); }} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-xs font-bold text-primary hover:bg-primary/5 disabled:opacity-50">
+              <MaterialIcon name={editing ? 'close' : 'edit'} size="xs" />
+              {editing ? 'Cancelar' : 'Editar'}
+            </button>
           </div>
+          {editing ? (
+            <form id="share-slug-editor" onSubmit={(event) => { event.preventDefault(); void saveSlug(); }} className="mt-1 space-y-2">
+              <label htmlFor="share-slug" className="block text-xs text-on-surface-variant">quiero.menu/</label>
+              <Input id="share-slug" value={slug} onChange={(event) => setSlugDraft(event.target.value)} placeholder="mi-restaurante" autoFocus disabled={saving} className="h-11 w-full min-w-0 bg-surface-container-lowest" />
+              <Button type="submit" disabled={saving || !dirty || !slug.trim()} className="h-11 w-full">{saving ? 'Guardando…' : 'Guardar dirección'}</Button>
+            </form>
+          ) : (
+            <p className="break-all text-sm leading-relaxed text-on-surface"><span className="text-on-surface-variant">quiero.menu/</span><span className="font-bold">{currentSlug || '…'}</span></p>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Button onClick={copy} className="font-bold">
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={copy} disabled={!restaurant} className="h-11 min-w-36 flex-1 px-3 font-bold">
             <MaterialIcon name="content_copy" size="sm" />
             Copiar link
           </Button>
-          <a
-            href={shareWhatsApp}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => useActivationStore.getState().markShared()}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-3 text-sm font-bold text-white transition-colors hover:bg-[#1EBE5A]"
-          >
-            <WhatsAppIcon className="size-4" />
-            WhatsApp
-          </a>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={() => setShowQr((v) => !v)} className="font-bold">
+          <Button variant="outline" disabled={!restaurant} aria-expanded={showQr} aria-controls="share-menu-qr" onClick={() => setShowQr((v) => !v)} className="h-11 min-w-36 flex-1 px-3 font-bold">
             <MaterialIcon name="qr_code_2" size="sm" />
             {showQr ? 'Ocultar QR' : 'Ver QR'}
           </Button>
-          <Link href="/publicar/imprimir" onClick={() => useActivationStore.getState().markShared()} className={outlineLink}>
-            <MaterialIcon name="print" size="sm" />
-            Imprimir
-          </Link>
         </div>
 
         {restaurant && (
@@ -152,22 +126,31 @@ export function ShareMenuCard() {
             href={`/${restaurant.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-outline-variant/40 px-4 text-sm font-bold text-on-surface transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
+            <MaterialIcon name="visibility" size="sm" />
             Ver mi menú
-            <MaterialIcon name="arrow_outward" size="sm" />
+            <MaterialIcon name="arrow_outward" size="sm" className="text-outline" />
           </a>
         )}
 
         {showQr && (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-outline-variant/25 bg-white p-4">
+          <div id="share-menu-qr" className="flex flex-col items-center gap-3 rounded-2xl border border-outline-variant/25 bg-white p-3">
             <div ref={qrRef}>
               <BrandedQr value={menuUrl} size={160} logoUrl={restaurant?.logoUrl} />
             </div>
-            <Button onClick={download} variant="outline" className="w-full font-bold">
+            <Button onClick={download} variant="outline" className="h-11 w-full font-bold">
               <MaterialIcon name="download" size="sm" />
               Descargar QR
             </Button>
+            <Link
+              href="/publicar/imprimir"
+              onClick={() => useActivationStore.getState().markShared()}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-outline-variant/40 px-4 text-sm font-bold text-on-surface transition-colors hover:border-primary/40"
+            >
+              <MaterialIcon name="print" size="sm" />
+              Imprimir
+            </Link>
           </div>
         )}
       </div>

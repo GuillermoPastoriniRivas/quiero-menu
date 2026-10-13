@@ -35,18 +35,20 @@ export const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; lab
 interface RecentOrdersListProps {
   orders: OrderWithRedaction[];
   currency: string;
+  title?: string;
+  showViewAll?: boolean;
   /** Si no se pasa, la lista es solo-lectura (la operacion vive en Pedidos) */
   onAdvance?: (order: OrderWithRedaction) => void;
 }
 
-export function RecentOrdersList({ orders, currency, onAdvance }: RecentOrdersListProps) {
+export function RecentOrdersList({ orders, currency, title = 'Pedidos recientes', showViewAll = true, onAdvance }: RecentOrdersListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>Pedidos recientes</h3>
-        <Link href="/orders" className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
+        <h3 className="font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>{title}</h3>
+        {showViewAll && <Link href="/orders" className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
           Ver todos <MaterialIcon name="arrow_forward" size="xs" />
-        </Link>
+        </Link>}
       </div>
       {orders.length === 0 ? (
         <p className="text-sm text-on-surface-variant py-4">No hay pedidos para mostrar.</p>
@@ -57,8 +59,8 @@ export function RecentOrdersList({ orders, currency, onAdvance }: RecentOrdersLi
             return (
               <div key={order.id} className="flex items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-on-surface">{order.code}</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href="/orders" className="break-all font-extrabold text-on-surface hover:text-primary">{order.code}</Link>
                     <Badge variant={STATUS_BADGE_VARIANT[order.status]}>
                       {STATUS_LABELS[order.status]}
                     </Badge>
@@ -68,7 +70,7 @@ export function RecentOrdersList({ orders, currency, onAdvance }: RecentOrdersLi
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-bold text-on-surface" style={{ fontFamily: 'var(--font-heading)' }}>
+                  <p className="text-sm font-bold text-on-surface sm:text-base" style={{ fontFamily: 'var(--font-heading)' }}>
                     {formatCurrency(order.total, currency)}
                   </p>
                   {next && onAdvance && (
