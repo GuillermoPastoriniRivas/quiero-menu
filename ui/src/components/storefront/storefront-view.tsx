@@ -44,7 +44,7 @@ import { formatUpdatedDate } from "@/lib/restaurant-categories";
 import { ProductOptions } from '@/components/storefront/product-options';
 import { ProductComponents } from '@/components/storefront/product-components';
 import { OrderItemSelections } from '@/components/storefront/order-item-selections';
-import { activeComponentSlots, componentSelectionIssues, componentSnapshots, productOptionGroups, productStartingPrice, productUnitPrice, reconcileOptionSelections, selectedOptionSnapshots, selectionIssues } from '@/lib/menu-options';
+import { activeComponentSlots, componentSelectionIssues, componentSnapshots, priceVaries, productOptionGroups, productStartingPrice, productUnitPrice, reconcileOptionSelections, selectedOptionSnapshots, selectionIssues } from '@/lib/menu-options';
 import { behaviorContext, searchProperties, trackStorefront } from '@/lib/behavior';
 import { StorefrontDirectoryLinks } from '@/components/directory/storefront-directory-links';
 
@@ -981,7 +981,7 @@ export function StorefrontView({
                               className="font-extrabold text-lg text-on-surface"
                               style={{ fontFamily: "var(--font-heading)" }}
                             >
-                              {item.isOrderable === false ? "Para elegir en tu pote" : productStartingPrice(item, catalog) === null ? 'No disponible' : `${item.variants.length || item.optionGroups?.some(g => g.minSelections > 0) || item.components?.length ? 'Desde ' : ''}${formatCurrency(productStartingPrice(item, catalog)!, restaurant.currency)}`}
+                              {item.isOrderable === false ? "Para elegir en tu pote" : productStartingPrice(item, catalog) === null ? 'No disponible' : `${priceVaries(item) ? 'Desde ' : ''}${formatCurrency(productStartingPrice(item, catalog)!, restaurant.currency)}`}
                             </span>
                             {!item.isAvailable || productStartingPrice(item, catalog) === null ? (
                               <Badge variant="secondary">Agotado</Badge>

@@ -1,6 +1,9 @@
 import type { StorefrontData } from "@/types";
 import { getCategoryDef } from "@/lib/restaurant-categories";
 import { serializeJsonLd } from "@/lib/json-ld";
+import { productStartingPrice } from "@/lib/menu-options";
+
+type StorefrontItem = StorefrontData["categories"][number]["items"][number];
 
 function omitEmpty(value: string | null | undefined): string | undefined {
   return value && value.trim() ? value : undefined;
@@ -22,18 +25,17 @@ function isValidTime(value: string): boolean {
 
 /**
  * Rango de precios visible, derivado del menú. Google lo muestra como texto.
+ * Usa el precio de entrada real de cada producto (tamaños incluidos), no el base.
  */
-function priceRange(data: StorefrontData): string | undefined {
-  const prices = data.categories
-    .filter((cat) => cat.isVisible)
-    .flatMap((cat) => cat.items.filter((item) => item.isVisible))
-    .map((item) => item.basePrice)
-    .filter((p) => typeof p === "number" && p > 0);
+function priceRange(items: StorefrontItem[], currency: string): string | undefined {
+  const prices = items
+    .filter((item) => item.isOrderable !== false)
+    .map((item) => productStartingPrice(item, items))
+    .filter((p): p is number => typeof p === "number" && p > 0);
   if (prices.length === 0) return undefined;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
-  const format = (n: number) =>
-    `${data.restaurant.currency} ${n.toLocaleString("es-AR")}`;
+  const format = (n: number) => `${currency} ${n.toLocaleString("es-AR")}`;
   return min === max ? format(min) : `${format(min)} - ${format(max)}`;
 }
 
@@ -51,7 +53,10 @@ export function StorefrontJsonLd({
   // Las fichas sin dueño (claimed=false) se publican sin precios: el menú es
   // informativo y no queremos fijar precios que pueden estar desactualizados.
   const showPrices = restaurant.claimed !== false;
-  const price = showPrices ? priceRange(data) : undefined;
+  const visibleItems = categories
+    .filter((cat) => cat.isVisible)
+    .flatMap((cat) => cat.items.filter((item) => item.isVisible));
+  const price = showPrices ? priceRange(visibleItems, restaurant.currency) : undefined;
   const sameAs = Object.values(restaurant.socialLinks ?? {}).filter((value) => {
     try { return ["https:", "http:"].includes(new URL(value).protocol); } catch { return false; }
   });
@@ -120,23 +125,26 @@ export function StorefrontJsonLd({
             : {}),
           hasMenuItem: cat.items
             .filter((item) => item.isVisible)
-            .map((item) => ({
-              "@type": "MenuItem",
-              name: item.name,
-              ...(omitEmpty(item.description)
-                ? { description: item.description }
-                : {}),
-              ...(omitEmpty(item.imageUrl) ? { image: item.imageUrl } : {}),
-              ...(showPrices
-                ? {
-                    offers: {
-                      "@type": "Offer",
-                      price: item.basePrice,
-                      priceCurrency: restaurant.currency,
-                    },
-                  }
-                : {}),
-            })),
+            .map((item) => {
+              const itemPrice = showPrices ? productStartingPrice(item, visibleItems) : null;
+              return {
+                "@type": "MenuItem",
+                name: item.name,
+                ...(omitEmpty(item.description)
+                  ? { description: item.description }
+                  : {}),
+                ...(omitEmpty(item.imageUrl) ? { image: item.imageUrl } : {}),
+                ...(itemPrice != null
+                  ? {
+                      offers: {
+                        "@type": "Offer",
+                        price: itemPrice,
+                        priceCurrency: restaurant.currency,
+                      },
+                    }
+                  : {}),
+              };
+            }),
         })),
     } } : {}),
   };

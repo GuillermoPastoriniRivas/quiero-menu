@@ -321,5 +321,11 @@ export function productStartingPrice(item: ProductWithOptions, catalog: ProductW
   return prices.length ? Math.min(...prices) : null;
 }
 
+/** "Desde" solo cuando el precio realmente puede variar: más de un tamaño, o elecciones obligatorias. */
+export function priceVaries(item: ProductWithOptions): boolean {
+  const sizes = new Set(item.variants.filter(v => v.isAvailable !== false).map(v => v.priceOverride ?? item.basePrice));
+  return sizes.size > 1 || (item.optionGroups ?? []).some(g => g.minSelections > 0) || (item.components ?? []).length > 0;
+}
+
 export const selectedOptionsLabel = (options: SelectedOption[] = []) => options.map(o =>
   `${o.groupName ? `${o.groupName}: ` : ''}${o.quantity ?? 1}× ${o.name}`).join(', ');

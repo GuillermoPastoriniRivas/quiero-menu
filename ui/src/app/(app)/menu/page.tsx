@@ -497,6 +497,11 @@ export default function MenuPage() {
   const optionLists = richCategories.filter((cat) => cat.isOptionSource);
   const filteredProducts = productCategories.map((cat) => ({ ...cat, items: cat.items.filter((item) => !search || normalize(`${cat.name} ${item.name} ${item.description} ${item.variants.map((v) => v.name).join(' ')} ${[...item.options, ...(item.resolvedOptions ?? [])].map((o) => o.name).join(' ')}`).includes(normalize(search))) })).filter((cat) => !search || cat.items.length > 0);
 
+  // Un producto con tamaños no tiene "precio de arriba": el precio vive en cada presentación.
+  const dialogItemId = itemDialog?.mode === 'edit' ? itemDialog.item.id : null;
+  const dialogItem = dialogItemId ? richCategories.flatMap((cat) => cat.items).find((item) => item.id === dialogItemId) ?? null : null;
+  const dialogVariants = dialogItem ? [...dialogItem.variants].sort((a, b) => a.displayOrder - b.displayOrder) : [];
+
   // Los sabores de una lista compartida se administran una sola vez en su lista:
   // desde acá solo se prende/apaga para este local.
   const handleToggleSourceOption = async (sourceItemId: string, next: boolean) => {
@@ -718,7 +723,35 @@ export default function MenuPage() {
                         </button>
 
                         <div className="flex items-center gap-1 sm:gap-2 shrink-0 flex-wrap justify-end w-full sm:w-auto" onClick={(e) => e.stopPropagation()}>
-                             {item.variants.length > 0 ? <span className="text-sm font-semibold">Desde {formatCurrency(Math.min(...item.variants.map((v) => v.priceOverride ?? item.basePrice)), menuCurrency)}</span> : priceEdit?.kind === 'item' && priceEdit.id === item.id ? (
+                             {item.variants.length > 0 ? (
+                               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                 {[...item.variants].sort((a, b) => a.displayOrder - b.displayOrder).map((v) =>
+                                   priceEdit?.kind === 'variant' && priceEdit.id === v.id ? (
+                                     <MoneyInput
+                                       key={v.id}
+                                       autoFocus
+                                       value={priceDraft}
+                                       onChange={setPriceDraft}
+                                       onKeyDown={handlePriceKeyDown}
+                                       onBlur={handlePriceBlur}
+                                       className="w-24"
+                                       aria-label={`Precio de ${v.name || 'presentación'} en ${item.name}`}
+                                     />
+                                   ) : (
+                                     <button
+                                       key={v.id}
+                                       type="button"
+                                       onClick={() => openPriceEdit({ kind: 'variant', id: v.id }, v.priceOverride != null ? String(v.priceOverride) : '')}
+                                       className="whitespace-nowrap rounded px-1.5 py-0.5 text-sm transition-colors hover:bg-muted"
+                                       title={`Editar precio de ${v.name || 'presentación'}`}
+                                     >
+                                       {v.name && <span className="mr-1 text-xs text-muted-foreground">{v.name}</span>}
+                                       <span className="font-semibold">{formatCurrency(v.priceOverride ?? item.basePrice, menuCurrency)}</span>
+                                     </button>
+                                   ),
+                                 )}
+                               </div>
+                             ) : priceEdit?.kind === 'item' && priceEdit.id === item.id ? (
                             <MoneyInput
                               autoFocus
                               value={priceDraft}
@@ -964,7 +997,38 @@ export default function MenuPage() {
                 placeholder="Hamburguesa clasica"
               />
             </div>
-            {itemDialog?.mode === 'edit' && itemDialog.item.variants.length > 0 ? <p className="rounded-xl bg-muted p-3 text-sm">Los precios finales se editan por presentación, en la sección Presentaciones o en la vista Precios.</p> : <div className="space-y-1">
+            {itemDialog?.mode === 'edit' && dialogVariants.length > 0 ? (
+              <div className="space-y-2 rounded-xl bg-muted p-3">
+                <p className="text-sm font-semibold">Precios por tamaño · {menuCurrency}</p>
+                {dialogVariants.map((v) =>
+                  priceEdit?.kind === 'variant' && priceEdit.id === v.id ? (
+                    <MoneyInput
+                      key={v.id}
+                      autoFocus
+                      value={priceDraft}
+                      onChange={setPriceDraft}
+                      onKeyDown={handlePriceKeyDown}
+                      onBlur={handlePriceBlur}
+                      className="w-28"
+                      aria-label={`Precio de ${v.name || 'presentación'}`}
+                    />
+                  ) : (
+                    <div key={v.id} className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 flex-1 truncate text-sm">{v.name || 'Presentación sin nombre'}</span>
+                      <button
+                        type="button"
+                        onClick={() => openPriceEdit({ kind: 'variant', id: v.id }, v.priceOverride != null ? String(v.priceOverride) : '')}
+                        className="whitespace-nowrap rounded px-1.5 py-0.5 text-sm font-semibold transition-colors hover:bg-background"
+                        title="Editar precio"
+                      >
+                        {formatCurrency(v.priceOverride ?? (dialogItem?.basePrice ?? 0), menuCurrency)}
+                      </button>
+                    </div>
+                  ),
+                )}
+                <p className="text-xs text-muted-foreground">Tocá un precio para editarlo. Para agregar o quitar tamaños, usá la sección Presentaciones del producto.</p>
+              </div>
+            ) : <div className="space-y-1">
               <Label>Precio de venta · {menuCurrency}</Label>
               <MoneyInput
                 value={itemForm.price}
