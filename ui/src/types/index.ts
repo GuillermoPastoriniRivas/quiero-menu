@@ -68,6 +68,8 @@ export interface Restaurant {
   countrySlug?: string;
   /** false = cargado como inventario, reclamable. undefined (API vieja) = con dueño. */
   claimed?: boolean;
+  /** true = local de demostración (datos ficticios). Nunca público. */
+  isDemo?: boolean;
   /**
    * Galería de fotos de la ficha. 's3' = subida por el equipo a nuestro
    * bucket público; 'external' = link validado 200 image/* al insertarse.

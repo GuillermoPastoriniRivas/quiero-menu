@@ -14,6 +14,7 @@
     "start:prod": "node dist/main",
     "backfill:tracking-tokens": "node dist/scripts/backfill-tracking-tokens.js",
     "seed:concepcion": "nest build && node dist/scripts/seed-concepcion-uruguay.js",
+    "mark:demo-locals": "nest build && node dist/scripts/mark-demo-locals.js",
     "import:directory": "nest build && node dist/scripts/import-directory-inventory.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",

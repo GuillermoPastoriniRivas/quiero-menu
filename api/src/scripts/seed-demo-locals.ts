@@ -618,6 +618,7 @@ async function main(): Promise<void> {
       timezone: 'America/Argentina/Buenos_Aires',
       status: 'active',
       claimed: demo.claimed !== false,
+      isDemo: true,
       openOverride: null,
       customDomain: null,
       socialLinks: null,

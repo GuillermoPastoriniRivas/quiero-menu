@@ -349,6 +349,8 @@ export class SearchStorefrontsUseCase {
     const publicSummaries = summaries.filter((summary) => {
       const restaurant = restaurantsBySlug.get(summary.slug);
       if (!restaurant) return false;
+      // Los locales demo (isDemo) nunca son resultados: datos ficticios.
+      if (restaurant.isDemo) return false;
       // Mismo criterio que el index: el local con carta O la ficha de
       // inventario sin dueño son resultados válidos.
       return (

@@ -130,8 +130,9 @@ export class ListActiveStorefrontsUseCase {
       restaurants
         // El directorio sirve a DOS públicos: claimed=true con carta (lo que es
         // el producto) y claimed=false = ficha de inventario indexable que
-        // genera el reclamo. Los claimed sin menu no se muestran.
-        .filter((r) => withMenu.has(r.id) || r.claimed === false)
+        // genera el reclamo. Los claimed sin menu no se muestran. Los locales
+        // demo (isDemo) se excluyen SIEMPRE: son datos ficticios.
+        .filter((r) => !r.isDemo && (withMenu.has(r.id) || r.claimed === false))
         .map((r) => ({
           slug: r.slug,
           name: r.name,

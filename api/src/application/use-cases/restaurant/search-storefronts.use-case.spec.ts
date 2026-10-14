@@ -36,6 +36,13 @@ function makeRestaurant(id: string, overrides: Partial<Restaurant> = {}) {
     new Date(),
     overrides.category,
     overrides.citySlug ?? 'concepcion-del-uruguay',
+    overrides.region,
+    overrides.countrySlug,
+    overrides.regionSlug,
+    overrides.claimed,
+    overrides.photoGallery,
+    overrides.activation,
+    overrides.isDemo,
   );
 }
 
@@ -268,5 +275,25 @@ describe('SearchStorefrontsUseCase', () => {
 
     await useCase.execute({});
     expect(deps.searchTermRepo.record).toHaveBeenCalledTimes(2);
+  });
+
+  it('excluye los locales demo del índice y la búsqueda por plato', async () => {
+    const real = makeRestaurant('1', { name: 'Rotisería Doña Clara' });
+    const demo = makeRestaurant('2', {
+      name: 'Rotisería Demo',
+      isDemo: true,
+    });
+    const deps = makeRepoDeps(
+      [real, demo],
+      [makeItem('1', 'Milanesa'), makeItem('2', 'Pollo al spiedo')],
+      [],
+    );
+    const useCase = makeUseCase(deps);
+
+    const all = await useCase.execute({});
+    expect(all.results.map((r) => r.slug)).toEqual(['local-1']);
+
+    const byDish = await useCase.execute({ q: 'pollo' });
+    expect(byDish.total).toBe(0);
   });
 });

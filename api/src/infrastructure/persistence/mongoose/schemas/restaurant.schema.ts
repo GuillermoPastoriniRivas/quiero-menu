@@ -139,6 +139,13 @@ export class RestaurantModel {
   @Prop({ type: Object, default: null })
   activation: RestaurantActivation | null;
 
+  /**
+   * true = local de demostración (datos ficticios del seed). Excluido de toda
+   * superficie pública (directorio, búsqueda, sitemap y ficha).
+   */
+  @Prop({ type: Boolean, default: false })
+  isDemo: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }

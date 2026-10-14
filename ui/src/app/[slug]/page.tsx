@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { fetchStorefrontData } from "@/lib/storefront-data";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontJsonLd } from "@/components/storefront/storefront-json-ld";
@@ -20,6 +21,9 @@ export default async function StorefrontPage({
   // para tener isOpen/disponibilidad en vivo.
   const data = await fetchStorefrontData(slug);
   if (!data) return <StorefrontClient slug={slug} initialData={null} />;
+
+  // Local de demostración (datos ficticios): nunca tiene ficha pública.
+  if (data.restaurant.isDemo) notFound();
 
   // Local de inventario (sin dueño): ficha informativa, no el storefront de
   // pedidos. La ficha es la landing del negocio; el CTA es el reclamo.

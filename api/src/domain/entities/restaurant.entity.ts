@@ -93,5 +93,11 @@ export class Restaurant {
     /** Galería de fotos de la ficha (inventario; la gestiona el equipo/scraper). */
     public readonly photoGallery?: PhotoGalleryImage[],
     public readonly activation?: RestaurantActivation,
+    /**
+     * true = local de demostración (datos ficticios del seed). NUNCA se publica
+     * en el directorio, la búsqueda, el sitemap ni su ficha pública; se conserva
+     * para admin y desarrollo. undefined/false = local real.
+     */
+    public readonly isDemo?: boolean,
   ) {}
 }

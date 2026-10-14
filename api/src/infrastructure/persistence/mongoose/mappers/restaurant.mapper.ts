@@ -40,6 +40,7 @@ export class RestaurantMapper {
       doc.claimed ?? true,
       doc.photoGallery ?? [],
       doc.activation ?? undefined,
+      doc.isDemo ?? false,
     );
   }
 }
