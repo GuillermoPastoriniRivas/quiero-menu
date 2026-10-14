@@ -30,7 +30,7 @@ export async function generateMetadata({
       title,
       description,
       url: `https://quiero.menu/${slug}/reclamar`,
-      siteName: "quiero.menu",
+      siteName: "Quiero.menu - Menú digital",
       locale: "es_AR",
       type: "website",
     },

@@ -499,7 +499,7 @@ export async function generateMetadata({
         openGraph: {
           title,
           url: canonical,
-          siteName: "quiero.menu",
+          siteName: "Quiero.menu - Menú digital",
           locale: "es_AR",
           type: "website",
           images: [{ url: `${BASE_URL}/locales/opengraph-image`, width: 1200, height: 630, alt: "Directorio de locales de quiero.menu" }],
@@ -523,7 +523,7 @@ export async function generateMetadata({
         openGraph: {
           title,
           url: canonical,
-          siteName: "quiero.menu",
+          siteName: "Quiero.menu - Menú digital",
           locale: "es_AR",
           type: "website",
           images: [{ url: `${BASE_URL}/locales/opengraph-image`, width: 1200, height: 630, alt: "Directorio de locales de quiero.menu" }],
@@ -581,7 +581,7 @@ export async function generateMetadata({
         title: base.title,
         description: base.description,
         url: canonical,
-        siteName: "quiero.menu",
+        siteName: "Quiero.menu - Menú digital",
         locale: "es_AR",
         type: "website",
         images: [{ url: `${BASE_URL}/locales/opengraph-image`, width: 1200, height: 630, alt: "Directorio de locales de quiero.menu" }],

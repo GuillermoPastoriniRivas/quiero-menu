@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_AR",
     url: "https://quiero.menu",
-    siteName: "quiero.menu",
+    siteName: "Quiero.menu - Menú digital",
     title: "Menu Digital Gratis para Restaurantes | quiero.menu",
     description: "Crea tu menu digital gratis, sin tarjeta. Recibi pedidos directos por WhatsApp o QR, sin comisiones por pedido.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "quiero.menu - Menu digital gratis para restaurantes" }],

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_AR',
     url: 'https://quiero.menu',
-    siteName: 'quiero.menu',
+    siteName: 'Quiero.menu - Menú digital',
     title: 'Menú Digital Gratis | Creá tu menú online en 5 minutos',
     description:
       'Creá tu menú digital gratis y sin tarjeta. Compartilo por WhatsApp o con un QR en tu local y recibí pedidos directos, sin comisiones por pedido.',
@@ -181,7 +181,7 @@ const faqs = [
 const webSiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'quiero.menu',
+  name: 'Quiero.menu - Menú digital',
   url: 'https://quiero.menu',
   description:
     'Creá tu menú digital gratis para tu restaurante y recibí pedidos directos por WhatsApp o QR, sin comisiones por pedido.',

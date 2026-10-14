@@ -50,7 +50,7 @@ export async function generateMetadata({
       title: socialTitle,
       description,
       url,
-      siteName: "quiero.menu",
+      siteName: "Quiero.menu - Menú digital",
       locale: "es_AR",
       type: "website",
       ...(image ? { images: [{ url: image }] } : {}),
