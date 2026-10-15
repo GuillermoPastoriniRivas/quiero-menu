@@ -5,6 +5,7 @@ import { ReadinessBar, StageBadge, expiryLabel } from "@/components/admin/stage"
 import { READINESS_STEPS } from "@/lib/readiness";
 import { getCategoryDef } from "@/lib/restaurant-categories";
 import { cn } from "@/lib/utils";
+import { toWhatsAppNumber } from "@/lib/ar-phone";
 import type { AdminRestaurantListItem } from "@/types";
 
 export function RestaurantAvatar({
@@ -46,14 +47,13 @@ export function RestaurantRow({ item, dense = false }: { item: AdminRestaurantLi
   const owned = item.stage === "activo" || item.stage === "pro";
   const summary = owned ? item.activation : item.listing;
   const steps = owned ? ACTIVATION_KEYS : undefined;
+  const whatsapp = toWhatsAppNumber(item.phone);
   return (
-    <Link
-      href={`/admin/locales/${item.id}`}
-      className={cn(
-        "group flex items-center gap-3 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest transition-colors hover:border-primary/40",
-        dense ? "px-3 py-2.5" : "px-4 py-3.5",
-      )}
-    >
+    <div className={cn(
+      "group flex items-center gap-3 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest transition-colors hover:border-primary/40",
+      dense ? "px-3 py-2.5" : "px-4 py-3.5",
+    )}>
+      <Link href={`/admin/locales/${item.id}`} className="flex min-w-0 flex-1 items-center gap-3 py-0.5">
       <RestaurantAvatar name={item.name} logoUrl={item.logoUrl} size={dense ? "sm" : "md"} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -90,7 +90,22 @@ export function RestaurantRow({ item, dense = false }: { item: AdminRestaurantLi
           </div>
         )}
       </div>
-      <MaterialIcon name="chevron_right" size="sm" className="shrink-0 text-outline transition-colors group-hover:text-primary" />
-    </Link>
+      </Link>
+      {whatsapp && (
+        <a
+          href={`https://wa.me/${whatsapp}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Hablar por WhatsApp con ${item.name}`}
+          title="Hablar por WhatsApp"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C4A] transition-colors hover:bg-[#25D366]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]"
+        >
+          <MaterialIcon name="chat" size="sm" />
+        </a>
+      )}
+      <Link href={`/admin/locales/${item.id}`} aria-label={`Ver ${item.name}`} className="shrink-0">
+        <MaterialIcon name="chevron_right" size="sm" className="text-outline transition-colors group-hover:text-primary" />
+      </Link>
+    </div>
   );
 }

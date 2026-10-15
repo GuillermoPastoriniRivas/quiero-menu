@@ -491,6 +491,7 @@ export interface AdminRestaurantListItem {
   claimed: boolean;
   stage: AdminStage;
   createdAt: string;
+  phone: string;
   owner: { name: string; email: string } | null;
   plan: string | null;
   invitation: { expiresAt: string; email: string | null } | null;

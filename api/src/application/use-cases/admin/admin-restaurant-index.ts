@@ -168,6 +168,7 @@ export interface AdminRestaurantListItem {
   claimed: boolean;
   stage: AdminStage;
   createdAt: Date;
+  phone: string;
   owner: { name: string; email: string } | null;
   plan: string | null;
   invitation: { expiresAt: Date; email: string | null } | null;
@@ -193,6 +194,7 @@ export function toListItem(row: AdminIndexRow): AdminRestaurantListItem {
     claimed: r.claimed !== false,
     stage: row.stage,
     createdAt: r.createdAt,
+    phone: r.phone,
     owner: row.owner ? { name: row.owner.name, email: row.owner.email } : null,
     plan: row.subscription?.plan ?? null,
     invitation: row.invitation
