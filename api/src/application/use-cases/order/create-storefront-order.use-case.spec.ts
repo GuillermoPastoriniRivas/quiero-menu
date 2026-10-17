@@ -90,9 +90,11 @@ describe('CreateStorefrontOrderUseCase — guard de horarios', () => {
     overrides: {
       status?: RestaurantStatus;
       hours?: OperatingHours[];
+      claimed?: boolean;
     } = {},
   ) {
     const restaurant = makeRestaurant(overrides.status);
+    Object.assign(restaurant, { claimed: overrides.claimed });
     const restaurantRepo = {
       findBySlug: jest.fn().mockResolvedValue(restaurant),
       findById: jest.fn(),
@@ -152,6 +154,15 @@ describe('CreateStorefrontOrderUseCase — guard de horarios', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it('no crea pedidos para locales de inventario aunque estén activos', async () => {
+    const { useCase, orderRepo, hoursRepo } = buildUseCase({ claimed: false });
+    const result = await useCase.execute('mi-resto', input);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toBeInstanceOf(RestaurantPausedError);
+    expect(orderRepo.create).not.toHaveBeenCalled();
+    expect(hoursRepo.findByRestaurantId).not.toHaveBeenCalled();
   });
 
   it('rechaza cuando está paused (override manual)', async () => {

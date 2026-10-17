@@ -4,6 +4,7 @@ import {
   importDirectoryInventory,
   InventoryBatchSchema,
 } from './directory-inventory.js';
+import { concepcionInventory } from './concepcion-inventory.js';
 
 jest.setTimeout(180_000);
 const row = {
@@ -109,5 +110,120 @@ describe('Directory importer with isolated Mongo', () => {
       )[0].action,
     ).toBe('duplicate');
     expect(await db.collection('restaurants').countDocuments()).toBe(1);
+  });
+
+  it('loads the Concepción batch without replacing reviewed data, menus or hours', async () => {
+    const rows = concepcionInventory();
+    expect(rows.length).toBeGreaterThanOrEqual(50);
+    const db = connection.db!;
+    await importDirectoryInventory(db, [rows[0]], true);
+    const stored = await db
+      .collection('restaurants')
+      .findOne({ slug: rows[0].slug });
+    const reviewed = {
+      phone: 'Teléfono revisado',
+      bannerUrl: 'https://example.com/revisada.jpg',
+      openOverride: 'closed',
+      theme: { primaryColor: '#112233' },
+    };
+    await db
+      .collection('restaurants')
+      .updateOne({ _id: stored!._id }, { $set: reviewed });
+    const menu = { restaurantId: stored!._id, name: 'Carta del equipo' };
+    const hours = {
+      restaurantId: stored!._id,
+      dayOfWeek: 1,
+      opensAt: '10:00',
+      closesAt: '14:00',
+    };
+    await db.collection('menu_items').insertOne(menu);
+    await db.collection('operating_hours').insertOne(hours);
+    await importDirectoryInventory(db, rows, true);
+    expect(
+      await db.collection('restaurants').findOne({ slug: rows[0].slug }),
+    ).toMatchObject(reviewed);
+    expect(
+      await db.collection('menu_items').findOne({ restaurantId: stored!._id }),
+    ).toMatchObject(menu);
+    expect(
+      await db
+        .collection('operating_hours')
+        .findOne({ restaurantId: stored!._id }),
+    ).toMatchObject(hours);
+    expect(await db.collection('restaurants').countDocuments()).toBe(
+      rows.length,
+    );
+    expect(
+      (await importDirectoryInventory(db, rows, true)).every(
+        (r) => r.action === 'unchanged',
+      ),
+    ).toBe(true);
+  });
+
+  it('protects legacy owner links, demo records and slug collisions in other cities', async () => {
+    const db = connection.db!;
+    await importDirectoryInventory(db, [row], true);
+    const stored = await db
+      .collection('restaurants')
+      .findOne({ slug: row.slug });
+    await db
+      .collection('user_restaurants')
+      .insertOne({ restaurantId: String(stored!._id) });
+    expect(
+      (
+        await importDirectoryInventory(
+          db,
+          [{ ...row, description: 'No tocar' }],
+          true,
+        )
+      )[0].action,
+    ).toBe('protected');
+    await db.collection('user_restaurants').deleteMany({});
+    await db
+      .collection('restaurants')
+      .updateOne({ _id: stored!._id }, { $set: { isDemo: true } });
+    expect((await importDirectoryInventory(db, [row], true))[0].action).toBe(
+      'protected',
+    );
+    await db
+      .collection('restaurants')
+      .updateOne({ _id: stored!._id }, { $set: { isDemo: false } });
+    expect(
+      (
+        await importDirectoryInventory(
+          db,
+          [{ ...row, city: 'Concepción del Uruguay' }],
+          true,
+        )
+      )[0].action,
+    ).toBe('protected');
+  });
+
+  it('fills missing images but never overwrites an existing gallery', async () => {
+    const db = connection.db!;
+    await importDirectoryInventory(db, [row], true);
+    const photoGallery = [
+      { url: 'https://example.com/foto.jpg', source: 'external' },
+    ];
+    await importDirectoryInventory(db, [{ ...row, photoGallery }], true);
+    await importDirectoryInventory(
+      db,
+      [
+        {
+          ...row,
+          photoGallery: [
+            { url: 'https://example.com/otra.jpg', source: 'external' },
+          ],
+        },
+      ],
+      true,
+    );
+    expect(
+      (await db.collection('restaurants').findOne({ slug: row.slug }))!
+        .photoGallery,
+    ).toEqual(photoGallery);
+    expect(() =>
+      InventoryBatchSchema.parse([{ ...row, logoUrl: 'javascript:alert(1)' }]),
+    ).toThrow();
   });
 });

@@ -211,28 +211,6 @@ export default function AdminOverviewPage() {
             </div>
           </section>
 
-          {data.pendingClaims > 0 && (
-            <Link
-              href="/admin/reclamos"
-              className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 p-4 transition-colors hover:bg-primary/15"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white">
-                <MaterialIcon name="mark_email_unread" size="md" />
-              </span>
-              <div className="flex-1">
-                <p className="font-bold text-on-surface">
-                  {data.pendingClaims === 1
-                    ? 'Un dueño pidió su local'
-                    : `${data.pendingClaims} dueños pidieron su local`}
-                </p>
-                <p className="text-xs text-on-surface-variant">
-                  Verificalo por WhatsApp y aprobá: se genera la invitación sola.
-                </p>
-              </div>
-              <MaterialIcon name="arrow_forward" size="md" className="text-primary" />
-            </Link>
-          )}
-
           {data.lists.ordersWithoutOwner.length > 0 && (
             <WorkList
               title="Toman pedidos y no tienen dueño"

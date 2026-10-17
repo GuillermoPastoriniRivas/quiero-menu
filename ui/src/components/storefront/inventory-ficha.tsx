@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { trackStorefront } from '@/lib/behavior';
 import { toWhatsAppNumber } from "@/lib/ar-phone";
+import { directoryMapsUrl } from "@/lib/directory-location";
 
 /**
  * Pings de la ficha de inventario: vista por sesión + clicks de contacto
@@ -14,20 +15,25 @@ export function FichaContactButtons({
   slug,
   phone,
   address,
+  name,
+  city,
+  region,
+  countrySlug,
+  lat,
+  lng,
 }: {
   slug: string;
   phone: string;
   address: string;
+  name: string;
+  city: string;
+  region?: string;
+  countrySlug?: string;
+  lat?: number | null;
+  lng?: number | null;
 }) {
   useEffect(() => {
     trackStorefront(slug, 'storefront_view', { claimed: false }, 'view');
-    const banner = document.querySelector('[data-claim-banner]');
-    if (!banner || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) trackStorefront(slug, 'claim_view', {}, 'claim-banner');
-    }, { threshold: 0.5 });
-    observer.observe(banner);
-    return () => observer.disconnect();
   }, [slug]);
 
   const track = (type: "whatsapp" | "maps") => {
@@ -36,9 +42,7 @@ export function FichaContactButtons({
 
   const digits = toWhatsAppNumber(phone) ?? "";
   const waHref = digits ? `https://wa.me/${digits}` : "";
-  const mapsHref = address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
-    : "";
+  const mapsHref = directoryMapsUrl({ name, address, city, region, countrySlug, lat, lng });
 
   return (
     <div className="flex flex-wrap gap-3">

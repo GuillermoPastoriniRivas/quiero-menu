@@ -86,8 +86,8 @@ export class Restaurant {
     public readonly regionSlug?: string,
     /**
      * true = el local ya tiene dueño (creado por signup o por admin con
-     * cuenta). false = cargado como inventario, reclamable desde el
-     * storefront. undefined (docs viejos) se lee como true.
+     * cuenta). false = información pública de inventario, sin pedidos.
+     * undefined (docs viejos) se lee como true.
      */
     public readonly claimed?: boolean,
     /** Galería de fotos de la ficha (inventario; la gestiona el equipo/scraper). */

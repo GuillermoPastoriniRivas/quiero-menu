@@ -67,10 +67,6 @@ import {
 import { GetRestaurantDetailUseCase } from '../application/use-cases/admin/get-restaurant-detail.use-case.js';
 import { CreateRestaurantAccountUseCase } from '../application/use-cases/admin/create-restaurant-account.use-case.js';
 import { SetRestaurantPlanUseCase } from '../application/use-cases/admin/set-restaurant-plan.use-case.js';
-import { RequestStoreClaimUseCase } from '../application/use-cases/claims/request-store-claim.use-case.js';
-import { ListStoreClaimsUseCase } from '../application/use-cases/claims/list-store-claims.use-case.js';
-import { ApproveStoreClaimUseCase } from '../application/use-cases/claims/approve-store-claim.use-case.js';
-import { RejectStoreClaimUseCase } from '../application/use-cases/claims/reject-store-claim.use-case.js';
 import { CreateUnclaimedRestaurantUseCase } from '../application/use-cases/claims/create-unclaimed-restaurant.use-case.js';
 import { AssignFeaturedSlotUseCase } from '../application/use-cases/featured/assign-featured-slot.use-case.js';
 import { ListFeaturedSlotsUseCase } from '../application/use-cases/featured/list-featured-slots.use-case.js';
@@ -444,7 +440,6 @@ const useCaseProviders = [
       subRepo: any,
       orderRepo: any,
       catRepo: any,
-      claimRepo: any,
       index: any,
       insights: any,
     ) =>
@@ -454,7 +449,6 @@ const useCaseProviders = [
         subRepo,
         orderRepo,
         catRepo,
-        claimRepo,
         index,
         insights,
       ),
@@ -464,7 +458,6 @@ const useCaseProviders = [
       'SubscriptionRepository',
       'OrderRepository',
       'MenuCategoryRepository',
-      'StoreClaimRepository',
       'AdminRestaurantIndex',
       'RestaurantInsightsQuery',
     ],
@@ -507,29 +500,6 @@ const useCaseProviders = [
     useFactory: (restRepo: any, subRepo: any) =>
       new SetRestaurantPlanUseCase(restRepo, subRepo),
     inject: ['RestaurantRepository', 'SubscriptionRepository'],
-  },
-  {
-    provide: 'RequestStoreClaimUseCase',
-    useFactory: (restRepo: any, claimRepo: any) =>
-      new RequestStoreClaimUseCase(restRepo, claimRepo),
-    inject: ['RestaurantRepository', 'StoreClaimRepository'],
-  },
-  {
-    provide: 'ListStoreClaimsUseCase',
-    useFactory: (claimRepo: any, restRepo: any, urRepo: any, userRepo: any) =>
-      new ListStoreClaimsUseCase(claimRepo, restRepo, urRepo, userRepo),
-    inject: [
-      'StoreClaimRepository',
-      'RestaurantRepository',
-      'UserRestaurantRepository',
-      'UserRepository',
-    ],
-  },
-  {
-    provide: 'ApproveStoreClaimUseCase',
-    useFactory: (claimRepo: any, createInvitation: any) =>
-      new ApproveStoreClaimUseCase(claimRepo, createInvitation),
-    inject: ['StoreClaimRepository', 'CreateInvitationUseCase'],
   },
   {
     provide: 'OperateRestaurantUseCase',
@@ -651,11 +621,6 @@ const useCaseProviders = [
     ],
   },
   {
-    provide: 'RejectStoreClaimUseCase',
-    useFactory: (claimRepo: any) => new RejectStoreClaimUseCase(claimRepo),
-    inject: ['StoreClaimRepository'],
-  },
-  {
     provide: 'CreateUnclaimedRestaurantUseCase',
     useFactory: (restRepo: any, subRepo: any) =>
       new CreateUnclaimedRestaurantUseCase(restRepo, subRepo),
@@ -755,7 +720,6 @@ const useCaseProviders = [
       billingRepo: any,
       pushRepo: any,
       sfEventRepo: any,
-      claimRepo: any,
       featuredRepo: any,
       feedbackRepo: any,
       rtRepo: any,
@@ -780,7 +744,6 @@ const useCaseProviders = [
         billingRepo,
         pushRepo,
         sfEventRepo,
-        claimRepo,
         featuredRepo,
         feedbackRepo,
         rtRepo,
@@ -805,7 +768,6 @@ const useCaseProviders = [
       'BillingRecordRepository',
       'PushSubscriptionRepository',
       'StorefrontEventRepository',
-      'StoreClaimRepository',
       'FeaturedSlotRepository',
       'OrderFeedbackRepository',
       'RefreshTokenRepository',

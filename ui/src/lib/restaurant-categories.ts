@@ -67,6 +67,20 @@ export const RESTAURANT_CATEGORIES: RestaurantCategoryDef[] = [
   { value: "bar", label: "Bar", plural: "bares", pluralLabel: "Bares", cuisine: "Bar" },
   { value: "panaderia", label: "Panadería", plural: "panaderias", pluralLabel: "Panaderías", cuisine: "Panadería" },
   {
+    value: "parrilla",
+    label: "Parrilla",
+    plural: "parrillas",
+    pluralLabel: "Parrillas",
+    cuisine: "Parrilla",
+  },
+  {
+    value: "cerveceria",
+    label: "Cervecería",
+    plural: "cervecerias",
+    pluralLabel: "Cervecerías",
+    cuisine: "Cerveza artesanal",
+  },
+  {
     value: "otro",
     label: "Otro",
     plural: "otros",

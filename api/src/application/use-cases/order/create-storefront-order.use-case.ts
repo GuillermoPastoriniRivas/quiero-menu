@@ -117,7 +117,10 @@ export class CreateStorefrontOrderUseCase {
   > {
     const restaurant = await this.restaurantRepo.findBySlug(slug);
     if (!restaurant) return err(new RestaurantNotFoundError());
-    if (restaurant.status !== RestaurantStatus.ACTIVE)
+    if (
+      restaurant.status !== RestaurantStatus.ACTIVE ||
+      restaurant.claimed === false
+    )
       return err(new RestaurantPausedError());
 
     const hours = await this.hoursRepo.findByRestaurantId(restaurant.id);

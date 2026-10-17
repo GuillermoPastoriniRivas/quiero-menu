@@ -28,6 +28,8 @@ export interface StorefrontSearchResult extends ActiveStorefrontSummary {
 export interface StorefrontSearchInput {
   q?: string;
   citySlug?: string;
+  countrySlug?: string;
+  regionSlug?: string;
   category?: string;
   openNow?: boolean;
   limit?: number;
@@ -109,6 +111,8 @@ export class SearchStorefrontsUseCase {
     const q = normalize(input.q ?? '');
     const tokens = q.split(/\s+/).filter((t) => t.length >= 2);
     const citySlug = normalize(input.citySlug ?? '');
+    const countrySlug = normalize(input.countrySlug ?? '');
+    const regionSlug = normalize(input.regionSlug ?? '');
     const category = normalize(input.category ?? '');
     const openNow = input.openNow === true;
     const limit = Math.min(Math.max(input.limit ?? 100, 1), 200);
@@ -121,6 +125,8 @@ export class SearchStorefrontsUseCase {
       if (!restaurant) continue;
 
       if (citySlug && summary.citySlug !== citySlug) continue;
+      if (countrySlug && summary.countrySlug !== countrySlug) continue;
+      if (regionSlug && summary.regionSlug !== regionSlug) continue;
       if (category && normalize(summary.category) !== category) continue;
       if (openNow) {
         const status = this.hoursPolicy.isOpen(
@@ -177,6 +183,20 @@ export class SearchStorefrontsUseCase {
     }
 
     results.sort((a, b) => {
+      const ownedFirst = Number(b.claimed) - Number(a.claimed);
+      if (ownedFirst) return ownedFirst;
+      const featured = (entry: StorefrontSearchResult) =>
+        Number(
+          entry.featured.some(
+            (slot) =>
+              slot.citySlug === entry.citySlug &&
+              (!category ||
+                slot.scope === 'home' ||
+                slot.category === category),
+          ),
+        );
+      const featuredFirst = featured(b) - featured(a);
+      if (featuredFirst) return featuredFirst;
       if (b.score !== a.score) return b.score - a.score;
       return a.name.localeCompare(b.name);
     });
@@ -191,7 +211,14 @@ export class SearchStorefrontsUseCase {
     return {
       results: results.slice(0, limit),
       total: results.length,
-      suggestions: this.buildSuggestions(index, tokens, citySlug, category),
+      suggestions: this.buildSuggestions(
+        index,
+        tokens,
+        citySlug,
+        category,
+        countrySlug,
+        regionSlug,
+      ),
     };
   }
 
@@ -200,6 +227,8 @@ export class SearchStorefrontsUseCase {
     tokens: string[],
     citySlug: string,
     categoryFilter: string,
+    countrySlug: string,
+    regionSlug: string,
   ): StorefrontSearchSuggestion[] {
     if (tokens.length === 0) return [];
 
@@ -213,6 +242,8 @@ export class SearchStorefrontsUseCase {
 
     for (const summary of index.summaries) {
       if (citySlug && summary.citySlug !== citySlug) continue;
+      if (countrySlug && summary.countrySlug !== countrySlug) continue;
+      if (regionSlug && summary.regionSlug !== regionSlug) continue;
       if (categoryFilter && normalize(summary.category) !== categoryFilter)
         continue;
       add({
@@ -286,7 +317,8 @@ export class SearchStorefrontsUseCase {
         category: r.category ?? '',
         description: r.description,
         logoUrl: r.logoUrl,
-        bannerUrl: r.bannerUrl,
+        bannerUrl: r.bannerUrl || r.photoGallery?.[0]?.url || '',
+        address: r.address,
         phone: r.phone,
         isOpen: false,
         hoursKnown: false,

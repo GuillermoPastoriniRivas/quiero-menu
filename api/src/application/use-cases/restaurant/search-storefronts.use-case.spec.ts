@@ -126,6 +126,46 @@ function makeUseCase(deps: ReturnType<typeof makeRepoDeps>) {
 }
 
 describe('SearchStorefrontsUseCase', () => {
+  it('prioriza menús propios antes de limitar resultados y conserva la relevancia dentro del grupo', async () => {
+    const inventory = makeRestaurant('1', { name: 'Pizza', claimed: false });
+    const ours = makeRestaurant('2', { name: 'Nuestro local' });
+    const deps = makeRepoDeps([inventory, ours], [makeItem('2', 'Pizza')], []);
+    const result = await makeUseCase(deps).execute({ q: 'pizza', limit: 1 });
+    expect(result.total).toBe(2);
+    expect(result.results.map((r) => r.slug)).toEqual(['local-2']);
+  });
+
+  it('no mezcla ciudades homónimas ni sus sugerencias al filtrar provincia', async () => {
+    const local = makeRestaurant('1', {
+      name: 'Pizza Entre Ríos',
+      citySlug: 'colon',
+      regionSlug: 'entre-rios',
+      countrySlug: 'argentina',
+      claimed: false,
+    });
+    const other = makeRestaurant('2', {
+      name: 'Pizza Buenos Aires',
+      citySlug: 'colon',
+      regionSlug: 'buenos-aires',
+      countrySlug: 'argentina',
+      claimed: false,
+    });
+    const result = await makeUseCase(
+      makeRepoDeps([local, other], [], []),
+    ).execute({
+      q: 'pizza',
+      citySlug: 'colon',
+      regionSlug: 'entre-rios',
+      countrySlug: 'argentina',
+    });
+    expect(result.results.map((r) => r.slug)).toEqual(['local-1']);
+    expect(
+      result.suggestions
+        .filter((s) => s.type === 'restaurant')
+        .map((s) => s.label),
+    ).toEqual(['Pizza Entre Ríos']);
+  });
+
   it('encuentra locales por plato de su carta, insensible a acentos', async () => {
     const parrilla = makeRestaurant('1', { name: "Leonardo's" });
     const cafe = makeRestaurant('2', { name: 'Café Central' });

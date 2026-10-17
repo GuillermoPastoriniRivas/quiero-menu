@@ -6,6 +6,7 @@ import { getCategoryDef } from "@/lib/restaurant-categories";
 import { formatCurrency } from "@/lib/format";
 import { toWhatsAppNumber } from "@/lib/ar-phone";
 import type { StorefrontSearchMatch } from "@/lib/storefront-search";
+import { directoryMapsUrl } from "@/lib/directory-location";
 
 function waDigits(phone: string | undefined): string {
   return toWhatsAppNumber(phone) ?? "";
@@ -43,19 +44,22 @@ export function StoreCard({
   const categoryDef = getCategoryDef(entry.category);
   const showDishChips = matchedItems && matchedItems.length > 0 && currency;
   const unclaimed = entry.claimed === false;
+  const mapsUrl = directoryMapsUrl(entry);
+  const imageUrl = entry.bannerUrl || entry.logoUrl;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
       <Link
         href={`/${entry.slug}?ref=dir`}
         className="relative block h-28 overflow-hidden"
-        aria-label={`Menú de ${entry.name}`}
+        aria-label={`${unclaimed ? "Información" : "Menú"} de ${entry.name}`}
       >
-        {entry.bannerUrl ? (
+        {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={entry.bannerUrl}
+            src={imageUrl}
             alt=""
+            loading="lazy"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
@@ -120,6 +124,22 @@ export function StoreCard({
             : ""}
         </p>
 
+        {mapsUrl ? (
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-start gap-1.5 text-sm text-on-surface-variant hover:text-primary">
+            <MaterialIcon name="location_on" size="sm" />
+            <span>{entry.address || "Ver ubicación"}</span>
+          </a>
+        ) : null}
+        {entry.phone?.trim() ? (
+          <a href={`tel:${entry.phone.replace(/[^+\d]/g, "")}`}
+            className="inline-flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-primary"
+            aria-label={`Llamar a ${entry.name}: ${entry.phone}`}>
+            <MaterialIcon name="call" size="sm" />
+            {entry.phone}
+          </a>
+        ) : null}
+
         {entry.description?.trim() ? (
           <p className="line-clamp-2 text-sm text-on-surface-variant">
             {entry.description}
@@ -158,7 +178,7 @@ export function StoreCard({
             href={`/${entry.slug}?ref=dir`}
             className="gradient-cta inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-transform hover:scale-[1.03]"
           >
-            {unclaimed ? "Ver ficha" : "Ver menú"}
+            {unclaimed ? "Ver más" : "Ver menú"}
             <MaterialIcon name="arrow_forward" size="xs" />
           </Link>
         </div>

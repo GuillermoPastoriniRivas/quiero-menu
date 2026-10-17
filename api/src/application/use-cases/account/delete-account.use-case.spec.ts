@@ -15,7 +15,6 @@ import { SubscriptionRepository } from '../../../domain/repositories/subscriptio
 import { BillingRecordRepository } from '../../../domain/repositories/billing-record.repository.js';
 import { PushSubscriptionRepository } from '../../../domain/repositories/push-subscription.repository.js';
 import { StorefrontEventRepository } from '../../../domain/repositories/storefront-event.repository.js';
-import { StoreClaimRepository } from '../../../domain/repositories/store-claim.repository.js';
 import { FeaturedSlotRepository } from '../../../domain/repositories/featured-slot.repository.js';
 import { OrderFeedbackRepository } from '../../../domain/repositories/order-feedback.repository.js';
 import { RefreshTokenRepository } from '../../../domain/repositories/refresh-token.repository.js';
@@ -45,7 +44,6 @@ describe('DeleteAccountUseCase', () => {
       billingRecordRepo?: Partial<BillingRecordRepository>;
       pushSubRepo?: Partial<PushSubscriptionRepository>;
       storefrontEventRepo?: Partial<StorefrontEventRepository>;
-      storeClaimRepo?: Partial<StoreClaimRepository>;
       featuredSlotRepo?: Partial<FeaturedSlotRepository>;
       orderFeedbackRepo?: Partial<OrderFeedbackRepository>;
       refreshTokenRepo?: Partial<RefreshTokenRepository>;
@@ -213,14 +211,6 @@ describe('DeleteAccountUseCase', () => {
       }),
       deleteManyByRestaurantId: jest.fn().mockResolvedValue(undefined),
     };
-    const storeClaimRepo: StoreClaimRepository = {
-      create: jest.fn(),
-      findById: jest.fn(),
-      listByStatus: jest.fn().mockResolvedValue([]),
-      findPendingByRestaurantId: jest.fn().mockResolvedValue([]),
-      updateStatus: jest.fn(),
-      deleteManyByRestaurantId: jest.fn().mockResolvedValue(undefined),
-    };
     const featuredSlotRepo: FeaturedSlotRepository = {
       create: jest.fn(),
       findById: jest.fn(),
@@ -275,7 +265,6 @@ describe('DeleteAccountUseCase', () => {
     Object.assign(billingRecordRepo, overrides.billingRecordRepo);
     Object.assign(pushSubRepo, overrides.pushSubRepo);
     Object.assign(storefrontEventRepo, overrides.storefrontEventRepo);
-    Object.assign(storeClaimRepo, overrides.storeClaimRepo);
     Object.assign(featuredSlotRepo, overrides.featuredSlotRepo);
     Object.assign(orderFeedbackRepo, overrides.orderFeedbackRepo);
     Object.assign(refreshTokenRepo, overrides.refreshTokenRepo);
@@ -300,7 +289,6 @@ describe('DeleteAccountUseCase', () => {
       billingRecordRepo,
       pushSubRepo,
       storefrontEventRepo,
-      storeClaimRepo,
       featuredSlotRepo,
       orderFeedbackRepo,
       refreshTokenRepo,
@@ -311,7 +299,6 @@ describe('DeleteAccountUseCase', () => {
     return {
       useCase,
       storefrontEventRepo,
-      storeClaimRepo,
       featuredSlotRepo,
       orderFeedbackRepo,
       userRepo,
@@ -355,7 +342,6 @@ describe('DeleteAccountUseCase', () => {
       billingRecordRepo,
       pushSubRepo,
       storefrontEventRepo,
-      storeClaimRepo,
       featuredSlotRepo,
       orderFeedbackRepo,
       refreshTokenRepo,
@@ -389,7 +375,6 @@ describe('DeleteAccountUseCase', () => {
     expect(storefrontEventRepo.deleteManyByRestaurantId).toHaveBeenCalledWith(
       'r1',
     );
-    expect(storeClaimRepo.deleteManyByRestaurantId).toHaveBeenCalledWith('r1');
     expect(featuredSlotRepo.deleteManyByRestaurantId).toHaveBeenCalledWith(
       'r1',
     );

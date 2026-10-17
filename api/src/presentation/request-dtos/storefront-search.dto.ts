@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const StorefrontSearchRequestSchema = z.object({
   q: z.string().max(80).optional().default(''),
   city: z.string().max(80).optional().default(''),
+  country: z.string().max(80).optional().default(''),
+  region: z.string().max(80).optional().default(''),
   category: z.string().max(80).optional().default(''),
   openNow: z
     .union([z.boolean(), z.enum(['true', 'false'])])

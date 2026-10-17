@@ -88,10 +88,6 @@ import {
   FeaturedSlotSchema,
 } from './mongoose/schemas/featured-slot.schema.js';
 import {
-  StoreClaimModel,
-  StoreClaimSchema,
-} from './mongoose/schemas/store-claim.schema.js';
-import {
   InvitationModel,
   InvitationSchema,
 } from './mongoose/schemas/invitation.schema.js';
@@ -124,7 +120,6 @@ import { MongoAnalyticsRepository } from './mongoose/repositories/mongo-analytic
 import { MongoStorefrontEventRepository } from './mongoose/repositories/mongo-storefront-event.repository.js';
 import { MongoSearchTermRepository } from './mongoose/repositories/mongo-search-term.repository.js';
 import { MongoFeaturedSlotRepository } from './mongoose/repositories/mongo-featured-slot.repository.js';
-import { MongoStoreClaimRepository } from './mongoose/repositories/mongo-store-claim.repository.js';
 import { MongoInvitationRepository } from './mongoose/repositories/mongo-invitation.repository.js';
 import { MongoOrderFeedbackRepository } from './mongoose/repositories/mongo-order-feedback.repository.js';
 import { MongoRestaurantInsightsQuery } from './mongoose/queries/mongo-restaurant-insights.query.js';
@@ -165,7 +160,6 @@ const schemas = MongooseModule.forFeature([
   { name: StorefrontViewModel.name, schema: StorefrontViewSchema },
   { name: StorefrontEventModel.name, schema: StorefrontEventSchema },
   { name: SearchTermModel.name, schema: SearchTermSchema },
-  { name: StoreClaimModel.name, schema: StoreClaimSchema },
   { name: InvitationModel.name, schema: InvitationSchema },
   { name: OrderFeedbackModel.name, schema: OrderFeedbackSchema },
   { name: FeaturedSlotModel.name, schema: FeaturedSlotSchema },
@@ -228,7 +222,6 @@ const repositories = [
     useClass: MongoStorefrontEventRepository,
   },
   { provide: 'SearchTermRepository', useClass: MongoSearchTermRepository },
-  { provide: 'StoreClaimRepository', useClass: MongoStoreClaimRepository },
   { provide: 'InvitationRepository', useClass: MongoInvitationRepository },
   {
     provide: 'FeaturedSlotRepository',

@@ -10,7 +10,7 @@ import {
   type StorefrontSearchResult,
   type StorefrontSearchSuggestion,
 } from "@/lib/storefront-search";
-import { isFeatured } from "@/lib/featured";
+import { isFeatured, sortDirectoryEntries } from "@/lib/featured";
 import { trackPublic, searchProperties } from '@/lib/behavior';
 
 const MIN_QUERY_LENGTH = 2;
@@ -34,6 +34,8 @@ const SUGGESTION_LABELS: Record<StorefrontSearchSuggestion["type"], string> = {
 export function DirectorySearch({
   placeholder,
   citySlug,
+  countrySlug,
+  regionSlug,
   category,
   cities = [],
   initialQuery = "",
@@ -43,6 +45,8 @@ export function DirectorySearch({
 }: {
   placeholder: string;
   citySlug?: string;
+  countrySlug?: string;
+  regionSlug?: string;
   category?: string;
   cities?: DirectoryCityOption[];
   initialQuery?: string;
@@ -133,6 +137,8 @@ export function DirectorySearch({
         const out = await searchStorefronts({
           q: trimmed,
           city: effectiveCity,
+          country: countrySlug,
+          region: regionSlug,
           category,
           openNow,
           signal: controller.signal,
@@ -149,6 +155,8 @@ export function DirectorySearch({
           const out = filterIndexLocally(entries, {
             q: trimmed,
             city: effectiveCity,
+            country: countrySlug,
+            region: regionSlug,
             category,
             openNow,
           });
@@ -163,8 +171,11 @@ export function DirectorySearch({
       }
     }, DEBOUNCE_MS);
 
-    return () => clearTimeout(timer);
-  }, [trimmed, openNow, effectiveCity, category, active]);
+    return () => {
+      clearTimeout(timer);
+      abortRef.current?.abort();
+    };
+  }, [trimmed, openNow, effectiveCity, countrySlug, regionSlug, category, active]);
 
   const chooseSuggestion = (suggestion: StorefrontSearchSuggestion) => {
     if (suggestion.type === "city") {
@@ -324,7 +335,7 @@ export function DirectorySearch({
 
           {!loading && !error && results && results.length > 0 ? (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {results.map((result) => (
+               {sortDirectoryEntries(results, effectiveCity ? { citySlug: effectiveCity, category } : undefined).map((result) => (
                 <StoreCard key={result.slug} entry={result} matchedItems={result.matchedItems} currency={result.currency} featured={isFeatured(result, { citySlug: result.citySlug || effectiveCity })} />
               ))}
             </div>

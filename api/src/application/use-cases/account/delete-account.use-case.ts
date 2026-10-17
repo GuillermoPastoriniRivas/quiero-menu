@@ -14,7 +14,6 @@ import { SubscriptionRepository } from '../../../domain/repositories/subscriptio
 import { BillingRecordRepository } from '../../../domain/repositories/billing-record.repository.js';
 import { PushSubscriptionRepository } from '../../../domain/repositories/push-subscription.repository.js';
 import { StorefrontEventRepository } from '../../../domain/repositories/storefront-event.repository.js';
-import { StoreClaimRepository } from '../../../domain/repositories/store-claim.repository.js';
 import { FeaturedSlotRepository } from '../../../domain/repositories/featured-slot.repository.js';
 import { OrderFeedbackRepository } from '../../../domain/repositories/order-feedback.repository.js';
 import { RefreshTokenRepository } from '../../../domain/repositories/refresh-token.repository.js';
@@ -50,7 +49,6 @@ export class DeleteAccountUseCase {
     private readonly billingRecordRepo: BillingRecordRepository,
     private readonly pushSubRepo: PushSubscriptionRepository,
     private readonly storefrontEventRepo: StorefrontEventRepository,
-    private readonly storeClaimRepo: StoreClaimRepository,
     private readonly featuredSlotRepo: FeaturedSlotRepository,
     private readonly orderFeedbackRepo: OrderFeedbackRepository,
     private readonly refreshTokenRepo: RefreshTokenRepository,
@@ -138,10 +136,9 @@ export class DeleteAccountUseCase {
     await this.deliveryTokenRepo.deleteManyByRestaurantId(restaurantId);
     await this.pushSubRepo.deleteManyByRestaurantId(restaurantId);
 
-    // Datos nuevos por-tenant: métricas de contacto, reclamos, destacados y
-    // feedback del comensal (PII) no pueden quedar huérfanos tras una baja ARCO.
+    // Datos nuevos por-tenant: métricas de contacto, destacados y feedback del
+    // comensal (PII) no pueden quedar huérfanos tras una baja ARCO.
     await this.storefrontEventRepo.deleteManyByRestaurantId(restaurantId);
-    await this.storeClaimRepo.deleteManyByRestaurantId(restaurantId);
     await this.featuredSlotRepo.deleteManyByRestaurantId(restaurantId);
     await this.orderFeedbackRepo.deleteManyByRestaurantId(restaurantId);
 

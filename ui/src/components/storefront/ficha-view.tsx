@@ -14,10 +14,9 @@ import {
 
 /**
  * Ficha de inventario para locales SIN dueño (claimed=false): página pública
- * informativa con los datos que el equipo cargó + CTA de reclamo. NO es el
- * storefront de pedidos: el menú se muestra solo lectura, sin carrito ni checkout.
- * Le sirve a Google (landing indexable del negocio) y al dueño (descubre su
- * ficha y la reclama, con el pre-llenado ya hecho por el sistema).
+ * informativa con los datos cargados por el equipo. NO es el storefront de
+ * pedidos: el menú se muestra solo lectura, sin carrito ni checkout. No hay
+ * reclamo: el CTA invita al dueño a registrarse y crear su menú.
  */
 export function FichaView({ data, slug }: { data: StorefrontData; slug: string }) {
   const restaurant = data.restaurant;
@@ -61,20 +60,21 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
       <main className="mx-auto flex max-w-4xl flex-col px-5 pb-14 pt-4 sm:px-8 sm:pb-14 sm:pt-6">
         <div className="order-first"><DirectoryBreadcrumbs items={breadcrumbs} /></div>
         {/* Orden (mobile y desktop): banner -> ficha (desc + botones) ->
-            galería -> alert de reclamo al fondo. Ver orders en cada bloque. */}
-        <div data-claim-banner className="order-last mt-10 rounded-3xl border border-primary/30 bg-primary/5 p-6 sm:p-8">
+            galería -> CTA al dueño al fondo. Ver orders en cada bloque. */}
+        <div data-owner-cta className="order-last mt-10 rounded-3xl border border-primary/30 bg-primary/5 p-6 sm:p-8">
           <h2 className="font-[family-name:var(--font-heading)] text-xl font-extrabold text-on-surface">
-            ¿Tenés este local? Es tuyo.
+            ¿Tenés este local?
           </h2>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Armamos esta página con la información de tu negocio. Contactanos
-            para convertirla en tu menú digital con pedidos directos, sin comisión.
+            Armamos esta página con la información pública de tu negocio.
+            Creá tu menú digital gratis y recibí pedidos directos, sin comisión
+            por venta.
           </p>
           <Link
-            href={`/${slug}/reclamar`}
+            href="/onboarding"
             className="mt-4 inline-block rounded-full bg-primary px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
-            Contactanos
+            Crear mi menú gratis
           </Link>
         </div>
 
@@ -171,6 +171,12 @@ export function FichaView({ data, slug }: { data: StorefrontData; slug: string }
               slug={slug}
               phone={restaurant.phone}
               address={restaurant.address}
+              name={restaurant.name}
+              city={restaurant.city}
+              region={restaurant.region}
+              countrySlug={restaurant.countrySlug}
+              lat={restaurant.coordinates?.lat}
+              lng={restaurant.coordinates?.lng}
             />
           </div>
           <StorefrontDirectoryLinks restaurant={restaurant} />

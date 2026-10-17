@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import type { StorefrontData } from "@/types";
 import { StorefrontView } from "./storefront-view";
+import { FichaView } from "./ficha-view";
 import { browserPathParam } from "@/lib/static-route-param";
 import {
   getApiBase,
@@ -130,6 +131,12 @@ export function StorefrontClient({
         Restaurante no encontrado
       </div>
     );
+  // También en resolución cliente (SSR sin API o dominio dinámico) el
+  // inventario es informativo: nunca montar carrito ni checkout.
+  if (viewData.restaurant.isDemo) return null;
+  if (viewData.restaurant.claimed === false) {
+    return <FichaView data={viewData} slug={slug} />;
+  }
   return (
     <StorefrontView data={viewData} slug={slug} trackView={!preview} />
   );

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
-import { analyticsPath, internalViewer, trackOwner, trackPublic, trackStorefront } from '@/lib/behavior';
+import { analyticsPath, internalViewer, trackOwner, trackPublic } from '@/lib/behavior';
 
 const OWNER_PAGES = new Set(['dashboard', 'menu', 'mi-menu', 'business', 'apariencia', 'orders', 'analytics', 'customers', 'billing', 'account', 'coupons', 'promos', 'settings', 'publicar']);
 
@@ -24,8 +24,6 @@ export function BehaviorAnalytics() {
       const url = new URL(link.href);
       if (url.searchParams.get('ref') === 'powered') trackPublic('powered_click');
       if (url.searchParams.get('ref') === 'dir') trackPublic('directory_result_click');
-      const claim = /^\/([^/]+)\/reclamar$/.exec(url.pathname);
-      if (claim) trackStorefront(claim[1], 'claim_click');
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);

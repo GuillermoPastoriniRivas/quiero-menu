@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getStorefrontIndex } from "@/lib/storefront-index";
 import { StoreCard } from "@/components/directory/store-card";
 import { DirectorySearch } from "@/components/directory/directory-search";
-import { isFeatured, sortFeaturedFirst } from "@/lib/featured";
+import { isFeatured, sortDirectoryEntries } from "@/lib/featured";
 import {
   DirectoryJsonLd,
   BreadcrumbsJsonLd,
@@ -283,7 +283,7 @@ function CityView({
   city: CityGroup;
   query: { q?: string; open?: string };
 }) {
-  const entries = city.entries;
+  const entries = sortDirectoryEntries(city.entries, { citySlug: city.citySlug });
   const href = cityHref(city);
 
   // Rubros presentes en la ciudad (con página propia), con cantidad de locales.
@@ -310,15 +310,14 @@ function CityView({
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         <DirectoryBreadcrumbs items={breadcrumbsForCity(city)} />
         <p className="text-sm font-bold uppercase tracking-wide text-primary">
-          {entries.length} {entries.length === 1 ? "local" : "locales"}{" "}
-          publicados
+          {entries.length} {entries.length === 1 ? "local" : "locales"}
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-heading)] text-3xl font-extrabold tracking-tight text-on-surface sm:text-4xl">
           Locales de comida en {city.cityName}
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-on-surface-variant">
-          Encontrá {entries.length} {entries.length === 1 ? "local publicado" : "locales publicados"},
-          consultá sus datos y explorá las cartas disponibles. Revisá precios y horarios en la ficha de cada negocio.
+          Encontrá {entries.length} {entries.length === 1 ? "local gastronómico" : "locales gastronómicos"} en {city.cityName},
+          con teléfono, dirección y su carta cuando la tienen.
         </p>
 
         {categories.length > 0 ? (
@@ -337,12 +336,14 @@ function CityView({
 
         <DirectorySearch
           citySlug={city.citySlug}
+          countrySlug={city.countrySlug}
+          regionSlug={city.regionSlug}
           placeholder={`Buscá en ${city.cityName}… ej: milanesa, empanadas, helado`}
           initialQuery={query.q ?? ""}
           initialOpenNow={query.open === "1"}
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sortFeaturedFirst(entries, { citySlug: city.citySlug }).map((entry) => (
+            {entries.map((entry) => (
               <StoreCard
                 key={entry.slug}
                 entry={entry}
@@ -372,9 +373,10 @@ function CategoryView({
   categoryDef: RestaurantCategoryDef;
   query: { q?: string; open?: string };
 }) {
-  const entries = categoryDef
-    ? city.entries.filter((e) => e.category === categoryDef.value)
-    : [];
+  const entries = sortDirectoryEntries(
+    city.entries.filter((e) => e.category === categoryDef.value),
+    { citySlug: city.citySlug, category: categoryDef.value },
+  );
 
   return (
     <div className="min-h-screen bg-surface-container-lowest">
@@ -406,22 +408,21 @@ function CategoryView({
           {categoryDef.pluralLabel} en {city.cityName}
         </h1>
         <p className="mt-3 max-w-2xl text-lg text-on-surface-variant">
-          Compará {entries.length} {entries.length === 1 ? "local publicado" : "locales publicados"} de {categoryDef.pluralLabel.toLowerCase()}.
-          Abrí cada ficha para consultar dirección, contactos y la carta cuando está disponible.
+          Compará {entries.length} {entries.length === 1 ? "local" : "locales"} de {categoryDef.pluralLabel.toLowerCase()}.
+          Abrí cada uno para consultar dirección, contactos y la carta cuando está disponible.
         </p>
 
         <DirectorySearch
           citySlug={city.citySlug}
+          countrySlug={city.countrySlug}
+          regionSlug={city.regionSlug}
           category={categoryDef.value}
           initialQuery={query.q ?? ""}
           initialOpenNow={query.open === "1"}
           placeholder={`Buscá en ${categoryDef.pluralLabel.toLowerCase()}…`}
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sortFeaturedFirst(entries, {
-              citySlug: city.citySlug,
-              category: categoryDef.value,
-            }).map((entry) => (
+            {entries.map((entry) => (
               <StoreCard
                 key={entry.slug}
                 entry={entry}

@@ -64,13 +64,6 @@ export type AdminSearchTermsRequestDto = z.infer<
   typeof AdminSearchTermsRequestSchema
 >;
 
-export const AdminApproveClaimRequestSchema = z.object({
-  email: z.union([z.string().trim().email(), z.literal('')]).optional(),
-});
-export type AdminApproveClaimRequestDto = z.infer<
-  typeof AdminApproveClaimRequestSchema
->;
-
 export const AdminCreateUnclaimedRestaurantRequestSchema = z.object({
   restaurantName: z.string().min(1).max(120),
   restaurantSlug: z

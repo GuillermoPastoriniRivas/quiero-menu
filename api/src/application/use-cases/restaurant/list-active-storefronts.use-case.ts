@@ -31,6 +31,7 @@ export interface ActiveStorefrontSummary {
   bannerUrl: string;
   /** Teléfono público para el CTA de WhatsApp en el directorio. */
   phone: string;
+  address: string;
   /** Abierto ahora (horario + override, en la timezone del local). */
   isOpen: boolean;
   /** Permite distinguir cerrado de horario todavía no publicado. */
@@ -38,7 +39,7 @@ export interface ActiveStorefrontSummary {
   updatedAt: Date;
   /** Slots de destacado vigentes: la UI decide por contexto (ciudad/rubro). */
   featured: FeaturedSlotRef[];
-  /** false = ficha de inventario sin dueño (reclamable desde el directorio). */
+  /** false = local informativo de inventario, sin menú propio de pedidos. */
   claimed: boolean;
   /**
    * Coordenadas del local (''=sin cargar). El directorio las usa en el
@@ -129,8 +130,8 @@ export class ListActiveStorefrontsUseCase {
     return (
       restaurants
         // El directorio sirve a DOS públicos: claimed=true con carta (lo que es
-        // el producto) y claimed=false = ficha de inventario indexable que
-        // genera el reclamo. Los claimed sin menu no se muestran. Los locales
+        // el producto) y claimed=false = local informativo del directorio.
+        // Los claimed sin menú no se muestran. Los locales
         // demo (isDemo) se excluyen SIEMPRE: son datos ficticios.
         .filter((r) => !r.isDemo && (withMenu.has(r.id) || r.claimed === false))
         .map((r) => ({
@@ -144,7 +145,8 @@ export class ListActiveStorefrontsUseCase {
           category: r.category ?? '',
           description: r.description,
           logoUrl: r.logoUrl,
-          bannerUrl: r.bannerUrl,
+          bannerUrl: r.bannerUrl || r.photoGallery?.[0]?.url || '',
+          address: r.address,
           phone: r.phone,
           isOpen: this.hoursPolicy.isOpen(
             r,

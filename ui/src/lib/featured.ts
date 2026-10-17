@@ -23,15 +23,17 @@ export function isFeatured(
   });
 }
 
-/** Destacados primero (orden alfabético previo se conserva en cada grupo). */
-export function sortFeaturedFirst<T extends StorefrontIndexEntry>(
+/** Nuestros menús primero; los destacados encabezan cada grupo. Conserva el
+ * orden de relevancia (o alfabético) de entrada entre locales equivalentes. */
+export function sortDirectoryEntries<T extends StorefrontIndexEntry>(
   entries: T[],
-  ctx: FeaturedContext,
+  ctx?: FeaturedContext,
 ): T[] {
-  const feat: T[] = [];
-  const rest: T[] = [];
-  for (const e of entries) {
-    (isFeatured(e, ctx) ? feat : rest).push(e);
-  }
-  return [...feat, ...rest];
+  const featured = (entry: T) =>
+    Number(isFeatured(entry, ctx ?? { citySlug: entry.citySlug }));
+  return [...entries].sort(
+    (a, b) =>
+      Number(b.claimed !== false) - Number(a.claimed !== false) ||
+      featured(b) - featured(a),
+  );
 }

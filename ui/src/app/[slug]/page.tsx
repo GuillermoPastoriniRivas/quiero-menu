@@ -26,7 +26,7 @@ export default async function StorefrontPage({
   if (data.restaurant.isDemo) notFound();
 
   // Local de inventario (sin dueño): ficha informativa, no el storefront de
-  // pedidos. La ficha es la landing del negocio; el CTA es el reclamo.
+  // pedidos. La ficha es la landing del negocio; el CTA invita a crear su menú.
   if (data.restaurant.claimed === false) {
     return (
       <>

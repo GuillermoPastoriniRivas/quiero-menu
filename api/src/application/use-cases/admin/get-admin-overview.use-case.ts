@@ -28,7 +28,6 @@ export interface AdminOverviewOutput {
     ordersPrev7d: number;
     activeRestaurants7d: number;
   };
-  pendingClaims: number;
   lists: {
     expiringInvitations: AdminRestaurantListItem[];
     readyToInvite: AdminRestaurantListItem[];
@@ -60,11 +59,10 @@ export class GetAdminOverviewUseCase {
   async execute(now: Date = new Date()): Promise<AdminOverviewOutput> {
     const last7 = new Date(now.getTime() - 7 * DAY_MS);
     const prev7 = new Date(now.getTime() - 14 * DAY_MS);
-    const [rows, current, previous, pendingClaims, recent] = await Promise.all([
+    const [rows, current, previous, recent] = await Promise.all([
       this.index.search({}, now),
       this.insights.platformOrders(last7, now),
       this.insights.platformOrders(prev7, last7),
-      this.insights.pendingClaimsCount(),
       this.insights.timeline(null, 120),
     ]);
 
@@ -104,7 +102,6 @@ export class GetAdminOverviewUseCase {
         ordersPrev7d: previous.orders,
         activeRestaurants7d: current.restaurants,
       },
-      pendingClaims,
       lists: {
         expiringInvitations: top(
           rows,

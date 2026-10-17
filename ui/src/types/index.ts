@@ -66,7 +66,7 @@ export interface Restaurant {
   region?: string;
   regionSlug?: string;
   countrySlug?: string;
-  /** false = cargado como inventario, reclamable. undefined (API vieja) = con dueño. */
+  /** false = ficha de inventario sin dueño. undefined (API vieja) = con dueño. */
   claimed?: boolean;
   /** true = local de demostración (datos ficticios). Nunca público. */
   isDemo?: boolean;
@@ -533,7 +533,6 @@ export interface AdminOverview {
   pipeline: Record<AdminStage | "all", number>;
   inventory: { withMenu: number; listingReady: number; ordersWithoutOwner: number };
   platform: { ordersLast7d: number; ordersPrev7d: number; activeRestaurants7d: number };
-  pendingClaims: number;
   lists: {
     expiringInvitations: AdminRestaurantListItem[];
     readyToInvite: AdminRestaurantListItem[];
@@ -597,14 +596,6 @@ export interface AdminRestaurantDetail {
     openDays: number;
   };
   demand30d: Demand;
-  pendingClaims: {
-    id: string;
-    name: string;
-    phone: string;
-    email: string;
-    message: string;
-    createdAt: string;
-  }[];
   timeline: AdminActivityEntry[];
   flags: { ordersWithoutOwner: boolean };
 }
@@ -623,12 +614,6 @@ export interface ActivationStatus {
   };
 }
 
-export interface ApprovedClaim {
-  restaurantId: string;
-  claimant: { name: string; phone: string; email: string };
-  invitation: CreatedInvitation;
-}
-
 export interface AdminAuditLogEntry {
   id: string;
   event: string;
@@ -636,25 +621,6 @@ export interface AdminAuditLogEntry {
   restaurantId: string | null;
   metadata: Record<string, unknown> | null;
   createdAt: string;
-}
-
-export type StoreClaimStatus = 'pending' | 'approved' | 'rejected';
-
-export interface StoreClaimListItem {
-  id: string;
-  status: StoreClaimStatus;
-  createdAt: string;
-  reviewedAt: string | null;
-  claimant: { name: string; phone: string; email: string; message: string };
-  restaurant: {
-    id: string;
-    slug: string;
-    name: string;
-    city: string;
-    phone: string;
-    claimed: boolean;
-  } | null;
-  owners: { name: string; email: string }[];
 }
 
 export interface AdminCreateUnclaimedResponse {
@@ -700,8 +666,10 @@ export interface StorefrontIndexEntry {
   logoUrl: string;
   bannerUrl: string;
   phone: string;
+  /** Dirección pública; opcional durante el despliegue contra una API anterior. */
+  address?: string;
   isOpen: boolean;
-  /** false = ficha de inventario sin dueño (reclamable). Ausente = API vieja. */
+  /** false = ficha de inventario sin dueño. Ausente = API vieja. */
   claimed?: boolean;
   /** Coordenadas del local (null/ausente = sin cargar). Para ordenar por cercanía. */
   lat?: number | null;

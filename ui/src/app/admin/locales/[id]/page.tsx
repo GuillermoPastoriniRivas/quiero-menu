@@ -10,20 +10,17 @@ import { operateRestaurant } from '@/lib/admin-session';
 import { READINESS_STEPS } from '@/lib/readiness';
 import { getCategoryDef } from '@/lib/restaurant-categories';
 import { formatShortDate } from '@/lib/format';
-import { toWhatsAppNumber } from '@/lib/ar-phone';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { ProgressRing } from '@/components/ui/progress-ring';
-import { WhatsAppIcon } from '@/components/ui/brand-icons';
 import { StageBadge, STAGE_META, expiryLabel } from '@/components/admin/stage';
 import { RestaurantAvatar } from '@/components/admin/restaurant-row';
 import { InvitationPanel } from '@/components/admin/invitation-panel';
 import { FichaEditor } from '@/components/admin/ficha-editor';
 import { ActivityFeed } from '@/components/admin/activity-feed';
-import { useAdminStore } from '@/stores/admin.store';
 import { cn } from '@/lib/utils';
-import type { AdminRestaurantDetail, ApprovedClaim, ReadinessStep } from '@/types';
+import type { AdminRestaurantDetail, ReadinessStep } from '@/types';
 
 const NOT_FOUND = 'unknown';
 
@@ -62,73 +59,6 @@ function Stat({ label, value, icon }: { label: string; value: number; icon: stri
   );
 }
 
-function ClaimCard({
-  claim,
-  onDone,
-}: {
-  claim: AdminRestaurantDetail['pendingClaims'][number];
-  onDone: (approved?: ApprovedClaim) => void;
-}) {
-  const [email, setEmail] = useState(claim.email);
-  const [working, setWorking] = useState(false);
-  const whatsapp = toWhatsAppNumber(claim.phone);
-
-  const approve = async () => {
-    setWorking(true);
-    try {
-      const out = await api.post<ApprovedClaim>(`/admin/claims/${claim.id}/approve`, { email });
-      onDone(out);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'No se pudo aprobar');
-      setWorking(false);
-    }
-  };
-
-  const reject = async () => {
-    setWorking(true);
-    try {
-      await api.post(`/admin/claims/${claim.id}/reject`, {});
-      onDone();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'No se pudo rechazar');
-      setWorking(false);
-    }
-  };
-
-  return (
-    <div className="space-y-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
-      <div>
-        <p className="font-bold text-on-surface">{claim.name}</p>
-        <p className="text-xs text-on-surface-variant">
-          {claim.phone} · pidió el {formatShortDate(claim.createdAt)}
-        </p>
-        {claim.message && <p className="mt-1 text-sm italic text-on-surface-variant">“{claim.message}”</p>}
-      </div>
-      {whatsapp && (
-        <a
-          href={`https://wa.me/${whatsapp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm font-bold text-[#128C4B] hover:underline"
-        >
-          <WhatsAppIcon className="size-4" />
-          Verificar por WhatsApp
-        </a>
-      )}
-      <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="bg-surface-container-lowest" />
-      <div className="flex gap-2">
-        <Button size="sm" onClick={approve} disabled={working}>
-          <MaterialIcon name="check" size="sm" />
-          Aprobar e invitar
-        </Button>
-        <Button size="sm" variant="ghost" onClick={reject} disabled={working}>
-          Rechazar
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 function Detail() {
   const params = useSearchParams();
   const justCreated = params.get('nuevo') === '1';
@@ -145,7 +75,6 @@ function Detail() {
   const [featDays, setFeatDays] = useState('30');
   const [featuring, setFeaturing] = useState(false);
   const [planWorking, setPlanWorking] = useState(false);
-  const refreshPendingClaims = useAdminStore((s) => s.refreshPendingClaims);
 
   const load = useCallback(async () => {
     try {
@@ -402,30 +331,6 @@ function Detail() {
               )}
             </ul>
           </section>
-
-          {detail.pendingClaims.length > 0 && (
-            <Card title="Reclamos pendientes" icon="mark_email_unread">
-              <div className="space-y-3">
-                {detail.pendingClaims.map((claim) => (
-                  <ClaimCard
-                    key={claim.id}
-                    claim={claim}
-                    onDone={(approved) => {
-                      if (approved) {
-                        toast.success(
-                          approved.invitation.emailSent
-                            ? `Invitación enviada a ${approved.claimant.email}`
-                            : 'Reclamo aprobado. Mandale el link por WhatsApp desde Invitaciones.',
-                        );
-                      }
-                      load();
-                      refreshPendingClaims();
-                    }}
-                  />
-                ))}
-              </div>
-            </Card>
-          )}
 
           <InvitationPanel
             key={`${detail.stage}-${detail.invitation?.id ?? 'none'}`}

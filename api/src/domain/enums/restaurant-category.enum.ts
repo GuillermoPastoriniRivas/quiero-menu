@@ -9,5 +9,7 @@ export enum RestaurantCategory {
   SUSHI = 'sushi',
   BAR = 'bar',
   PANADERIA = 'panaderia',
+  PARRILA = 'parrilla',
+  CERVECERIA = 'cerveceria',
   OTRO = 'otro',
 }

@@ -16,7 +16,7 @@ function makeRestaurant(id: string, overrides: Partial<Restaurant> = {}) {
     '',
     '',
     '',
-    '',
+    overrides.address ?? '',
     overrides.city ?? 'Concepción del Uruguay',
     'AR',
     null,
@@ -38,7 +38,7 @@ function makeRestaurant(id: string, overrides: Partial<Restaurant> = {}) {
     undefined,
     undefined,
     overrides.claimed,
-    undefined,
+    overrides.photoGallery,
     undefined,
     overrides.isDemo,
   );
@@ -93,6 +93,21 @@ function makeUseCase(
 }
 
 describe('ListActiveStorefrontsUseCase', () => {
+  it('publica la dirección y aprovecha las fotos de galería sin requerir banner', async () => {
+    const local = makeRestaurant('1', {
+      claimed: false,
+      address: 'San Martín 123',
+      photoGallery: [
+        { url: 'https://example.com/local.jpg', source: 'external' },
+      ],
+    });
+    const result = await makeUseCase([local], [], []).execute();
+    expect(result[0]).toMatchObject({
+      address: 'San Martín 123',
+      bannerUrl: 'https://example.com/local.jpg',
+    });
+  });
+
   it('excluye los locales demo aunque tengan carta o sean inventario', async () => {
     const realConCarta = makeRestaurant('1', { name: 'Real con carta' });
     const realInventario = makeRestaurant('2', {

@@ -76,6 +76,18 @@ export const RESTAURANT_CATEGORIES: RestaurantCategoryDef[] = [
     plural: 'panaderias',
     cuisine: 'Panadería',
   },
+  {
+    value: RestaurantCategory.PARRILA,
+    label: 'Parrilla',
+    plural: 'parrillas',
+    cuisine: 'Parrilla',
+  },
+  {
+    value: RestaurantCategory.CERVECERIA,
+    label: 'Cervecería',
+    plural: 'cervecerias',
+    cuisine: 'Cerveza artesanal',
+  },
 ];
 
 export function getCategoryDef(

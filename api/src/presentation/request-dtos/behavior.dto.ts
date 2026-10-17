@@ -70,8 +70,6 @@ export const DINER_EVENTS = [
   'menu_search',
   'contact_click',
   'repeat_order',
-  'claim_view',
-  'claim_click',
 ] as const;
 export const OWNER_EVENTS = [
   'owner_page_view',

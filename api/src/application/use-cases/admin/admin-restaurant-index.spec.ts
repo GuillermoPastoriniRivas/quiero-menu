@@ -123,7 +123,6 @@ function fakeInsights(fixtures: Fixture[]): RestaurantInsightsQuery {
           : { orders: 4, restaurants: 1 },
       ),
     ),
-    pendingClaimsCount: jest.fn(() => Promise.resolve(3)),
     cities: jest.fn(() =>
       Promise.resolve([
         {
@@ -313,7 +312,6 @@ describe('GetAdminOverviewUseCase', () => {
     );
     const out = await uc.execute(NOW);
     expect(out.pipeline.all).toBe(7);
-    expect(out.pendingClaims).toBe(3);
     expect(out.platform).toEqual({
       ordersLast7d: 9,
       ordersPrev7d: 4,

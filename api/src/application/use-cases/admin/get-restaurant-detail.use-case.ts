@@ -3,7 +3,6 @@ import { RestaurantRepository } from '../../../domain/repositories/restaurant.re
 import { SubscriptionRepository } from '../../../domain/repositories/subscription.repository.js';
 import { OrderRepository } from '../../../domain/repositories/order.repository.js';
 import { MenuCategoryRepository } from '../../../domain/repositories/menu-category.repository.js';
-import { StoreClaimRepository } from '../../../domain/repositories/store-claim.repository.js';
 import type {
   PaymentMethodsConfig,
   PhotoGalleryImage,
@@ -90,14 +89,6 @@ export interface AdminRestaurantDetailOutput {
     openDays: number;
   };
   demand30d: InsightDemand;
-  pendingClaims: {
-    id: string;
-    name: string;
-    phone: string;
-    email: string;
-    message: string;
-    createdAt: Date;
-  }[];
   timeline: AdminActivityEntry[];
   flags: { ordersWithoutOwner: boolean };
 }
@@ -109,7 +100,6 @@ export class GetRestaurantDetailUseCase {
     private readonly subscriptionRepo: SubscriptionRepository,
     private readonly orderRepo: OrderRepository,
     private readonly menuCategoryRepo: MenuCategoryRepository,
-    private readonly claimRepo: StoreClaimRepository,
     private readonly index: AdminRestaurantIndex,
     private readonly insights: RestaurantInsightsQuery,
   ) {}
@@ -122,13 +112,12 @@ export class GetRestaurantDetailUseCase {
       .catch(() => null);
     if (!r) return err(new RestaurantNotFoundError());
 
-    const [[row], subscription, categories, ordersTotal, claims, entries] =
+    const [[row], subscription, categories, ordersTotal, entries] =
       await Promise.all([
         this.index.rowsFor([r]),
         this.subscriptionRepo.findByRestaurantId(r.id),
         this.menuCategoryRepo.findByRestaurantId(r.id),
         this.orderRepo.countByRestaurantIdSince(r.id, new Date(0)),
-        this.claimRepo.findPendingByRestaurantId(r.id),
         this.insights.timeline(r.id, 150),
       ]);
 
@@ -202,14 +191,6 @@ export class GetRestaurantDetailUseCase {
         openDays: row.openDays,
       },
       demand30d: row.demand30d,
-      pendingClaims: claims.map((c) => ({
-        id: c.id,
-        name: c.name,
-        phone: c.phone,
-        email: c.email,
-        message: c.message,
-        createdAt: c.createdAt,
-      })),
       timeline,
       flags: { ordersWithoutOwner: row.ordersWithoutOwner },
     });

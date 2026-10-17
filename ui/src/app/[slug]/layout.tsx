@@ -28,12 +28,13 @@ export async function generateMetadata({
   const url = `https://quiero.menu/${slug}`;
   // Título de pestaña: solo el nombre del local. El título social (OG/Twitter)
   // queda descriptivo para que la preview compartida explique el menú.
-  const socialTitle = entry.city
-    ? `Menú de ${entry.name} en ${entry.city} | quiero.menu`
-    : `Menú de ${entry.name} | quiero.menu`;
+  const inventory = entry.claimed === false;
+  const socialTitle = `${inventory ? entry.name : `Menú de ${entry.name}`}${entry.city ? ` en ${entry.city}` : ""} | quiero.menu`;
   const description =
     entry.description?.trim() ||
-    `Mirá el menú de ${entry.name}${entry.city ? ` en ${entry.city}` : ""} y pedí directo, sin comisiones.`;
+    (inventory
+      ? `Información de ${entry.name}${entry.city ? ` en ${entry.city}` : ""}: dirección y datos de contacto.`
+      : `Mirá el menú de ${entry.name}${entry.city ? ` en ${entry.city}` : ""} y pedí directo, sin comisiones.`);
   const image = entry.logoUrl || entry.bannerUrl || undefined;
 
   return {

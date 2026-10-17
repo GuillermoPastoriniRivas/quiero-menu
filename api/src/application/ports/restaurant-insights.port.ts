@@ -68,7 +68,6 @@ export interface RestaurantInsightsQuery {
     since: Date,
     to: Date,
   ): Promise<{ orders: number; restaurants: number }>;
-  pendingClaimsCount(): Promise<number>;
   cities(): Promise<CityFacet[]>;
   timeline(
     restaurantId: string | null,

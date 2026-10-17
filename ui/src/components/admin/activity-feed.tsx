@@ -17,8 +17,6 @@ const EVENTS: Record<string, { icon: string; label: string; tone?: "good" | "bad
   "billing.checkout": { icon: "workspace_premium", label: "Empezó el pago de Pro", tone: "good" },
   "billing.cancel": { icon: "cancel", label: "Canceló el plan Pro", tone: "bad" },
   "invitation.accepted": { icon: "handshake", label: "Aceptó la invitación y tomó el local", tone: "good" },
-  "admin.claim_approved": { icon: "check_circle", label: "Aprobó un reclamo y mandó la invitación", tone: "good" },
-  "admin.claim_rejected": { icon: "block", label: "Rechazó un reclamo" },
   "admin.featured_assigned": { icon: "star", label: "Destacó el local" },
   "admin.featured_deactivated": { icon: "star", label: "Sacó un destacado" },
   "admin.impersonated": { icon: "swap_horiz", label: "Entró como el dueño" },

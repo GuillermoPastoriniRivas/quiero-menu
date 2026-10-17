@@ -50,10 +50,6 @@ import {
 } from '../schemas/storefront-event.schema.js';
 import { OrderModel, OrderDocument } from '../schemas/order.schema.js';
 import {
-  StoreClaimModel,
-  StoreClaimDocument,
-} from '../schemas/store-claim.schema.js';
-import {
   AuditLogModel,
   AuditLogDocument,
 } from '../schemas/audit-log.schema.js';
@@ -103,8 +99,6 @@ export class MongoRestaurantInsightsQuery implements RestaurantInsightsQuery {
     private readonly events: Model<StorefrontEventDocument>,
     @InjectModel(OrderModel.name)
     private readonly orders: Model<OrderDocument>,
-    @InjectModel(StoreClaimModel.name)
-    private readonly claims: Model<StoreClaimDocument>,
     @InjectModel(AuditLogModel.name)
     private readonly auditLogs: Model<AuditLogDocument>,
   ) {}
@@ -358,10 +352,6 @@ export class MongoRestaurantInsightsQuery implements RestaurantInsightsQuery {
       orders: row?.orders ?? 0,
       restaurants: row?.restaurants.length ?? 0,
     };
-  }
-
-  async pendingClaimsCount(): Promise<number> {
-    return this.claims.countDocuments({ status: 'pending' });
   }
 
   async cities(): Promise<CityFacet[]> {

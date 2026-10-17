@@ -1,5 +1,6 @@
 import type { StorefrontIndexEntry } from "@/types";
 import { getApiBase } from "./storefront-context";
+import { sortDirectoryEntries } from "./featured";
 import {
   RESTAURANT_CATEGORIES,
   slugifyCity,
@@ -34,6 +35,8 @@ export async function searchStorefronts(
   params: {
     q?: string;
     city?: string;
+    country?: string;
+    region?: string;
     category?: string;
     openNow?: boolean;
     signal?: AbortSignal;
@@ -42,6 +45,8 @@ export async function searchStorefronts(
   const search = new URLSearchParams();
   if (params.q && params.q.trim().length >= 2) search.set("q", params.q.trim());
   if (params.city) search.set("city", params.city);
+  if (params.country) search.set("country", params.country);
+  if (params.region) search.set("region", params.region);
   if (params.category) search.set("category", params.category);
   if (params.openNow) search.set("openNow", "true");
 
@@ -83,7 +88,7 @@ const CATEGORY_TEXT = new Map(
  */
 export function filterIndexLocally(
   entries: StorefrontIndexEntry[],
-  params: { q?: string; city?: string; category?: string; openNow?: boolean },
+  params: { q?: string; city?: string; country?: string; region?: string; category?: string; openNow?: boolean },
 ): StorefrontSearchResponse {
   const q = normalize(params.q ?? "");
   const tokens = q.split(/\s+/).filter((t) => t.length >= 2);
@@ -91,6 +96,8 @@ export function filterIndexLocally(
 
   const results = entries
     .filter((e) => {
+      if (params.country && e.countrySlug !== params.country) return false;
+      if (params.region && e.regionSlug !== params.region) return false;
       if (city) {
         const entryCity = normalize(
           e.citySlug || slugifyCity(e.city || ""),
@@ -108,5 +115,9 @@ export function filterIndexLocally(
     })
     .map((e) => ({ ...e, currency: "", matchedItems: [] }));
 
-  return { results, total: results.length, suggestions: [] };
+  return {
+    results: sortDirectoryEntries(results, params.city ? { citySlug: params.city, category: params.category } : undefined),
+    total: results.length,
+    suggestions: [],
+  };
 }

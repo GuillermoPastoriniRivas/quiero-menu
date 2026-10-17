@@ -45,6 +45,8 @@ export class StorefrontsIndexController {
     return this.searchStorefronts.execute({
       q: query.q,
       citySlug: query.city,
+      countrySlug: query.country,
+      regionSlug: query.region,
       category: query.category,
       openNow: query.openNow,
       limit: query.limit,

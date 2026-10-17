@@ -65,6 +65,21 @@ export const InventoryBatchSchema = z
         address: z.string().trim().max(200).optional(),
         description: z.string().trim().max(500).optional(),
         phone: z.string().trim().max(30).optional(),
+        logoUrl: publicUrl.optional(),
+        bannerUrl: publicUrl.optional(),
+        photoGallery: z
+          .array(
+            z
+              .object({
+                url: publicUrl,
+                source: z.enum(['s3', 'external']),
+                alt: z.string().max(200).optional(),
+              })
+              .strict(),
+          )
+          .min(1)
+          .max(20)
+          .optional(),
         coordinates: z
           .object({
             lat: z.number().min(-90).max(90),
@@ -131,9 +146,13 @@ export async function importDirectoryInventory(
     if (
       existing &&
       (existing.claimed !== false ||
-        (await db
-          .collection('user_restaurants')
-          .findOne({ restaurantId: existing._id })))
+        existing.isDemo === true ||
+        (existing.citySlug && existing.citySlug !== citySlug) ||
+        (existing.countrySlug && existing.countrySlug !== geo.countrySlug) ||
+        (existing.regionSlug && existing.regionSlug !== geo.regionSlug) ||
+        (await db.collection('user_restaurants').findOne({
+          restaurantId: { $in: [existing._id, String(existing._id)] },
+        })))
     ) {
       results.push({
         slug: row.slug,
@@ -151,13 +170,25 @@ export async function importDirectoryInventory(
         })
         .toArray();
       if (
-        neighbors.some(
-          (other) =>
-            slugifyCity(String(other.name)) === slugifyCity(row.name) ||
-            (row.phone?.replace(/\D/g, '') &&
-              String(other.phone ?? '').replace(/\D/g, '') ===
-                row.phone.replace(/\D/g, '')),
-        )
+        neighbors.some((other) => {
+          const nameMatches =
+            slugifyCity(String(other.name)) === slugifyCity(row.name);
+          const address = slugifyCity(row.address ?? '');
+          const otherAddress = slugifyCity(String(other.address ?? ''));
+          const knownAddress = address && address !== citySlug;
+          const knownOtherAddress = otherAddress && otherAddress !== citySlug;
+          const addressesConflict =
+            knownAddress && knownOtherAddress && address !== otherAddress;
+          const phoneMatches =
+            row.phone?.replace(/\D/g, '') &&
+            String(other.phone ?? '').replace(/\D/g, '') ===
+              row.phone.replace(/\D/g, '');
+          // Un teléfono puede pertenecer a varios locales o sucursales.
+          return (
+            (nameMatches && !addressesConflict) ||
+            Boolean(phoneMatches && knownAddress && address === otherAddress)
+          );
+        })
       ) {
         results.push({
           slug: row.slug,
@@ -177,8 +208,12 @@ export async function importDirectoryInventory(
       address: row.address,
       description: row.description,
       phone: row.phone,
+      logoUrl: row.logoUrl,
+      bannerUrl: row.bannerUrl,
+      photoGallery: row.photoGallery,
       coordinates: row.coordinates,
       socialLinks: row.socialLinks,
+      inventorySource: { urls: row.sourceUrls, importedAt: new Date() },
     };
     // Imported data only fills gaps; reviewed or owner-provided values win.
     const patch = Object.fromEntries(
@@ -189,10 +224,11 @@ export async function importDirectoryInventory(
           (!existing ||
             existing[key] === undefined ||
             existing[key] === null ||
-            existing[key] === ''),
+            existing[key] === '' ||
+            (Array.isArray(existing[key]) && existing[key].length === 0)),
       ),
     );
-    const action = !existing
+    let action: ImportResult['action'] = !existing
       ? 'create'
       : Object.keys(patch).length
         ? 'fill'
@@ -200,7 +236,7 @@ export async function importDirectoryInventory(
     if (apply) {
       const now = new Date();
       if (!existing) {
-        await restaurants.updateOne(
+        const inserted = await restaurants.updateOne(
           { slug: row.slug },
           {
             $setOnInsert: {
@@ -213,9 +249,9 @@ export async function importDirectoryInventory(
               slug: row.slug,
               claimed: false,
               status: 'active',
-              logoUrl: '',
-              bannerUrl: '',
-              photoGallery: [],
+              logoUrl: row.logoUrl ?? '',
+              bannerUrl: row.bannerUrl ?? '',
+              photoGallery: row.photoGallery ?? [],
               currency:
                 row.country === 'CO'
                   ? 'COP'
@@ -244,8 +280,9 @@ export async function importDirectoryInventory(
           },
           { upsert: true },
         );
+        if (!inserted.upsertedCount) action = 'protected';
       } else if (action === 'fill') {
-        await restaurants.updateOne(
+        const filled = await restaurants.updateOne(
           {
             _id: existing._id,
             claimed: false,
@@ -254,11 +291,13 @@ export async function importDirectoryInventory(
                 { [key]: { $exists: false } },
                 { [key]: null },
                 { [key]: '' },
+                ...(Array.isArray(patch[key]) ? [{ [key]: { $size: 0 } }] : []),
               ],
             })),
           },
           { $set: { ...patch, updatedAt: now } },
         );
+        if (!filled.matchedCount) action = 'protected';
       }
       const stored = await restaurants.findOne({ slug: row.slug });
       if (stored?.claimed === false) {

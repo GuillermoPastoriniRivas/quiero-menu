@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AdminGate } from '@/components/admin/admin-gate';
 import { useAuthStore } from '@/stores/auth.store';
-import { useAdminStore } from '@/stores/admin.store';
 import { Logo } from '@/components/ui/logo';
 import { MaterialIcon } from '@/components/ui/material-icon';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -16,13 +15,11 @@ interface NavItem {
   label: string;
   icon: string;
   exact?: boolean;
-  badge?: 'claims';
 }
 
 const PRIMARY: NavItem[] = [
   { href: '/admin', label: 'Resumen', icon: 'insights', exact: true },
   { href: '/admin/locales', label: 'Locales', icon: 'storefront' },
-  { href: '/admin/reclamos', label: 'Reclamos', icon: 'mark_email_unread', badge: 'claims' },
 ];
 
 const SECONDARY: NavItem[] = [
@@ -37,16 +34,7 @@ function isActive(pathname: string, item: NavItem): boolean {
   return pathname.startsWith(item.href);
 }
 
-function Badge({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return (
-    <span className="ml-auto min-w-5 rounded-full bg-primary px-1.5 py-0.5 text-center text-[10px] font-extrabold leading-none text-white">
-      {count > 99 ? '99+' : count}
-    </span>
-  );
-}
-
-function SidebarLink({ item, pathname, pending }: { item: NavItem; pathname: string; pending: number }) {
+function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const active = isActive(pathname, item);
   return (
     <Link
@@ -58,7 +46,6 @@ function SidebarLink({ item, pathname, pending }: { item: NavItem; pathname: str
     >
       <MaterialIcon name={item.icon} size="md" fill={active} />
       <span>{item.label}</span>
-      {item.badge === 'claims' && <Badge count={pending} />}
     </Link>
   );
 }
@@ -67,13 +54,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const pending = useAdminStore((s) => s.pendingClaims);
-  const refreshPendingClaims = useAdminStore((s) => s.refreshPendingClaims);
   const [moreOpen, setMoreOpen] = useState(false);
-
-  useEffect(() => {
-    refreshPendingClaims();
-  }, [refreshPendingClaims, pathname]);
 
   const ownPanel = Boolean(user?.restaurantId) && !user?.operating;
 
@@ -88,7 +69,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-3">
           {PRIMARY.map((item) => (
-            <SidebarLink key={item.href} item={item} pathname={pathname} pending={pending} />
+            <SidebarLink key={item.href} item={item} pathname={pathname} />
           ))}
           <Link
             href="/admin/locales/nuevo"
@@ -101,7 +82,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             Más
           </p>
           {SECONDARY.map((item) => (
-            <SidebarLink key={item.href} item={item} pathname={pathname} pending={pending} />
+            <SidebarLink key={item.href} item={item} pathname={pathname} />
           ))}
         </nav>
         <div className="space-y-1 border-t border-outline-variant/20 p-3">
@@ -159,9 +140,6 @@ function AdminShell({ children }: { children: React.ReactNode }) {
               >
                 <MaterialIcon name={item.icon} size="md" fill={active} />
                 {item.label}
-                {item.badge === 'claims' && pending > 0 && (
-                  <span className="absolute right-[28%] top-1.5 h-2 w-2 rounded-full bg-primary" />
-                )}
               </Link>
             );
           })}
